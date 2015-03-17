@@ -1,19 +1,25 @@
 #ifndef PINS
 #define PINS
 
-short cathodeSegments[6] = {0, //SEG 1
-	1, //SEG 2
-	2, //SEG 3
-	3, //SEG 4
-	4, //SEG 5
-	5}; //SEG 6
+short speaker = A0;
+short potentio = A1;
+short thermistor = A2;
+short sendPin = A3;
+short receivePin = A4;
 
-short anodeSegments[8] = {6, //SEG A
-	7, //SEG B
-	8, //SEG C
-	9, //SEG D
-	10, //SEG E
-	11, //SEG F
+short cathodeSegments[6] = {1, //SEG 1
+	2, //SEG 2
+	3, //SEG 3
+	4, //SEG 4
+	5, //SEG 5
+	6}; //SEG 6
+
+short anodeSegments[8] = {7, //SEG A
+	9, //SEG B
+	10, //SEG C
+	11, //SEG D
+	12, //SEG E
+	13, //SEG F
 	12, //SEG G
 	13}; //SEG H
 
