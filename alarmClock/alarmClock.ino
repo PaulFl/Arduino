@@ -1,5 +1,6 @@
 #include "segments.h"
 #include "pins.h"
+#include "pitches.h"
 
 #define DEBUG 0
 #define REFRESHSPEED 2
@@ -45,7 +46,10 @@ void setup() {
     }
     
     //Play init sound
-    
+   tone(speaker, NOTE_B4, 500);
+
+   //Set time
+   setTime();
 }
 
 void loop() {
@@ -80,4 +84,8 @@ void flip() {
         }
         flipmillis = millis();
     }
+}
+
+void setTime() {
+
 }
