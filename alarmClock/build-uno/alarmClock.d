@@ -10,4 +10,4 @@ build-uno/alarmClock.o: alarmClock.ino \
  /usr/share/arduino/hardware/arduino/avr/cores/arduino/USBAPI.h \
  /usr/share/arduino/hardware/arduino/avr/cores/arduino/Arduino.h \
  /usr/share/arduino/hardware/arduino/avr/variants/standard/pins_arduino.h \
- segments.h pins.h
+ segments.h pins.h pitches.h functions.h
