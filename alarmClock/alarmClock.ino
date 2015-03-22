@@ -83,7 +83,7 @@ void loop() {
                 displayTime();
               }
               if (readCapSensor() > SETTINGSDELAY){
-                setUserTime();
+                setTimeUser();
               }
               else if (readCapSensor()){
                 actualDisplay = DATE;
@@ -96,7 +96,7 @@ void loop() {
                 displayDate();
               }
               if (readCapSensor() > SETTINGSDELAY){
-                setUserDate();
+                setDateUser();
               }
               else if (readCapSensor() || millis() - timeoutDisplay > TIMEOUT){
                 actualDisplay = TIME;
@@ -119,7 +119,8 @@ void displayTime() {
 	array[4] = second()/10;
 	array[5] = second()%10;
 	display(array);
-        setSeparators([0, 1, 0, 1, 0, 0]);
+	boolean separators[6] = {0, 1, 0, 1, 0, 0};
+        setSeparators(separators);
 }
 
 void displayDate() {
@@ -141,7 +142,8 @@ void displayDate() {
         array[4] = (year()/10)%10;
         array[5] = year()%10;
         display(array);
-        setSeparators([0, 1, 0, 1, 0, 0]);
+	boolean separators[6] = {0, 1, 0, 1, 0, 0};
+        setSeparators(separators);
 }
 
 void display(byte text[6]) {
@@ -268,7 +270,7 @@ void setDateUser() {
 					setTime(hour(), minute(), second(), day(), map(analogRead(analogInput), 0, 1023, 1, 12), year());
 					break;
 				case 2:
-					setTime(hour(), minute(), second(), day(), month(), map(analogRead(anaolgInput), 0, 1023, 2015, 2080));
+					setTime(hour(), minute(), second(), day(), month(), map(analogRead(analogInput), 0, 1023, 2015, 2080));
 					break;
 				default:
 					break;
