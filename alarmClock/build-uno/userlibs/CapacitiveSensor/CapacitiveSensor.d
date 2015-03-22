@@ -1,4 +1,5 @@
-build-uno/alarmClock.o: alarmClock.ino \
+build-uno/userlibs/CapacitiveSensor/CapacitiveSensor.o: \
+ /home/pi/Arduino/libraries/CapacitiveSensor/CapacitiveSensor.cpp \
  /usr/share/arduino/hardware/arduino/avr/cores/arduino/Arduino.h \
  /usr/share/arduino/hardware/arduino/avr/cores/arduino/binary.h \
  /usr/share/arduino/hardware/arduino/avr/cores/arduino/WCharacter.h \
@@ -10,6 +11,4 @@ build-uno/alarmClock.o: alarmClock.ino \
  /usr/share/arduino/hardware/arduino/avr/cores/arduino/USBAPI.h \
  /usr/share/arduino/hardware/arduino/avr/cores/arduino/Arduino.h \
  /usr/share/arduino/hardware/arduino/avr/variants/standard/pins_arduino.h \
- segments.h pins.h pitches.h functions.h \
- /home/pi/Arduino/libraries/Time/Time.h \
  /home/pi/Arduino/libraries/CapacitiveSensor/CapacitiveSensor.h

@@ -3,10 +3,14 @@
 #include "pitches.h"
 #include "functions.h"
 
+#include "Time.h"
+#include "CapacitiveSensor.h"
+
 #define DEBUG 0
 #define REFRESHSPEED 2
 #define BLINKSPEED 500
 #define TIMEOUT 10000
+#define SENSTHRESHOLD 200
 
 boolean chars[22][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
     {0, 1, 1, 0, 0, 0, 0}, //1
@@ -37,7 +41,9 @@ unsigned long blinkmillis;
 boolean blinkState = true;
 boolean segments[6][8];
 boolean blink[6] = {false};
-short onSegment = 0;
+byte onSegment = 0;
+
+CapacitiveSensor sensor = CapacitiveSensor(sendPin, receivePin);
 
 void setup() {
         Serial.begin(9600); //Init Serial
@@ -51,11 +57,12 @@ void setup() {
         digitalWrite(anodeSegments[i], LOW);
     }
     
-    //Play init sound
-
-   //Set time
+   //Play init sound
+	
+   //Set time and datee
    setTime(0, 0, 0, 0, 1, 2015);
    setTimeUser();
+   setDateUser();
 }
 
 void loop() {
@@ -63,7 +70,7 @@ void loop() {
 }
 
 void displayTime() {
-	short array[6];
+	byte array[6];
 	if (hour() < 10){
 		array[0] = OFFSEG;
 	}
@@ -78,7 +85,7 @@ void displayTime() {
 	display(array);
 }
 
-void display(short text[6]) {
+void display(byte text[6]) {
     for (int i = 0; i < 6; i++) {
         for (int j = 0; j < 7; j++) {
             segments[i][j] = chars[text[i]][j];
@@ -120,7 +127,7 @@ void setTimeUser() {
 	unsigned long lastAction = millis();
 	boolean done = false;
 	boolean edit = false;
-	short selection = 0;
+	byte selection = 0;
 	int pastAnalog = analogRead(analogInput);
 	while (!done){
 		flip();
@@ -171,3 +178,19 @@ void setTimeUser() {
 	}
 }
 
+void setDateUser() {
+}
+
+int readCapSensor() {
+	unsigned long time = millis();
+	if(sensor.capacitiveSensor(5)){
+		flip();
+		while(sensor.capacitiveSensor(5)){
+			flip();
+		}
+		return (millis() - time);
+	}
+	else {
+		return 0;
+	}
+}
