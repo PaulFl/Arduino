@@ -13,5 +13,6 @@ void loop() {
     serial.read();
     digitalWrite(1, HIGH);
     delay(1000);
+    serial.end();
   }
 }
