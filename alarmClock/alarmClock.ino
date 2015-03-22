@@ -11,6 +11,7 @@
 #define BLINKSPEED 500
 #define TIMEOUT 10000
 #define SENSTHRESHOLD 200
+#define SETTINGSDELAY 1500
 
 boolean chars[22][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
     {0, 1, 1, 0, 0, 0, 0}, //1
@@ -37,11 +38,16 @@ boolean chars[22][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
 
 unsigned long flipmillis;
 unsigned long blinkmillis;
+unsigned long timeoutDisplay;
 
 boolean blinkState = true;
 boolean segments[6][8];
 boolean blink[6] = {false};
 byte onSegment = 0;
+byte actualDisplay;
+
+byte pastSeconds;
+byte pastDate;
 
 CapacitiveSensor sensor = CapacitiveSensor(sendPin, receivePin);
 
@@ -63,10 +69,40 @@ void setup() {
    setTime(0, 0, 0, 0, 1, 2015);
    setTimeUser();
    setDateUser();
+   pastSeconds = 60;
+   pastDate = 0;
+   actualDisplay = TIME;
 }
 
 void loop() {
-    
+        flip();
+        switch (actualDisplay) {
+            case TIME:
+              if(pastSeconds != second()){
+                pastSeconds = second();
+                displayTime();
+              }
+              if (readCapSensor() > SETTINGSDELAY){
+                setUserTime();
+              }
+              else if (readCapSensor()){
+                actualDisplay = DATE;
+                timeoutDisplay = millis();
+              }
+              break;
+            case DATE:
+              if(pastDate != day()){
+                pastDate = day();
+                displayDate();
+              }
+              if (readCapSensor() > SETTINGSDELAY){
+                setUserDate();
+              }
+              else if (readCapSensor() || millis() - timeoutDisplay > TIMEOUT){
+                actualDisplay = TIME;
+              }
+              break;
+        }
 }
 
 void displayTime() {
@@ -83,6 +119,29 @@ void displayTime() {
 	array[4] = second()/10;
 	array[5] = second()%10;
 	display(array);
+        setSeparators([0, 1, 0, 1, 0, 0]);
+}
+
+void displayDate() {
+        byte array[6];
+        if (day() < 10){
+          array[0] = OFFSEG;
+        }
+        else {
+          array[0] = day()/10;
+        }
+        array[1] = day()%10;
+        if (month() < 10){
+          array[2] = OFFSEG;
+        }
+        else {
+          array[2] = month()/10;
+        }
+        array[3] = month()%10;
+        array[4] = (year()/10)%10;
+        array[5] = year()%10;
+        display(array);
+        setSeparators([0, 1, 0, 1, 0, 0]);
 }
 
 void display(byte text[6]) {
@@ -130,6 +189,7 @@ void setTimeUser() {
 	byte selection = 0;
 	int pastAnalog = analogRead(analogInput);
 	while (!done){
+                displayTime();
 		flip();
 		for (int i = 0; i < 6; i++){
 			if ((i == (2*selection)) || (i== ((2*selection)+1))) {
@@ -179,13 +239,66 @@ void setTimeUser() {
 }
 
 void setDateUser() {
+        unsigned long lastAction = millis();
+	boolean done = false;
+	boolean edit = false;
+	byte selection = 0;
+	int pastAnalog = analogRead(analogInput);
+	while (!done){
+                displayDate();
+		flip();
+		for (int i = 0; i < 6; i++){
+			if ((i == (2*selection)) || (i== ((2*selection)+1))) {
+				blink[i] = true;
+			}
+			else {
+				blink[i] = false;
+			}
+		}
+		if ((analogRead(analogInput) > (pastAnalog + 5)) || (analogRead(analogInput) < (pastAnalog - 5))){
+			edit = true;
+			lastAction = millis();
+		}
+		if (edit){
+			switch (selection) {
+				case 0:
+                                        setTime(hour(), minute(), second(), map(analogRead(analogInput), 0, 1023, 1, 31), month(), year());
+					break;
+				case 1:
+					setTime(hour(), minute(), second(), day(), map(analogRead(analogInput), 0, 1023, 1, 12), year());
+					break;
+				case 2:
+					setTime(hour(), minute(), second(), day(), month(), map(analogRead(anaolgInput), 0, 1023, 2015, 2080));
+					break;
+				default:
+					break;
+			}
+		}
+		if (millis() - lastAction > TIMEOUT) {
+			done = true;
+		}
+		if (readCapSensor()){
+			selection ++;
+			pastAnalog = analogRead(analogInput);
+			edit = false;
+			lastAction = millis();
+			if (selection == 3) {
+			done = true;
+			}
+		}
+		if (done) {
+			for (int i = 0; i < 6; i++) {
+				blink[i] = false;
+			}
+		}
+	}
 }
 
 int readCapSensor() {
 	unsigned long time = millis();
-	if(sensor.capacitiveSensor(5)){
+	if(sensor.capacitiveSensor(5) >= SENSTHRESHOLD){
 		flip();
-		while(sensor.capacitiveSensor(5)){
+		while(sensor.capacitiveSensor(5) >= SENSTHRESHOLD){
 			flip();
 		}
 		return (millis() - time);
