@@ -64,7 +64,8 @@ void setup() {
     }
     
    //Play init sound
-	
+    tone(speaker, NOTE_A3, 500);
+
    //Set time and datee
    setTime(0, 0, 0, 0, 1, 2015);
    setTimeUser();
