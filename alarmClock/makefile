@@ -1,7 +1,7 @@
 BOARD_TAG    = uno
-ARDUINO_PORT = /dev/ttyACM0
+ARDUINO_PORT = /dev/ttyAMA0
 
-ARDUINO_LIBS = Time CapacitiveSensor
+ARDUINO_LIBS = Time
 ARDUINO_SKETCHBOOK = /home/pi/Arduino
 ARDUINO_DIR = /usr/share/arduino
 

@@ -12,6 +12,6 @@ void setTimeUser();
 void setDateUser();
 void displayDate();
 void displayTime();
-int readCapSensor();
+int readButton();
 
 #endif

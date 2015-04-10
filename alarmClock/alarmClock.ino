@@ -4,13 +4,11 @@
 #include "functions.h"
 
 #include "Time.h"
-#include "CapacitiveSensor.h"
 
 #define DEBUG 0
-#define REFRESHSPEED 2
+#define REFRESHSPEED 500
 #define BLINKSPEED 500
 #define TIMEOUT 10000
-#define SENSTHRESHOLD 200
 #define SETTINGSDELAY 1500
 
 boolean chars[22][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
@@ -36,7 +34,7 @@ boolean chars[22][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
     {0, 1, 1, 1, 1, 1, 0}, //U
     {0, 0, 0, 0, 0, 0, 0}}; //Off segment
 
-unsigned long flipmillis;
+unsigned long flipmicros;
 unsigned long blinkmillis;
 unsigned long timeoutDisplay;
 
@@ -49,11 +47,13 @@ byte actualDisplay;
 byte pastSeconds;
 byte pastDate;
 
-CapacitiveSensor sensor = CapacitiveSensor(sendPin, receivePin);
 
 void setup() {
-        Serial.begin(9600); //Init Serial
-    //Init segments pins
+       // Serial.begin(9600); //Init Serial
+    //Init pins
+	pinMode(button, INPUT_PULLUP);
+       
+       //Init segments pins
     for (int i = 0; i < 6; i++) {
         pinMode(cathodeSegments[i], OUTPUT);
         digitalWrite(cathodeSegments[i], HIGH);
@@ -65,14 +65,16 @@ void setup() {
     
    //Play init sound
     tone(speaker, NOTE_A3, 500);
-
-   //Set time and datee
+    //Set time and datee
    setTime(0, 0, 0, 0, 1, 2015);
    setTimeUser();
    setDateUser();
    pastSeconds = 60;
    pastDate = 0;
    actualDisplay = TIME;
+
+   
+   pinMode(speaker, INPUT);
 }
 
 void loop() {
@@ -83,10 +85,10 @@ void loop() {
                 pastSeconds = second();
                 displayTime();
               }
-              if (readCapSensor() > SETTINGSDELAY){
+              if (readButton() > SETTINGSDELAY){
                 setTimeUser();
               }
-              else if (readCapSensor()){
+              else if (readButton()){
                 actualDisplay = DATE;
                 timeoutDisplay = millis();
               }
@@ -96,10 +98,10 @@ void loop() {
                 pastDate = day();
                 displayDate();
               }
-              if (readCapSensor() > SETTINGSDELAY){
+              if (readButton() > SETTINGSDELAY){
                 setDateUser();
               }
-              else if (readCapSensor() || millis() - timeoutDisplay > TIMEOUT){
+              else if (readButton() || millis() - timeoutDisplay > TIMEOUT){
                 actualDisplay = TIME;
               }
               break;
@@ -120,7 +122,7 @@ void displayTime() {
 	array[4] = second()/10;
 	array[5] = second()%10;
 	display(array);
-	boolean separators[6] = {0, 1, 0, 1, 0, 0};
+	boolean separators[6] = {0, 0, 0, 0, 1, 1};
         setSeparators(separators);
 }
 
@@ -163,7 +165,7 @@ void setSeparators(boolean separators[6]) {
 }
 
 void flip() {
-    if (millis() - flipmillis > REFRESHSPEED) {
+    if (micros() - flipmicros > REFRESHSPEED) {
         digitalWrite(cathodeSegments[onSegment], LOW);
         onSegment++;
         if (onSegment == 6) {
@@ -172,16 +174,16 @@ void flip() {
 	if (millis() - blinkmillis > BLINKSPEED) {
 		blinkState = !blinkState;
 	}
+	for (int i = 0; i < 8; i++){
+		digitalWrite(anodeSegments[i], segments[onSegment][i]);
+	}
 	if (blink[onSegment]) {
 		digitalWrite(cathodeSegments[onSegment], blinkState);
 	}
 	else {
         	digitalWrite(cathodeSegments[onSegment], HIGH);
 	}
-        for (int i = 0; i < 8; i++) {
-            digitalWrite(anodeSegments[i], segments[onSegment][i]);
-        }
-        flipmillis = millis();
+        flipmicros = micros();
     }
 }
 
@@ -224,7 +226,7 @@ void setTimeUser() {
 		if (millis() - lastAction > TIMEOUT) {
 			done = true;
 		}
-		if (readCapSensor()){
+		if (readButton()){
 			selection ++;
 			pastAnalog = analogRead(analogInput);
 			edit = false;
@@ -280,7 +282,7 @@ void setDateUser() {
 		if (millis() - lastAction > TIMEOUT) {
 			done = true;
 		}
-		if (readCapSensor()){
+		if (readButton()){
 			selection ++;
 			pastAnalog = analogRead(analogInput);
 			edit = false;
@@ -297,11 +299,10 @@ void setDateUser() {
 	}
 }
 
-int readCapSensor() {
+int readButton() {
 	unsigned long time = millis();
-	if(sensor.capacitiveSensor(5) >= SENSTHRESHOLD){
-		flip();
-		while(sensor.capacitiveSensor(5) >= SENSTHRESHOLD){
+	if(digitalRead(button) == LOW){
+		while(digitalRead(button) == LOW){
 			flip();
 		}
 		return (millis() - time);

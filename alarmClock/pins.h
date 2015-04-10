@@ -1,10 +1,9 @@
 #ifndef PINS
 #define PINS
 
-short speaker = 10;
+short speaker = A4;
 short analogInput = A3;
-short sendPin = A4;
-short receivePin = A5;
+short button = 10;
 short led = 9;
 
 short cathodeSegments[6] = {1, //SEG 1
