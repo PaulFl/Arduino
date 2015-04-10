@@ -9,7 +9,7 @@
  */
 
 
-CapacitiveSensor   cs_4_2 = CapacitiveSensor(4,2);        // 10M resistor between pins 4 & 2, pin 2 is sensor pin, add a wire and or foil if desired
+CapacitiveSensor   cs_4_2 = CapacitiveSensor(A4,A5);        // 10M resistor between pins 4 & 2, pin 2 is sensor pin, add a wire and or foil if desired
 
 void setup()                    
 {
@@ -18,7 +18,7 @@ void setup()
 
 void loop()                    
 {
-    long total1 =  cs_4_2.capacitiveSensor();
+    long total1 =  cs_4_2.capacitiveSensor(5);
 
 
     Serial.println(total1);                  // print sensor output 1
