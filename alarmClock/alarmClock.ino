@@ -173,6 +173,7 @@ void flip() {
         }
 	if (millis() - blinkmillis > BLINKSPEED) {
 		blinkState = !blinkState;
+		blinkmillis = millis();
 	}
 	for (int i = 0; i < 8; i++){
 		digitalWrite(anodeSegments[i], segments[onSegment][i]);
