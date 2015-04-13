@@ -10,6 +10,7 @@
 #define BLINKSPEED 500
 #define TIMEOUT 10000
 #define SETTINGSDELAY 1500
+#define DEBOUNCEDELAY 250
 
 boolean chars[22][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
     {0, 1, 1, 0, 0, 0, 0}, //1
@@ -90,6 +91,7 @@ void loop() {
               }
               else if (readButton()){
                 actualDisplay = DATE;
+                displayDate();
                 timeoutDisplay = millis();
               }
               break;
@@ -171,8 +173,12 @@ void flip() {
         if (onSegment == 6) {
             onSegment = 0;
         }
-	if (millis() - blinkmillis > BLINKSPEED) {
-		blinkState = !blinkState;
+	if ((millis() - blinkmillis > BLINKSPEED) && blinkState) {
+		blinkState = false;
+		blinkmillis = millis();
+	}
+	else if ((millis() - blinkmillis > BLINKSPEED/5) && !blinkState) {
+		blinkState = true;
 		blinkmillis = millis();
 	}
 	for (int i = 0; i < 8; i++){
@@ -301,14 +307,22 @@ void setDateUser() {
 }
 
 int readButton() {
-	unsigned long time = millis();
-	if(digitalRead(button) == LOW){
-		while(digitalRead(button) == LOW){
+	if(digitalRead(button) == LOW) {
+		unsigned long lastLow = millis();
+		unsigned long startTime = millis();
+		boolean done = false;
+		while(!done) {
 			flip();
+			if (digitalRead(button) == LOW) {
+				lastLow = millis();
+			}
+			if (millis() - lastLow > DEBOUNCEDELAY) {
+				done = true;
+			}
 		}
-		return (millis() - time);
+		return ((int) millis() - startTime);
 	}
 	else {
-		return 0;
+	return 0;
 	}
 }
