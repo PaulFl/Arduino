@@ -1,4 +1,3 @@
-#include <toneAC.h>
 
 #include "pitches.h"
 #define NO_SOUND 0 // make the rests in music
@@ -47,10 +46,14 @@ void setup() {
     if (millis() - time > duration*1.2){
       time = millis();
       duration = pace/noteDurations[Note];
-      toneAC(melody[Note], 7, duration, true);
+      tone(9, melody[Note], duration);
       Note++;
   }
 }
+pinMode(9, OUTPUT);
+pinMode(10, OUTPUT);
+digitalWrite(9, LOW);
+digitalWrite(10, LOW);
 }
 
 void loop() {

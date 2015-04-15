@@ -13,8 +13,8 @@ void setup() {
 
 void loop() {
 	pastMicros = micros();
-	Serial.print(sensor.capacitiveSensor(10));
+	Serial.print(sensor.capacitiveSensor(5));
 	Serial.print("\t");
 	Serial.println(micros() - pastMicros);
-	delay(250);
+	delay(25);
 }
