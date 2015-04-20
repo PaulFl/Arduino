@@ -1,31 +1,98 @@
-#define SIZE_MAX     50   //taille maximale de la séquence aléatoire
+#include <EEPROM.h>
+#include "functions.h"
+
+#define SIZE_MAX     99   //taille maximale de la séquence aléatoire
 #define LIMITE_TEMPS 2000 //la limite de temps pour répondre
 #define VITESSE      500  //500ms de pause entre chaque note jouée
 
 #include "pitches.h"
- 
-const char leds[]    = {
-  10, 11, 12, 13};
-const char boutons[] = {
-  6, 7, 8, 9};
-const char buzzer  = 5;
+
+template <class T> int EEPROM_writeAnything(int ee, const T& value)
+{
+	   const byte* p = (const byte*)(const void*)&value;
+	      int i;
+	         for (i = 0; i < sizeof(value); i++)
+			        EEPROM.write(ee++, *p++);
+		    return i;
+}
+
+
+template <class T> int EEPROM_readAnything(int ee, T& value)
+{
+	   byte* p = (byte*)(void*)&value;
+	      int i;
+	         for (i = 0; i < sizeof(value); i++)
+			        *p++ = EEPROM.read(ee++);
+		    return i;
+}
+
+
+void BetterRandomSeed( void )
+{
+	 unsigned long __seed;
+	  
+	  EEPROM_readAnything( 0, __seed );
+	   
+	   srandom( __seed );
+}
+
+
+long BetterRandom( void )
+{
+	 long __seed;
+	  
+	  __seed = random();
+	   
+	   EEPROM_writeAnything( 0, __seed );
+
+	    return( __seed );
+}
+
+
+long BetterRandom( long howbig )
+{
+	 if ( howbig == 0 ) 
+		  {
+			     return 0;
+			      }
+	  return( BetterRandom() % howbig );
+}
+
+
+long BetterRandom( long howsmall, long howbig )
+{
+	 if ( howsmall >= howbig ) 
+		  {
+			     return howsmall;
+			      }
+	  long diff = howbig - howsmall;
+	   
+	   return( BetterRandom(diff) + howsmall );
+}
+
+const short leds[]    = {
+  9, 12, A2, A5};
+const short boutons[] = {
+  10, 11, A3, A4};
+const char buzzer  = 13;
 const int frequences[] = {
   NOTE_E4, NOTE_CS4, NOTE_A4, NOTE_E3};
 
 
  
-char etats[] = {
+boolean etats[] = {
   LOW,LOW,LOW, LOW};
-char mem[]  = {
+boolean mem[]  = {
   HIGH,HIGH,HIGH, HIGH};
  
-char sequence[SIZE_MAX];
-char cpt = 0;
+int sequence[SIZE_MAX];
+int cpt = 0;
 int score = 0;
  
  
 void setup() {
-  for(char i=0; i<4; i++) {
+    BetterRandomSeed();
+    for(short i=0; i<4; i++) {
     pinMode(leds[i],    OUTPUT);
     pinMode(boutons[i], INPUT);
     digitalWrite(leds[i],    LOW);
@@ -37,7 +104,6 @@ void setup() {
 
   //---------------------
  
-  randomSeed(analogRead(A5));
  
   Serial.begin(14400);
   Serial.println("Initialisation...");
@@ -57,7 +123,7 @@ void loop() {
       playSequence();    
       
       mancheOK = true;
-      for(char i=0; i<cpt; i++) {
+      for(short i=0; i<cpt; i++) {
         if(!checkEtape(i)) {
           mancheOK = false;
           break;
@@ -83,7 +149,7 @@ void loop() {
 
 
 boolean ajouterEtape() {
-  sequence[cpt] = random(0,4);
+  sequence[cpt] = BetterRandom(4);
   cpt++;
   score = (int)cpt - 1;
   Serial.print(score);
@@ -94,7 +160,7 @@ boolean ajouterEtape() {
 }
  
 void playSequence() {
-  for(char i=0; i<cpt; i++) {
+  for(short i=0; i<cpt; i++) {
     digitalWrite(leds[sequence[i]], HIGH);
     tone(buzzer, frequences[sequence[i]]);
     delay(VITESSE);
@@ -112,25 +178,25 @@ boolean checkEtape(char etape) {
     lectureBoutons();
     for(int i=0; i<4; i++) {
       if(etats[i]) {
+	if(i != objectif) {
+		return false;
+	}
+	else if(i == objectif) {
         digitalWrite(leds[i], HIGH);
         tone(buzzer, frequences[i]);
         delay(VITESSE);
         digitalWrite(leds[i], LOW);
         noTone(buzzer);
-        
-        if(i==objectif) {
-          return true;
-        } else {
-          return false; 
+	return true;
+	}
+	} 
         }
-      }
-    }
   }
   return false;
-}
+ }
  
 void lectureBoutons() {
-  for(char i=0; i<4; i++) {
+  for(short i=0; i<4; i++) {
     char etat = digitalRead(boutons[i]);
     if(etat != mem[i] ) {
       if(etat == LOW) {
@@ -147,30 +213,16 @@ void lectureBoutons() {
 }
 
 void animationReponseFausse() {
-  for(char i=0; i<4; i++) {
-    for(char j=0; j<4; j++) {
-      digitalWrite(leds[j], HIGH);
-    }
-    tone(buzzer, 1000);
-    delay(500);
-    for(char j=0; j<4; j++) {
-      digitalWrite(leds[j], LOW);
-    }
+   digitalWrite(leds[sequence[cpt-1]], HIGH); 
+    tone(buzzer, NOTE_A2);
+    delay(750);
+    digitalWrite(leds[sequence[cpt-1]], LOW);
     noTone(buzzer);
     delay(500);
-  }
 }
  
 void animationReponseBonne() {
-  for(char i=0; i<4; i++) {
-    digitalWrite(leds[i], HIGH);
-    tone(buzzer, frequences[i]);
-    delay(100);
-  }
-  for(char i=0; i<4; i++) {
-    digitalWrite(leds[i], LOW); 
-  }
-  noTone(buzzer);
+	delay(500);
 }
  
 void ecranFin(boolean perdu) {
