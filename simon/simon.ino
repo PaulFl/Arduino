@@ -1,14 +1,86 @@
 #include <EEPROM.h>
 
 #include "functions.h"
+#include "pitches.h"
 
 #define SIZE_MAX     99   //taille maximale de la séquence aléatoire
 #define LIMITE_TEMPS 2500 //la limite de temps pour répondre
 #define SPEED_MAX      250  //pause entre chaque note jouée
 #define SPEED_MIN 500
 #define ACCELERATION 10
+#define REFRESHSPEED 10
 
-#include "pitches.h"
+
+#define ACHAR 10
+#define CCHAR 11
+#define ECHAR 12
+#define FCHAR 13
+#define HCHAR 14
+#define ICHAR 15
+#define JCHAR 16
+#define LCHAR 17
+#define NCHAR 18
+#define OCHAR 0
+#define PCHAR 19
+#define SCHAR 5
+#define UCHAR 20
+
+#define OFFSEG 21
+
+short cathodeSegments[6] = {1, //SEG 1
+	2}; //SEG 2
+
+short anodeSegments[8] = {7, //SEG A
+	8, //SEG B
+	11, //SEG C
+	12, //SEG D
+	13, //SEG E
+	A0, //SEG F
+	A1}; //SEG G
+
+const short leds[]    = {
+  9, 12, A2, A5};
+const short boutons[] = {
+  10, 11, A3, A4};
+const char buzzer  = 13;
+const int frequences[] = {
+  NOTE_E4, NOTE_CS4, NOTE_A4, NOTE_E3};
+
+
+ 
+boolean etats[] = {
+  LOW,LOW,LOW, LOW};
+boolean mem[]  = {
+  HIGH,HIGH,HIGH, HIGH};
+ 
+int sequence[SIZE_MAX];
+int cpt = 0;
+int score = 0;
+int pressed;
+
+boolean chars[22][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
+    {0, 1, 1, 0, 0, 0, 0}, //1
+    {1, 1, 0, 1, 1, 0, 1}, //2
+    {1, 1, 1, 1, 0, 0, 1}, //3
+    {0, 1, 1, 0, 0, 1, 1}, //4
+    {1, 0, 1, 1, 0, 1, 1}, //5
+    {1, 0, 1, 1, 1, 1, 1}, //6
+    {1, 1, 1, 0, 0, 0, 0}, //7
+    {1, 1, 1, 1, 1, 1, 1}, //8
+    {1, 1, 1, 1, 0, 1, 1}, //9
+    {1, 1, 1, 0, 1, 1, 1}, //A
+    {1, 0, 0, 1, 1, 1, 0}, //C
+    {1, 0, 0, 1, 1, 1, 1}, //E
+    {1, 0, 0, 0, 1, 1, 1}, //F
+    {0, 1, 1, 0, 1, 1, 0}, //H
+    {0, 0, 0, 0, 1, 1, 0}, //I
+    {0, 1, 1, 1, 1, 0, 0}, //J
+    {0, 0, 0, 1, 1, 1, 0}, //L
+    {0, 0, 1, 0, 1, 0, 1}, //n
+    {1, 1, 0, 0, 1, 1, 1}, //P
+    {0, 1, 1, 1, 1, 1, 0}, //U
+    {0, 0, 0, 0, 0, 0, 0}}; //Off segment
+
 
 template <class T> int EEPROM_writeAnything(int ee, const T& value)
 {
@@ -71,26 +143,6 @@ long BetterRandom( long howsmall, long howbig) {
 	   
 	   return( BetterRandom(diff) + howsmall );
 }
-
-const short leds[]    = {
-  9, 12, A2, A5};
-const short boutons[] = {
-  10, 11, A3, A4};
-const char buzzer  = 13;
-const int frequences[] = {
-  NOTE_E4, NOTE_CS4, NOTE_A4, NOTE_E3};
-
-
- 
-boolean etats[] = {
-  LOW,LOW,LOW, LOW};
-boolean mem[]  = {
-  HIGH,HIGH,HIGH, HIGH};
- 
-int sequence[SIZE_MAX];
-int cpt = 0;
-int score = 0;
-int pressed;
  
  
 void setup() {
@@ -102,10 +154,6 @@ void setup() {
     digitalWrite(boutons[i], HIGH);
   }
   pinMode(buzzer, OUTPUT);
-  
-  //7 segments display---
-
-  //---------------------
  
  
   Serial.begin(14400);
