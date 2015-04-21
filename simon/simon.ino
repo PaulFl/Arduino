@@ -4,7 +4,9 @@
 
 #define SIZE_MAX     99   //taille maximale de la séquence aléatoire
 #define LIMITE_TEMPS 2500 //la limite de temps pour répondre
-#define VITESSE      500  //500ms de pause entre chaque note jouée
+#define SPEED_MAX      250  //pause entre chaque note jouée
+#define SPEED_MIN 500
+#define ACCELERATION 10
 
 #include "pitches.h"
 
@@ -121,7 +123,7 @@ void loop() {
     mancheOK = false;
     while(nbEssai < 1 && !mancheOK) {
       delay(1000);
-      playSequence();    
+      playSequence(false);    
       
       mancheOK = true;
       for(short i=0; i<cpt; i++) {
@@ -161,14 +163,29 @@ boolean ajouterEtape() {
     return true;
 }
  
-void playSequence() {
-  for(short i=0; i<cpt; i++) {
+void playSequence(boolean finished) {
+  short lenght;
+  if(finished) lenght = cpt-1;
+  else lenght = cpt;
+  for(short i=0; i<lenght; i++) {
     digitalWrite(leds[sequence[i]], HIGH);
     tone(buzzer, frequences[sequence[i]]);
-    delay(VITESSE);
+    delay(SPEED_MAX);
+    if(score < ((SPEED_MIN-SPEED_MAX)/ACCELERATION) && !finished) {
+      delay(SPEED_MIN-SPEED_MAX - (ACCELERATION*score));
+    }
+    else if (finished) {
+      delay(400 - SPEED_MAX);
+    }
     digitalWrite(leds[sequence[i]], LOW); 
     noTone(buzzer);
-    delay(VITESSE);
+    delay(SPEED_MAX);
+    if(score < ((SPEED_MIN-SPEED_MAX)/ACCELERATION) && !finished) {
+      delay(SPEED_MIN-SPEED_MAX - (ACCELERATION*score));
+    }
+    else if (finished) {
+      delay(400 - SPEED_MAX);
+    }
   }
 }
  
@@ -186,7 +203,7 @@ int checkEtape(char etape) {
 	else if(i == objectif) {
         digitalWrite(leds[i], HIGH);
         tone(buzzer, frequences[i]);
-        delay(VITESSE);
+        delay(400);
         digitalWrite(leds[i], LOW);
         noTone(buzzer);
 	return -1;
@@ -228,7 +245,7 @@ void ecranFin(boolean perdu) {
     while(1) {
       //joue la séquence si on lit un état bas
       if(!digitalRead(boutons[0]) || !digitalRead(boutons[1]) || !digitalRead(boutons[2]) || !digitalRead(boutons[3])) {
-        playSequence(); 
+        playSequence(true); 
       }
     }
   }
