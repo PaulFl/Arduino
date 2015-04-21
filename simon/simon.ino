@@ -1,8 +1,9 @@
 #include <EEPROM.h>
+
 #include "functions.h"
 
 #define SIZE_MAX     99   //taille maximale de la séquence aléatoire
-#define LIMITE_TEMPS 2000 //la limite de temps pour répondre
+#define LIMITE_TEMPS 2500 //la limite de temps pour répondre
 #define VITESSE      500  //500ms de pause entre chaque note jouée
 
 #include "pitches.h"
@@ -59,8 +60,7 @@ long BetterRandom( long howbig )
 }
 
 
-long BetterRandom( long howsmall, long howbig )
-{
+long BetterRandom( long howsmall, long howbig) {
 	 if ( howsmall >= howbig ) 
 		  {
 			     return howsmall;
@@ -88,6 +88,7 @@ boolean mem[]  = {
 int sequence[SIZE_MAX];
 int cpt = 0;
 int score = 0;
+int pressed;
  
  
 void setup() {
@@ -124,17 +125,18 @@ void loop() {
       
       mancheOK = true;
       for(short i=0; i<cpt; i++) {
-        if(!checkEtape(i)) {
+        pressed = checkEtape(i);
+        if(pressed != -1) {
           mancheOK = false;
           break;
         }
       }
       if(!mancheOK) {
         nbEssai++;
-        animationReponseFausse();
+        animationReponseFausse(pressed);
       } 
       else {
-        animationReponseBonne(); 
+        delay(175); 
       }
       delay(500);
     }
@@ -170,7 +172,7 @@ void playSequence() {
   }
 }
  
-boolean checkEtape(char etape) {
+int checkEtape(char etape) {
   long temps = millis();
   char objectif = sequence[etape];
  
@@ -179,7 +181,7 @@ boolean checkEtape(char etape) {
     for(int i=0; i<4; i++) {
       if(etats[i]) {
 	if(i != objectif) {
-		return false;
+		return i;
 	}
 	else if(i == objectif) {
         digitalWrite(leds[i], HIGH);
@@ -187,12 +189,12 @@ boolean checkEtape(char etape) {
         delay(VITESSE);
         digitalWrite(leds[i], LOW);
         noTone(buzzer);
-	return true;
+	return -1;
 	}
 	} 
         }
   }
-  return false;
+  return objectif;
  }
  
 void lectureBoutons() {
@@ -212,17 +214,13 @@ void lectureBoutons() {
   }
 }
 
-void animationReponseFausse() {
-   digitalWrite(leds[sequence[cpt-1]], HIGH); 
+void animationReponseFausse(int lastPressed) {
+   digitalWrite(leds[sequence[lastPressed]], HIGH); 
     tone(buzzer, NOTE_A2);
     delay(750);
-    digitalWrite(leds[sequence[cpt-1]], LOW);
+    digitalWrite(leds[sequence[lastPressed]], LOW);
     noTone(buzzer);
     delay(500);
-}
- 
-void animationReponseBonne() {
-	delay(500);
 }
  
 void ecranFin(boolean perdu) {
