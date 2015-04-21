@@ -27,16 +27,16 @@
 
 #define OFFSEG 21
 
-short cathodeSegments[6] = {1, //SEG 1
-	2}; //SEG 2
+short cathodeSegments[2] = {0, //SEG 1
+	0}; //SEG 2
 
-short anodeSegments[8] = {7, //SEG A
-	8, //SEG B
-	11, //SEG C
-	12, //SEG D
-	13, //SEG E
-	A0, //SEG F
-	A1}; //SEG G
+short anodeSegments[7] = {0, //SEG A
+	0, //SEG B
+	0, //SEG C
+	0, //SEG D
+	0, //SEG E
+	0, //SEG F
+	0}; //SEG G
 
 const short leds[]    = {
   9, 12, A2, A5};
@@ -251,7 +251,7 @@ int checkEtape(char etape) {
 	else if(i == objectif) {
         digitalWrite(leds[i], HIGH);
         tone(buzzer, frequences[i]);
-        delay(400);
+        delay(500);
         digitalWrite(leds[i], LOW);
         noTone(buzzer);
 	return -1;
