@@ -8,7 +8,7 @@ void lectureBoutons();
 void animationReponseFausse(int lastPressed);
 void ecranFin(boolean perdu);
 void flip();
-void delayFlip(int delay);
+void delayFlip(unsigned int delay);
 void display(byte text[2]);
 
 #endif

@@ -251,7 +251,7 @@ void flip() {
     }
 }
 
-void delayFlip(int delay){
+void delayFlip(unsigned int delay){
   unsigned long pastTime = millis();
   while((millis() - pastTime) < delay){
     flip();
