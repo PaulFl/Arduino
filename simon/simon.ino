@@ -1,3 +1,6 @@
+// change this to any new value to re-init EEPROM state
+#define SCHEMA 0x0101
+
 #include <EEPROM.h>
 
 #include "functions.h"
@@ -56,6 +59,7 @@ boolean mem[]  = {
 int sequence[SIZE_MAX];
 int cpt = 0;
 int score = 0;
+int bestScore;
 int pressed;
 
 boolean chars[22][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
@@ -80,6 +84,11 @@ boolean chars[22][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
     {1, 1, 0, 0, 1, 1, 1}, //P
     {0, 1, 1, 1, 1, 1, 0}, //U
     {0, 0, 0, 0, 0, 0, 0}}; //Off segment
+    
+unsigned long flipmillis;
+
+boolean segments[2][7] = {false};
+byte onSegment = 0;
 
 
 template <class T> int EEPROM_writeAnything(int ee, const T& value)
@@ -146,7 +155,15 @@ long BetterRandom( long howsmall, long howbig) {
  
  
 void setup() {
+    short schema;
+   EEPROM_readAnything(sizeof(long)+sizeof(int)+2, schema);
+   if (schema != SCHEMA) {
+       EEPROM_writeAnything(sizeof(long)+1, int(0));
+       schema = SCHEMA;
+       EEPROM_writeAnything(sizeof(long)+sizeof(int)+2, schema);
+   }
     BetterRandomSeed();
+    EEPROM_readAnything( sizeof(long)+1, bestScore);
     for(short i=0; i<4; i++) {
     pinMode(leds[i],    OUTPUT);
     pinMode(boutons[i], INPUT);
@@ -154,11 +171,16 @@ void setup() {
     digitalWrite(boutons[i], HIGH);
   }
   pinMode(buzzer, OUTPUT);
- 
- 
-  Serial.begin(14400);
-  Serial.println("Initialisation...");
-  delay(50);
+ byte array[2];
+  if (bestScore < 10){
+    array[0] = OFFSEG;
+  }
+  else {
+    array[0] = bestScore/10;
+  }
+  array[1] = bestScore%10;
+  display(array);
+  delayFlip(1500);
 }
  
 void loop() {
@@ -170,7 +192,7 @@ void loop() {
     nbEssai = 0;
     mancheOK = false;
     while(nbEssai < 1 && !mancheOK) {
-      delay(1000);
+      delayFlip(1000);
       playSequence(false);    
       
       mancheOK = true;
@@ -186,9 +208,9 @@ void loop() {
         animationReponseFausse(pressed);
       } 
       else {
-        delay(175); 
+        delayFlip(175); 
       }
-      delay(500);
+      delayFlip(500);
     }
     
     if(nbEssai == 1) {
@@ -199,12 +221,64 @@ void loop() {
   ecranFin(perdu);
 }
 
+void flip() {
+    if (millis() - flipmillis > REFRESHSPEED) {
+        digitalWrite(cathodeSegments[onSegment], LOW);
+        onSegment++;
+        if (onSegment == 2) {
+            onSegment = 0;
+        }
+        /*
+	if ((millis() - blinkmillis > BLINKSPEED) && blinkState) {
+		blinkState = false;
+		blinkmillis = millis();
+	}
+	else if ((millis() - blinkmillis > BLINKSPEED/5) && !blinkState) {
+		blinkState = true;
+		blinkmillis = millis();
+	}
+        */
+	for (int i = 0; i < 7; i++){
+		digitalWrite(anodeSegments[i], segments[onSegment][i]);
+	}
+	//if (blink[onSegment]) {
+	//	digitalWrite(cathodeSegments[onSegment], blinkState);
+	//}
+	//else {
+        	digitalWrite(cathodeSegments[onSegment], HIGH);
+	//}
+        flipmillis = millis();
+    }
+}
+
+void delayFlip(int delay){
+  unsigned long pastTime = millis();
+  while((millis() - pastTime) < delay){
+    flip();
+  }
+}
+
+void display(byte text[2]) {
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 7; j++) {
+            segments[i][j] = chars[text[i]][j];
+        }
+    }
+}
 
 boolean ajouterEtape() {
   sequence[cpt] = BetterRandom(4);
   cpt++;
   score = (int)cpt - 1;
-  Serial.print(score);
+  byte array[2];
+  if (score < 10){
+		array[0] = OFFSEG;
+  }
+  else {
+  array[0] = score/10;
+  }
+  array[1] = score%10;
+  display(array);
   if(cpt == SIZE_MAX)
     return false;
   else
@@ -218,21 +292,21 @@ void playSequence(boolean finished) {
   for(short i=0; i<lenght; i++) {
     digitalWrite(leds[sequence[i]], HIGH);
     tone(buzzer, frequences[sequence[i]]);
-    delay(SPEED_MAX);
+    delayFlip(SPEED_MAX);
     if(score < ((SPEED_MIN-SPEED_MAX)/ACCELERATION) && !finished) {
-      delay(SPEED_MIN-SPEED_MAX - (ACCELERATION*score));
+      delayFlip(SPEED_MIN-SPEED_MAX - (ACCELERATION*score));
     }
     else if (finished) {
-      delay(400 - SPEED_MAX);
+      delayFlip(400 - SPEED_MAX);
     }
     digitalWrite(leds[sequence[i]], LOW); 
     noTone(buzzer);
-    delay(SPEED_MAX);
+    delayFlip(SPEED_MAX);
     if(score < ((SPEED_MIN-SPEED_MAX)/ACCELERATION) && !finished) {
-      delay(SPEED_MIN-SPEED_MAX - (ACCELERATION*score));
+      delayFlip(SPEED_MIN-SPEED_MAX - (ACCELERATION*score));
     }
     else if (finished) {
-      delay(400 - SPEED_MAX);
+      delayFlip(400 - SPEED_MAX);
     }
   }
 }
@@ -242,6 +316,7 @@ int checkEtape(char etape) {
   char objectif = sequence[etape];
  
   while((millis() - temps) < LIMITE_TEMPS) {
+    flip();
     lectureBoutons();
     for(int i=0; i<4; i++) {
       if(etats[i]) {
@@ -251,7 +326,7 @@ int checkEtape(char etape) {
 	else if(i == objectif) {
         digitalWrite(leds[i], HIGH);
         tone(buzzer, frequences[i]);
-        delay(500);
+        delayFlip(500);
         digitalWrite(leds[i], LOW);
         noTone(buzzer);
 	return -1;
@@ -282,15 +357,19 @@ void lectureBoutons() {
 void animationReponseFausse(int lastPressed) {
    digitalWrite(leds[sequence[lastPressed]], HIGH); 
     tone(buzzer, NOTE_A2);
-    delay(750);
+    delayFlip(750);
     digitalWrite(leds[sequence[lastPressed]], LOW);
     noTone(buzzer);
-    delay(500);
+    delayFlip(500);
 }
  
 void ecranFin(boolean perdu) {
   if(perdu) {
+    if (score > bestScore) {
+      EEPROM_writeAnything( sizeof(long)+1, score);
+    }
     while(1) {
+      flip();
       //joue la séquence si on lit un état bas
       if(!digitalRead(boutons[0]) || !digitalRead(boutons[1]) || !digitalRead(boutons[2]) || !digitalRead(boutons[3])) {
         playSequence(true); 
