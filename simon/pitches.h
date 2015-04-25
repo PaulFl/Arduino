@@ -1,3 +1,6 @@
+#ifndef PITCHES
+#define PITCHES
+
 /*************************************************
  * Public Constants
  *************************************************/
@@ -91,3 +94,5 @@
 #define NOTE_CS8 4435
 #define NOTE_D8  4699
 #define NOTE_DS8 4978
+
+#endif PITCHES
