@@ -8,10 +8,10 @@
 
 #define SIZE_MAX     99   //taille maximale de la séquence aléatoire
 #define LIMITE_TEMPS 2500 //la limite de temps pour répondre
-#define SPEED_MAX      250  //pause entre chaque note jouée
+#define SPEED_MAX      200  //pause entre chaque note jouée
 #define SPEED_MIN 500
-#define ACCELERATION 10
-#define REFRESHSPEED 10
+#define ACCELERATION 20
+#define REFRESHSPEED 2
 
 
 #define ACHAR 10
@@ -30,16 +30,16 @@
 
 #define OFFSEG 21
 
-short cathodeSegments[2] = {0, //SEG 1
-	0}; //SEG 2
+short cathodeSegments[2] = {A1, //SEG 1
+	A0}; //SEG 2
 
-short anodeSegments[7] = {0, //SEG A
-	0, //SEG B
-	0, //SEG C
-	0, //SEG D
-	0, //SEG E
-	0, //SEG F
-	0}; //SEG G
+short anodeSegments[7] = {5, //SEG A
+	6, //SEG B
+	7, //SEG C
+	2, //SEG D
+	3, //SEG E
+	4, //SEG F
+	8}; //SEG G
 
 const short leds[]    = {
   9, 12, A2, A5};
@@ -170,6 +170,14 @@ void setup() {
     digitalWrite(leds[i],    LOW);
     digitalWrite(boutons[i], HIGH);
   }
+  for(short i=0; i<2; i++) {
+	  pinMode(cathodeSegments[i], OUTPUT);
+  }
+  for(short i=0; i<7; i++) {
+	  pinMode(anodeSegments[i], OUTPUT);
+  }
+  pinMode(1, OUTPUT);
+  digitalWrite(1, HIGH);
   pinMode(buzzer, OUTPUT);
  byte array[2];
   if (bestScore < 10){
@@ -180,7 +188,7 @@ void setup() {
   }
   array[1] = bestScore%10;
   display(array);
-  delayFlip(1500);
+  delayFlip(3000);
 }
  
 void loop() {
@@ -303,10 +311,10 @@ void playSequence(boolean finished) {
     noTone(buzzer);
     delayFlip(SPEED_MAX);
     if(score < ((SPEED_MIN-SPEED_MAX)/ACCELERATION) && !finished) {
-      delayFlip(SPEED_MIN-SPEED_MAX - (ACCELERATION*score));
+      delayFlip((SPEED_MIN-SPEED_MAX - (ACCELERATION*score))/2);
     }
     else if (finished) {
-      delayFlip(400 - SPEED_MAX);
+      delayFlip((400 - SPEED_MAX)/2);
     }
   }
 }
