@@ -10,7 +10,7 @@
 #define LIMITE_TEMPS 2500 //la limite de temps pour répondre
 #define SPEED_MAX      200  //pause entre chaque note jouée
 #define SPEED_MIN 500
-#define ACCELERATION 20
+#define ACCELERATION 30
 #define REFRESHSPEED 2
 
 
@@ -309,9 +309,9 @@ void playSequence(boolean finished) {
     }
     digitalWrite(leds[sequence[i]], LOW); 
     noTone(buzzer);
-    delayFlip(SPEED_MAX);
+    delayFlip(SPEED_MAX/3);
     if(score < ((SPEED_MIN-SPEED_MAX)/ACCELERATION) && !finished) {
-      delayFlip((SPEED_MIN-SPEED_MAX - (ACCELERATION*score))/2);
+      delayFlip((SPEED_MIN-SPEED_MAX - (ACCELERATION*score))/3);
     }
     else if (finished) {
       delayFlip((400 - SPEED_MAX)/2);
@@ -363,10 +363,10 @@ void lectureBoutons() {
 }
 
 void animationReponseFausse(int lastPressed) {
-   digitalWrite(leds[sequence[lastPressed]], HIGH); 
-    tone(buzzer, NOTE_A2);
+   digitalWrite(leds[lastPressed], HIGH); 
+    tone(buzzer, NOTE_A1);
     delayFlip(750);
-    digitalWrite(leds[sequence[lastPressed]], LOW);
+    digitalWrite(leds[lastPressed], LOW);
     noTone(buzzer);
     delayFlip(500);
 }
