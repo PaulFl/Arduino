@@ -1,10 +1,11 @@
 #include <Servo.h>
 
 #define FLAPSPERCENTAGE 40
+#
 
 //Pins
-short leftPin = 3;
-short rightPin = 4;
+short leftPin = 9;
+short rightPin = 10;
 short flapsPin = 5;
 short aileronsPin = 6;
 
