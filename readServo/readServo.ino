@@ -1,4 +1,4 @@
-short receivePin = 10;
+short receivePin = 6;
 short ledPin = 13;
 unsigned int value;
 bool led = true;
