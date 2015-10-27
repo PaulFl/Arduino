@@ -1,34 +1,41 @@
 #include <CapacitiveSensor.h>
 
-const int relay = A0;
+#define DEBUG 1
+
+int onThreshold = 1500;
+int offThreshold = 1200;
+
+short relay = 10;
+CapacitiveSensor sensor =  CapacitiveSensor(2, 12);
 
 long time;
-
-CapacitiveSensor sensor =  CapacitiveSensor(2, 12);
 long value;
+
 boolean state = false;
-boolean stateLamp = HIGH;
+boolean stateLamp = LOW;
 
 void setup() {
-  Serial.begin(9600);
-  Serial.println("Initialisation...");
+  if (DEBUG) {
+    Serial.begin(9600);
+    Serial.println("Initialisation...");
+  }
   time = millis();
   pinMode(relay, OUTPUT);
+  digitalWrite(relay, stateLamp);
 }
 
 void loop() {
   value = sensor.capacitiveSensor(30);
-  if (value > 1500 && state == false) {
+  if (value > onThreshold && state == false) {
     state = true;
     stateLamp = !stateLamp;
-    Serial.println("Switched !");
+    if (DEBUG) Serial.println("Switched !");
     digitalWrite(relay, stateLamp);
-    time = millis();
-    
-  }
-  if (value < 1200 && millis() - time > 500) {
+  } else if (value < offThreshold && state == true) {
     state = false;
   }
-  Serial.println(value);
-  delay(10);
+  if (DEBUG) {
+    Serial.println(value);
+    delay(10);
+  }
 }
