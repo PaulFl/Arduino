@@ -22,4 +22,4 @@ short anodeSegments[8] = {7, //SEG A
 	A1, //SEG G
 	A2}; //SEG H
 
-#endif
+#endif 

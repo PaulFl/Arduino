@@ -47,7 +47,7 @@ class TembooChoreo : public Process {
     void addOutputFilter(const String& filterName, const String& filterPath, const String& variableName) { addParameter("-o" + filterName + ":" + filterPath + ":" + variableName);}
     void setSettingsFileToWrite(const String& filePath) { addParameter("-w" + filePath);}
     void setSettingsFileToRead(const String& filePath) { addParameter("-r" + filePath);}
-    unsigned int setGatewayAddress(const String& addr) { addParameter("-s" + addr);}
+    void setGatewayAddress(const String& addr) { addParameter("-s" + addr);}
         
 
 };

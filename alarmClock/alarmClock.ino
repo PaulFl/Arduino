@@ -8,9 +8,9 @@
 #define DEBUG 0
 #define REFRESHSPEED 500
 #define BLINKSPEED 500
-#define TIMEOUT 10000
+#define TIMEOUT 30000
 #define SETTINGSDELAY 1500
-#define DEBOUNCEDELAY 250
+#define DEBOUNCEDELAY 100
 
 boolean chars[22][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
     {0, 1, 1, 0, 0, 0, 0}, //1
@@ -48,9 +48,10 @@ byte actualDisplay;
 byte pastSeconds;
 byte pastDate;
 
+int buttonDuration;
+
 
 void setup() {
-       // Serial.begin(9600); //Init Serial
     //Init pins
 	pinMode(button, INPUT_PULLUP);
        
@@ -80,16 +81,18 @@ void setup() {
 
 void loop() {
         flip();
+        buttonDuration = 0;
         switch (actualDisplay) {
             case TIME:
               if(pastSeconds != second()){
                 pastSeconds = second();
                 displayTime();
               }
-              if (readButton() > SETTINGSDELAY){
+              buttonDuration = readButton();
+              if (buttonDuration > SETTINGSDELAY){
                 setTimeUser();
               }
-              else if (readButton()){
+              else if (buttonDuration){
                 actualDisplay = DATE;
                 displayDate();
                 timeoutDisplay = millis();
@@ -100,10 +103,11 @@ void loop() {
                 pastDate = day();
                 displayDate();
               }
-              if (readButton() > SETTINGSDELAY){
+              buttonDuration = readButton();
+              if (buttonDuration > SETTINGSDELAY){
                 setDateUser();
               }
-              else if (readButton() || millis() - timeoutDisplay > TIMEOUT){
+              else if (buttonDuration || millis() - timeoutDisplay > TIMEOUT){
                 actualDisplay = TIME;
               }
               break;
@@ -274,7 +278,7 @@ void setDateUser() {
 		if (edit){
 			switch (selection) {
 				case 0:
-                                        setTime(hour(), minute(), second(), map(analogRead(analogInput), 0, 1023, 1, 31), month(), year());
+          setTime(hour(), minute(), second(), map(analogRead(analogInput), 0, 1023, 1, 31), month(), year());
 					break;
 				case 1:
 					setTime(hour(), minute(), second(), day(), map(analogRead(analogInput), 0, 1023, 1, 12), year());
@@ -316,11 +320,11 @@ int readButton() {
 			if (digitalRead(button) == LOW) {
 				lastLow = millis();
 			}
-			if (millis() - lastLow > DEBOUNCEDELAY) {
+			else if (millis() - lastLow > DEBOUNCEDELAY) {
 				done = true;
 			}
 		}
-		return ((int) millis() - startTime);
+		return ((unsigned long) millis() - startTime);
 	}
 	else {
 	return 0;

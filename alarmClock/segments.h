@@ -1,6 +1,8 @@
 #ifndef SEGMENTS
 #define SEGMENTS
 
+#include <Arduino.h>
+
 #define ACHAR 10
 #define CCHAR 11
 #define ECHAR 12
