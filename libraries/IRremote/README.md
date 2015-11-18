@@ -1,13 +1,21 @@
 # IRremote Arduino Library
-This library enables you to send and receive using infra-red signals on an arduino
 
-## Version - 1.00
+[![Join the chat at https://gitter.im/shirriff/Arduino-IRremote](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/shirriff/Arduino-IRremote?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+This library enables you to send and receive using infra-red signals on an arduino.
+
+Check [here](http://shirriff.github.io/Arduino-IRremote/) for tutorials and more information.
+
+## Version - 22.00
 
 ## Installation
-1. Click "Download ZIP" 
-2. Extract the downloaded zip file 
-3. Rename the extracted folder from "Arduino-IRremote" to "IRremote"
-4. Move this folder to your libraries directory
+1. Navigate to the [Releases](https://github.com/shirriff/Arduino-IRremote/releases) page.
+2. Download the latest release.
+3. Extract the zip file
+4. Move the "IRremote" folder that has been extracted to your libraries directory.
+
+## Usage
+- TODO (Check examples for now)
 
 ## Contributing
 If you want to contribute to this project:

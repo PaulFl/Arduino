@@ -5,6 +5,7 @@ short speaker = A4;
 short analogInput = A3;
 short button = 10;
 short led = 9;
+short iRReceiver = A5;
 
 short cathodeSegments[6] = {1, //SEG 1
 	2, //SEG 2

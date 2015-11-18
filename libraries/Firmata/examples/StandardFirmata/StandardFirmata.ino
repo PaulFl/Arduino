@@ -20,7 +20,7 @@
 
   See file LICENSE.txt for further informations on licensing terms.
 
-  Last updated by Jeff Hoefs: August 9th, 2015
+  Last updated by Jeff Hoefs: November 7th, 2015
 */
 
 #include <Servo.h>
@@ -37,7 +37,7 @@
 #define I2C_REGISTER_NOT_SPECIFIED  -1
 
 // the minimum interval for sampling analog input
-#define MINIMUM_SAMPLING_INTERVAL 10
+#define MINIMUM_SAMPLING_INTERVAL   1
 
 
 /*==============================================================================
@@ -226,24 +226,24 @@ void checkDigitalInputs(void)
  */
 void setPinModeCallback(byte pin, int mode)
 {
-  if (pinConfig[pin] == IGNORE)
+  if (pinConfig[pin] == PIN_MODE_IGNORE)
     return;
 
-  if (pinConfig[pin] == I2C && isI2CEnabled && mode != I2C) {
+  if (pinConfig[pin] == PIN_MODE_I2C && isI2CEnabled && mode != PIN_MODE_I2C) {
     // disable i2c so pins can be used for other functions
     // the following if statements should reconfigure the pins properly
     disableI2CPins();
   }
-  if (IS_PIN_DIGITAL(pin) && mode != SERVO) {
+  if (IS_PIN_DIGITAL(pin) && mode != PIN_MODE_SERVO) {
     if (servoPinMap[pin] < MAX_SERVOS && servos[servoPinMap[pin]].attached()) {
       detachServo(pin);
     }
   }
   if (IS_PIN_ANALOG(pin)) {
-    reportAnalogCallback(PIN_TO_ANALOG(pin), mode == ANALOG ? 1 : 0); // turn on/off reporting
+    reportAnalogCallback(PIN_TO_ANALOG(pin), mode == PIN_MODE_ANALOG ? 1 : 0); // turn on/off reporting
   }
   if (IS_PIN_DIGITAL(pin)) {
-    if (mode == INPUT) {
+    if (mode == INPUT || mode == PIN_MODE_PULLUP) {
       portConfigInputs[pin / 8] |= (1 << (pin & 7));
     } else {
       portConfigInputs[pin / 8] &= ~(1 << (pin & 7));
@@ -251,20 +251,33 @@ void setPinModeCallback(byte pin, int mode)
   }
   pinState[pin] = 0;
   switch (mode) {
-    case ANALOG:
+    case PIN_MODE_ANALOG:
       if (IS_PIN_ANALOG(pin)) {
         if (IS_PIN_DIGITAL(pin)) {
           pinMode(PIN_TO_DIGITAL(pin), INPUT);    // disable output driver
+#if ARDUINO <= 100
+          // deprecated since Arduino 1.0.1 - TODO: drop support in Firmata 2.6
           digitalWrite(PIN_TO_DIGITAL(pin), LOW); // disable internal pull-ups
+#endif
         }
-        pinConfig[pin] = ANALOG;
+        pinConfig[pin] = PIN_MODE_ANALOG;
       }
       break;
     case INPUT:
       if (IS_PIN_DIGITAL(pin)) {
         pinMode(PIN_TO_DIGITAL(pin), INPUT);    // disable output driver
+#if ARDUINO <= 100
+        // deprecated since Arduino 1.0.1 - TODO: drop support in Firmata 2.6
         digitalWrite(PIN_TO_DIGITAL(pin), LOW); // disable internal pull-ups
+#endif
         pinConfig[pin] = INPUT;
+      }
+      break;
+    case PIN_MODE_PULLUP:
+      if (IS_PIN_DIGITAL(pin)) {
+        pinMode(PIN_TO_DIGITAL(pin), INPUT_PULLUP);
+        pinConfig[pin] = PIN_MODE_PULLUP;
+        pinState[pin] = 1;
       }
       break;
     case OUTPUT:
@@ -274,16 +287,16 @@ void setPinModeCallback(byte pin, int mode)
         pinConfig[pin] = OUTPUT;
       }
       break;
-    case PWM:
+    case PIN_MODE_PWM:
       if (IS_PIN_PWM(pin)) {
         pinMode(PIN_TO_PWM(pin), OUTPUT);
         analogWrite(PIN_TO_PWM(pin), 0);
-        pinConfig[pin] = PWM;
+        pinConfig[pin] = PIN_MODE_PWM;
       }
       break;
-    case SERVO:
+    case PIN_MODE_SERVO:
       if (IS_PIN_DIGITAL(pin)) {
-        pinConfig[pin] = SERVO;
+        pinConfig[pin] = PIN_MODE_SERVO;
         if (servoPinMap[pin] == 255 || !servos[servoPinMap[pin]].attached()) {
           // pass -1 for min and max pulse values to use default values set
           // by Servo library
@@ -291,11 +304,11 @@ void setPinModeCallback(byte pin, int mode)
         }
       }
       break;
-    case I2C:
+    case PIN_MODE_I2C:
       if (IS_PIN_I2C(pin)) {
         // mark the pin as i2c
         // the user must call I2C_CONFIG to enable I2C for a device
-        pinConfig[pin] = I2C;
+        pinConfig[pin] = PIN_MODE_I2C;
       }
       break;
     default:
@@ -304,16 +317,32 @@ void setPinModeCallback(byte pin, int mode)
   // TODO: save status to EEPROM here, if changed
 }
 
+/*
+ * Sets the value of an individual pin. Useful if you want to set a pin value but
+ * are not tracking the digital port state.
+ * Can only be used on pins configured as OUTPUT.
+ * Cannot be used to enable pull-ups on Digital INPUT pins.
+ */
+void setPinValueCallback(byte pin, int value)
+{
+  if (pin < TOTAL_PINS && IS_PIN_DIGITAL(pin)) {
+    if (pinConfig[pin] == OUTPUT) {
+      pinState[pin] = value;
+      digitalWrite(PIN_TO_DIGITAL(pin), value);
+    }
+  }
+}
+
 void analogWriteCallback(byte pin, int value)
 {
   if (pin < TOTAL_PINS) {
     switch (pinConfig[pin]) {
-      case SERVO:
+      case PIN_MODE_SERVO:
         if (IS_PIN_DIGITAL(pin))
           servos[servoPinMap[pin]].write(value);
         pinState[pin] = value;
         break;
-      case PWM:
+      case PIN_MODE_PWM:
         if (IS_PIN_PWM(pin))
           analogWrite(PIN_TO_PWM(pin), value);
         pinState[pin] = value;
@@ -324,7 +353,7 @@ void analogWriteCallback(byte pin, int value)
 
 void digitalWriteCallback(byte port, int value)
 {
-  byte pin, lastPin, mask = 1, pinWriteMask = 0;
+  byte pin, lastPin, pinValue, mask = 1, pinWriteMask = 0;
 
   if (port < TOTAL_PORTS) {
     // create a mask of the pins on this port that are writable.
@@ -333,11 +362,21 @@ void digitalWriteCallback(byte port, int value)
     for (pin = port * 8; pin < lastPin; pin++) {
       // do not disturb non-digital pins (eg, Rx & Tx)
       if (IS_PIN_DIGITAL(pin)) {
-        // only write to OUTPUT and INPUT (enables pullup)
         // do not touch pins in PWM, ANALOG, SERVO or other modes
         if (pinConfig[pin] == OUTPUT || pinConfig[pin] == INPUT) {
-          pinWriteMask |= mask;
-          pinState[pin] = ((byte)value & mask) ? 1 : 0;
+          pinValue = ((byte)value & mask) ? 1 : 0;
+          if (pinConfig[pin] == OUTPUT) {
+            pinWriteMask |= mask;
+          } else if (pinConfig[pin] == INPUT && pinValue == 1 && pinState[pin] != 1) {
+            // only handle INPUT here for backwards compatibility
+#if ARDUINO > 100
+            pinMode(pin, INPUT_PULLUP);
+#else
+            // only write to the INPUT pin to enable pullups if Arduino v1.0.0 or earlier
+            pinWriteMask |= mask;
+#endif
+          }
+          pinState[pin] = pinValue;
         }
       }
       mask = mask << 1;
@@ -511,7 +550,7 @@ void sysexCallback(byte command, byte argc, byte *argv)
             detachServo(pin);
           }
           attachServo(pin, minPulse, maxPulse);
-          setPinModeCallback(pin, SERVO);
+          setPinModeCallback(pin, PIN_MODE_SERVO);
         }
       }
       break;
@@ -540,23 +579,25 @@ void sysexCallback(byte command, byte argc, byte *argv)
         if (IS_PIN_DIGITAL(pin)) {
           Firmata.write((byte)INPUT);
           Firmata.write(1);
+          Firmata.write((byte)PIN_MODE_PULLUP);
+          Firmata.write(1);
           Firmata.write((byte)OUTPUT);
           Firmata.write(1);
         }
         if (IS_PIN_ANALOG(pin)) {
-          Firmata.write(ANALOG);
+          Firmata.write(PIN_MODE_ANALOG);
           Firmata.write(10); // 10 = 10-bit resolution
         }
         if (IS_PIN_PWM(pin)) {
-          Firmata.write(PWM);
+          Firmata.write(PIN_MODE_PWM);
           Firmata.write(8); // 8 = 8-bit resolution
         }
         if (IS_PIN_DIGITAL(pin)) {
-          Firmata.write(SERVO);
+          Firmata.write(PIN_MODE_SERVO);
           Firmata.write(14);
         }
         if (IS_PIN_I2C(pin)) {
-          Firmata.write(I2C);
+          Firmata.write(PIN_MODE_I2C);
           Firmata.write(1);  // TODO: could assign a number to map to SCL or SDA
         }
         Firmata.write(127);
@@ -597,7 +638,7 @@ void enableI2CPins()
   for (i = 0; i < TOTAL_PINS; i++) {
     if (IS_PIN_I2C(i)) {
       // mark pins as i2c so they are ignore in non i2c data requests
-      setPinModeCallback(i, I2C);
+      setPinModeCallback(i, PIN_MODE_I2C);
     }
   }
 
@@ -639,8 +680,8 @@ void systemResetCallback()
     // otherwise, pins default to digital output
     if (IS_PIN_ANALOG(i)) {
       // turns off pullup, configures everything
-      setPinModeCallback(i, ANALOG);
-    } else {
+      setPinModeCallback(i, PIN_MODE_ANALOG);
+    } else if (IS_PIN_DIGITAL(i)) {
       // sets the output to 0, configures portConfigInputs
       setPinModeCallback(i, OUTPUT);
     }
@@ -674,6 +715,7 @@ void setup()
   Firmata.attach(REPORT_ANALOG, reportAnalogCallback);
   Firmata.attach(REPORT_DIGITAL, reportDigitalCallback);
   Firmata.attach(SET_PIN_MODE, setPinModeCallback);
+  Firmata.attach(SET_DIGITAL_PIN_VALUE, setPinValueCallback);
   Firmata.attach(START_SYSEX, sysexCallback);
   Firmata.attach(SYSTEM_RESET, systemResetCallback);
 
@@ -713,7 +755,7 @@ void loop()
     previousMillis += samplingInterval;
     /* ANALOGREAD - do all analogReads() at the configured sampling interval */
     for (pin = 0; pin < TOTAL_PINS; pin++) {
-      if (IS_PIN_ANALOG(pin) && pinConfig[pin] == ANALOG) {
+      if (IS_PIN_ANALOG(pin) && pinConfig[pin] == PIN_MODE_ANALOG) {
         analogPin = PIN_TO_ANALOG(pin);
         if (analogInputsToReport & (1 << analogPin)) {
           Firmata.sendAnalog(analogPin, analogRead(analogPin));
