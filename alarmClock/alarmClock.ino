@@ -13,7 +13,7 @@
 #define TIMEOUT 30000
 #define SETTINGSDELAY 1500
 #define DEBOUNCEDELAY 100
-#define IRDELAY 200
+#define IRDELAY 100
 
 unsigned long flipmicros;
 unsigned long blinkmillis;
@@ -34,6 +34,8 @@ int buttonDuration;
 //boolean irRemoteState = false;
 //boolean lastIrRemoteState = false;
 boolean irClean = false;
+
+int irMainValue;
 
 IRrecv irrecv(iRReceiver);
 decode_results results;
@@ -83,6 +85,18 @@ void loop() {
         displayTime();
       }
       buttonDuration = readButton();
+      irMainValue = readIR();
+      if (DEBUG && irMainValue != 999) Serial.println(irMainValue);
+      switch (irMainValue) {
+        case ENTER:
+          if (DEBUG) Serial.println("enter");
+          actualDisplay = DATE;
+          displayDate();
+          timeoutDisplay = millis();
+          break;
+        default:
+          break;
+      }
       if (buttonDuration > SETTINGSDELAY) {
         setTimeUser();
       }
@@ -98,6 +112,16 @@ void loop() {
         displayDate();
       }
       buttonDuration = readButton();
+      irMainValue = readIR();
+      if (DEBUG && irMainValue != 999) Serial.println(irMainValue);
+      switch (irMainValue) {
+        case ENTER:
+          if (DEBUG) Serial.println("enter");
+          actualDisplay = TIME;
+          break;
+        default:
+          break;
+      }
       if (buttonDuration > SETTINGSDELAY) {
         setDateUser();
       }
@@ -284,7 +308,7 @@ void setTimeUser() {
         }
         break;
       case DOWN:
-        if (DEBUG) Serial.println("right");
+        if (DEBUG) Serial.println("down");
         lastAction = millis();
         switch (selection) {
           case 0:
@@ -361,6 +385,71 @@ void setDateUser() {
       if (selection == 3) {
         done = true;
       }
+    }
+    int irValue = readIR();
+    if (DEBUG && irValue != 999) Serial.println(irValue);
+    switch (irValue) {
+      case RIGHT:
+        if (DEBUG) Serial.println("right");
+        selection++;
+        pastAnalog = analogRead(analogInput);
+        edit = false;
+        lastAction = millis();
+        if (selection == 3) selection = 2;
+        break;
+      case LEFT:
+        if (DEBUG) Serial.println("left");
+        selection--;
+        pastAnalog = analogRead(analogInput);
+        edit = false;
+        lastAction = millis();
+        if (selection == -1) selection = 0;
+        break;
+      case ENTER:
+        if (DEBUG) Serial.println("enter");
+        pastAnalog = analogRead(analogInput);
+        edit = false;
+        lastAction = millis();
+        done = true;
+        break;
+      case UP:
+        if (DEBUG) Serial.println("up");
+        lastAction = millis();
+        switch (selection) {
+          case 0:
+            setTime(hour(), minute(), second(), day() + 1, month(), year());
+            break;
+          case 1:
+            setTime(hour(), minute(), second(), day(), month() + 1, year());
+            break;
+          case 2:
+            setTime(hour(), minute(), second(), day(), month() + 1, year());
+            break;
+          default:
+            break;
+        }
+        break;
+      case DOWN:
+        if (DEBUG) Serial.println("down");
+        lastAction = millis();
+        switch (selection) {
+          case 0:
+            if (day() == 1) setTime(hour(), minute(), second(), 31, month(), year());
+            else setTime(hour(), minute(), second(), day() - 1, month(), year());
+            break;
+          case 1:
+            if (month() == 1) setTime(hour(), minute(), second(), day(), 12, year());
+            else setTime(hour(), minute(), second(), day(), month() - 1, year());
+            break;
+          case 2:
+            setTime(hour(), minute(), second(), day(), month(), year() - 1);
+            break;
+          default:
+            break;
+        }
+        break;
+      default:
+        break;
     }
     if (done) {
       for (int i = 0; i < 6; i++) {
