@@ -13,7 +13,7 @@
 #define TIMEOUT 30000
 #define SETTINGSDELAY 1500
 #define DEBOUNCEDELAY 100
-#define IRDELAY 100
+#define IRDELAY 200
 
 unsigned long flipmicros;
 unsigned long blinkmillis;
@@ -31,8 +31,9 @@ byte pastDate;
 
 int buttonDuration;
 
-boolean irRemoteState = false;
-boolean lastIrRemoteState = false;
+//boolean irRemoteState = false;
+//boolean lastIrRemoteState = false;
+boolean irClean = false;
 
 IRrecv irrecv(iRReceiver);
 decode_results results;
@@ -239,8 +240,11 @@ void setTimeUser() {
         done = true;
       }
     }
-    switch (readIR()) {
+    int irValue = readIR();
+    if (DEBUG && irValue != 999) Serial.println(irValue);
+    switch (irValue) {
       case RIGHT:
+        if (DEBUG) Serial.println("right");
         selection++;
         pastAnalog = analogRead(analogInput);
         edit = false;
@@ -248,13 +252,55 @@ void setTimeUser() {
         if (selection == 3) selection = 2;
         break;
       case LEFT:
+        if (DEBUG) Serial.println("left");
         selection--;
         pastAnalog = analogRead(analogInput);
         edit = false;
         lastAction = millis();
         if (selection == -1) selection = 0;
-        if (DEBUG) {
-          Serial.println(selection);
+        break;
+      case ENTER:
+        if (DEBUG) Serial.println("enter");
+        pastAnalog = analogRead(analogInput);
+        edit = false;
+        lastAction = millis();
+        done = true;
+        break;
+      case UP:
+        if (DEBUG) Serial.println("up");
+        lastAction = millis();
+        switch (selection) {
+          case 0:
+            setTime(hour() + 1, minute(), second(), day(), month(), year());
+            break;
+          case 1:
+            setTime(hour(), minute() + 1, second(), day(), month(), year());
+            break;
+          case 2:
+            setTime(hour(), minute(), second() + 1, day(), month(), year());
+            break;
+          default:
+            break;
+        }
+        break;
+      case DOWN:
+        if (DEBUG) Serial.println("right");
+        lastAction = millis();
+        switch (selection) {
+          case 0:
+            if (hour() == 0) setTime(23, minute(), second(), day(), month(), year());
+            else setTime(hour() - 1, minute(), second(), day(), month(), year());
+            break;
+          case 1:
+            if (minute() == 0) setTime(hour(), 59, second(), day(), month(), year());
+            else setTime(hour(), minute() - 1, second(), day(), month(), year());
+            break;
+          case 2:
+            if (second() == 0) setTime(hour(), minute(), 59, day(), month(), year());
+            else setTime(hour(), minute(), second() - 2, day(), month(), year());
+            break;
+          default:
+            break;
         }
         break;
       default:
@@ -325,37 +371,43 @@ void setDateUser() {
 }
 
 int readIR() {
-  if (millis() - pastIRReading > IRDELAY) {
+  if (millis() - pastIRReading > IRDELAY && !irClean) {
     if (irrecv.decode(&results)) {
       irrecv.resume();
+    }
+    irClean = true;
+  }
+  if (irClean) {
+    if (irrecv.decode(&results)) {
+      irrecv.resume();
+      irClean = false;
       pastIRReading = millis();
       String value = String(results.value, HEX);
+      //if (/*value.startsWith(String(REMOTECODE)) && */value.length() == 8) {
+      value.remove(0, 4);
+      //if (value.startsWith("a")) irRemoteState = false;
+      //else if (value.startsWith("2")) irRemoteState = true;
+      value.remove(0, 1);
       if (DEBUG) Serial.println(value);
-      if (value.startsWith(String(REMOTECODE)) && value.length() == 8) {
-        value.remove(0, 4);
-        if (value.startsWith("a")) irRemoteState = false;
-        else if (value.startsWith("2")) irRemoteState = true;
-        value.remove(0, 1);
-        if (irRemoteState != lastIrRemoteState) {
-          lastIrRemoteState  = irRemoteState;
-        if (DEBUG) Serial.println(value);
-        if (value == left) return LEFT;
-        else if (value == right) return RIGHT;
-        else if (value == up) return UP;
-        else if (value == down) return DOWN;
-        else if (value == enter) return ENTER;
-        else if (value == zero) return 0;
-        else if (value == one) return 1;
-        else if (value == two) return 2;
-        else if (value == three) return 3;
-        else if (value == four) return 4;
-        else if (value == five) return 5;
-        else if (value == six) return 6;
-        else if (value == seven) return 7;
-        else if (value == eight) return 8;
-        else if (value == nine) return 9;
-      }
-    }
+      //if (irRemoteState != lastIrRemoteState) {
+      //lastIrRemoteState  = irRemoteState;
+      if (value == left[0] || value == left[1] || value == left[2]) return LEFT;
+      else if (value == right[0] || value == right[1] || value == right[2]) return RIGHT;
+      else if (value == up[0] || value == up[1] || value == up[2]) return UP;
+      else if (value == down[0] || value == down[1] || value == down[2]) return DOWN;
+      else if (value == enter[0] || value == enter[1] || value == enter[2]) return ENTER;
+      else if (value == zero[0] || value == zero[1] || value == zero[2]) return 0;
+      else if (value == one[0] || value == one[1] || value == one[2]) return 1;
+      else if (value == two[0] || value == two[1] || value == two[2]) return 2;
+      else if (value == three[0] || value == three[1] || value == three[2]) return 3;
+      else if (value == four[0] || value == four[1] || value == four[2]) return 4;
+      else if (value == five[0] || value == five[1] || value == five[2]) return 5;
+      else if (value == six[0] || value == six[1] || value == six[2]) return 6;
+      else if (value == seven[0] || value == seven[1] || value == seven[2]) return 7;
+      else if (value == eight[0] || value == eight[1] || value == eight[2]) return 8;
+      else if (value == nine[0] || value == nine[1] || value == nine[2]) return 9;
+      //}
+      //}
     }
   }
   return 999;
