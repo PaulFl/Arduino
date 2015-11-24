@@ -23,6 +23,7 @@ unsigned long pastIRReading;
 boolean blinkState = true;
 boolean segments[6][8];
 boolean blink[6] = {false};
+boolean displaySeconds = true;
 byte onSegment = 0;
 byte actualDisplay;
 
@@ -63,7 +64,7 @@ void setup() {
 
   //Play init sound
   tone(speaker, NOTE_A3, 500);
-  //Set time and datee
+  //Set time and date
   setTime(0, 0, 0, 0, 1, 2015);
   setTimeUser();
   setDateUser();
@@ -82,7 +83,7 @@ void loop() {
     case TIME:
       if (pastSeconds != second()) {
         pastSeconds = second();
-        displayTime();
+        displayTime(displaySeconds);
       }
       buttonDuration = readButton();
       irMainValue = readIR();
@@ -93,6 +94,13 @@ void loop() {
           actualDisplay = DATE;
           displayDate();
           timeoutDisplay = millis();
+          break;
+        case SETTINGS:
+          setTimeUser();
+          break;
+        case LIST:
+          displaySeconds = !displaySeconds;
+          displayTime(displaySeconds);
           break;
         default:
           break;
@@ -119,6 +127,9 @@ void loop() {
           if (DEBUG) Serial.println("enter");
           actualDisplay = TIME;
           break;
+        case SETTINGS:
+          setDateUser();
+          break;
         default:
           break;
       }
@@ -132,21 +143,39 @@ void loop() {
   }
 }
 
-void displayTime() {
+void displayTime(boolean displaySec) {
   byte array[6];
-  if (hour() < 10) {
-    array[0] = OFFSEG;
+  boolean separators[6] = {0, 0, 0, 0, 0, 0};
+  if (displaySec) {
+    if (hour() < 10) {
+      array[0] = OFFSEG;
+    }
+    else {
+      array[0] = hour() / 10;
+    }
+    array[1] = hour() % 10;
+    array[2] = minute() / 10;
+    array[3] = minute() % 10;
+    array[4] = second() / 10;
+    array[5] = second() % 10;
+    separators[4] = true;
+    separators[5] = true;
   }
   else {
-    array[0] = hour() / 10;
+    array[0] = OFFSEG;
+    array[1] = OFFSEG;
+    if (hour() < 10) {
+      array[2] = OFFSEG;
+    }
+    else {
+      array[2] = hour() / 10;
+    }
+    array[3] = hour() % 10;
+    array[4] = minute() / 10;
+    array[5] = minute() % 10;
+    separators[5] = true;
   }
-  array[1] = hour() % 10;
-  array[2] = minute() / 10;
-  array[3] = minute() % 10;
-  array[4] = second() / 10;
-  array[5] = second() % 10;
   display(array);
-  boolean separators[6] = {0, 0, 0, 0, 1, 1};
   setSeparators(separators);
 }
 
@@ -223,7 +252,7 @@ void setTimeUser() {
   int selection = 0;
   int pastAnalog = analogRead(analogInput);
   while (!done) {
-    displayTime(); //if pastSeconds != seconds() or minutes or hours?...
+    displayTime(true); //if pastSeconds != seconds() or minutes or hours?...
     flip();
     for (int i = 0; i < 6; i++) {
       if ((i == (2 * selection)) || (i == ((2 * selection) + 1))) {
@@ -234,6 +263,7 @@ void setTimeUser() {
       }
     }
     if ((analogRead(analogInput) > (pastAnalog + 5)) || (analogRead(analogInput) < (pastAnalog - 5))) {
+      if (DEBUG) Serial.println("edit -> true");
       edit = true;
       lastAction = millis();
     }
@@ -321,7 +351,7 @@ void setTimeUser() {
             break;
           case 2:
             if (second() == 0) setTime(hour(), minute(), 59, day(), month(), year());
-            else setTime(hour(), minute(), second() - 2, day(), month(), year());
+            else setTime(hour(), minute(), second() - 1, day(), month(), year());
             break;
           default:
             break;
@@ -485,6 +515,8 @@ int readIR() {
       else if (value == up[0] || value == up[1] || value == up[2]) return UP;
       else if (value == down[0] || value == down[1] || value == down[2]) return DOWN;
       else if (value == enter[0] || value == enter[1] || value == enter[2]) return ENTER;
+      else if (value == settings[0] || value == settings[1] || value == settings[2]) return SETTINGS;
+      else if (value == list[0] || value == list[1] || value == list[2]) return LIST;
       else if (value == zero[0] || value == zero[1] || value == zero[2]) return 0;
       else if (value == one[0] || value == one[1] || value == one[2]) return 1;
       else if (value == two[0] || value == two[1] || value == two[2]) return 2;

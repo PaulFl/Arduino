@@ -11,7 +11,8 @@ void flip();
 void setTimeUser();
 void setDateUser();
 void displayDate();
-void displayTime();
+void displayTime(boolean displaySec);
+int readIR();
 int readButton();
 
 #endif

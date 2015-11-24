@@ -241,10 +241,41 @@ void BridgeClass::dropAll() {
   }
 }
 
+#if defined(ARDUINO_ARCH_SAM)
+#include <Reset.h>
+#endif
+
+#if defined(ARDUINO_ARCH_SAM)
+void checkForRemoteSketchUpdate(uint8_t pin) {
+  // The host force pin LOW to signal that a new sketch is coming
+  pinMode(pin, INPUT_PULLUP);
+  delay(50);
+  if (digitalRead(pin) == LOW) {
+    initiateReset(1);
+    while (true)
+      ; // Wait for reset to SAM-BA
+  }
+
+  // Restore in standard state
+  pinMode(pin, INPUT);
+}
+#else
+void checkForRemoteSketchUpdate(uint8_t /* pin */) {
+  // Empty, bootloader is enough.
+}
+#endif
+
 // Bridge instance
-#ifdef __AVR_ATmega32U4__
+#if defined(SERIAL_PORT_LINUXBRIDGE)
+SerialBridgeClass Bridge(SERIAL_PORT_LINUXBRIDGE);
+#elif defined(SERIAL_PORT_HARDWARE)
+SerialBridgeClass Bridge(SERIAL_PORT_HARDWARE);
+#elif defined(SERIAL_PORT_HARDWARE_OPEN)
+SerialBridgeClass Bridge(SERIAL_PORT_HARDWARE_OPEN);
+#elif defined(__AVR_ATmega32U4__) // Legacy fallback
 // Leonardo variants (where HardwareSerial is Serial1)
 SerialBridgeClass Bridge(Serial1);
 #else
 SerialBridgeClass Bridge(Serial);
 #endif
+
