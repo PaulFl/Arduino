@@ -14,6 +14,7 @@
 #define SETTINGSDELAY 1500
 #define DEBOUNCEDELAY 100
 #define IRDELAY 100
+#define ANALOGLIMIT 1010
 
 unsigned long flipmicros;
 unsigned long blinkmillis;
@@ -40,6 +41,10 @@ int irMainValue;
 
 IRrecv irrecv(iRReceiver);
 decode_results results;
+
+int alarmHour = 7;
+int alarmMinute = 0;
+boolean alarmEnabled = false;
 
 void setup() {
   if (DEBUG) {
@@ -71,12 +76,16 @@ void setup() {
   pastSeconds = 60;
   pastDate = 0;
   actualDisplay = TIME;
+  pinMode(speaker, OUTPUT);
+  digitalWrite(speaker, LOW);
 
-
-  pinMode(speaker, INPUT);
+  pinMode(led, OUTPUT);
 }
 
 void loop() {
+  if (hour() == alarmHour && minute() == alarmMinute && second() == 0 && alarmEnabled) {
+    alarm();
+  }
   flip();
   buttonDuration = 0;
   switch (actualDisplay) {
@@ -87,10 +96,8 @@ void loop() {
       }
       buttonDuration = readButton();
       irMainValue = readIR();
-      if (DEBUG && irMainValue != 999) Serial.println(irMainValue);
       switch (irMainValue) {
         case ENTER:
-          if (DEBUG) Serial.println("enter");
           actualDisplay = DATE;
           displayDate();
           timeoutDisplay = millis();
@@ -105,9 +112,7 @@ void loop() {
         default:
           break;
       }
-      if (buttonDuration > SETTINGSDELAY) {
-        setTimeUser();
-      }
+      if (buttonDuration > SETTINGSDELAY) setTimeUser();
       else if (buttonDuration) {
         actualDisplay = DATE;
         displayDate();
@@ -121,11 +126,11 @@ void loop() {
       }
       buttonDuration = readButton();
       irMainValue = readIR();
-      if (DEBUG && irMainValue != 999) Serial.println(irMainValue);
       switch (irMainValue) {
         case ENTER:
-          if (DEBUG) Serial.println("enter");
-          actualDisplay = TIME;
+          actualDisplay = ALARM;
+          displayAlarm();
+          timeoutDisplay = millis();
           break;
         case SETTINGS:
           setDateUser();
@@ -133,14 +138,61 @@ void loop() {
         default:
           break;
       }
-      if (buttonDuration > SETTINGSDELAY) {
-        setDateUser();
+      if (buttonDuration > SETTINGSDELAY) setDateUser();
+      else if (millis() - timeoutDisplay > TIMEOUT) {
+        actualDisplay = TIME;
+        displayTime(displaySeconds);
       }
+      else if (buttonDuration) {
+        actualDisplay = ALARM;
+        displayAlarm();
+        timeoutDisplay = millis();
+      }
+      break;
+    case ALARM:
+      buttonDuration = readButton();
+      irMainValue = readIR();
+      switch (irMainValue) {
+        case ENTER:
+          actualDisplay = TIME;
+          displayTime(displaySeconds);
+          break;
+        case SETTINGS:
+          setAlarmUser();
+          break;
+        case LIST:
+          alarmEnabled = !alarmEnabled;
+          //if (alarmEnabled) {
+          //  alarmID = Alarm.alarmRepeat(alarmHour, alarmMinute, 0, alarm);
+          //} else {
+          //  Alarm.free(alarmID);
+          //}
+          break;
+        default:
+          break;
+      }
+      if (buttonDuration > SETTINGSDELAY) setAlarmUser();
       else if (buttonDuration || millis() - timeoutDisplay > TIMEOUT) {
         actualDisplay = TIME;
+        displayTime(displaySeconds);
       }
       break;
   }
+}
+
+void displayAlarm() {
+  byte array[6];
+  boolean separators[6] = {0, 0, 0, 0, 0, 0};
+  array[0] = ACHAR;
+  array[1] = LCHAR;
+  array[2] = alarmHour / 10;
+  array[3] = alarmHour % 10;
+  array[4] = alarmMinute / 10;
+  array[5] = alarmMinute % 10;
+  separators[5] = true;
+  separators[1] = true;
+  display(array);
+  setSeparators(separators);
 }
 
 void displayTime(boolean displaySec) {
@@ -241,6 +293,8 @@ void flip() {
     else {
       digitalWrite(cathodeSegments[onSegment], HIGH);
     }
+    if (alarmEnabled) digitalWrite(led, HIGH);
+    else digitalWrite(led, LOW);
     flipmicros = micros();
   }
 }
@@ -263,20 +317,25 @@ void setTimeUser() {
       }
     }
     if ((analogRead(analogInput) > (pastAnalog + 5)) || (analogRead(analogInput) < (pastAnalog - 5))) {
-      if (DEBUG) Serial.println("edit -> true");
       edit = true;
+      if (DEBUG) {
+      Serial.println("edit true");
+      Serial.print(pastAnalog);
+      Serial.print(analogRead(analogInput));
+      }
       lastAction = millis();
+      pastAnalog = analogRead(analogInput);
     }
     if (edit) {
       switch (selection) {
         case 0:
-          setTime(map(analogRead(analogInput), 0, 1023, 0, 23), minute(), second(), day(), month(), year());
+          setTime(map(analogRead(analogInput), 0, ANALOGLIMIT, 0, 23), minute(), second(), day(), month(), year());
           break;
         case 1:
-          setTime(hour(), map(analogRead(analogInput), 0, 1023, 0, 59), second(), day(), month(), year());
+          setTime(hour(), map(analogRead(analogInput), 0, ANALOGLIMIT, 0, 59), second(), day(), month(), year());
           break;
         case 2:
-          setTime(hour(), minute(), map(analogRead(analogInput), 0, 1023, 0, 59), day(), month(), year());
+          setTime(hour(), minute(), map(analogRead(analogInput), 0, ANALOGLIMIT, 0, 59), day(), month(), year());
           break;
         default:
           break;
@@ -295,10 +354,8 @@ void setTimeUser() {
       }
     }
     int irValue = readIR();
-    if (DEBUG && irValue != 999) Serial.println(irValue);
     switch (irValue) {
       case RIGHT:
-        if (DEBUG) Serial.println("right");
         selection++;
         pastAnalog = analogRead(analogInput);
         edit = false;
@@ -306,7 +363,6 @@ void setTimeUser() {
         if (selection == 3) selection = 2;
         break;
       case LEFT:
-        if (DEBUG) Serial.println("left");
         selection--;
         pastAnalog = analogRead(analogInput);
         edit = false;
@@ -314,14 +370,12 @@ void setTimeUser() {
         if (selection == -1) selection = 0;
         break;
       case ENTER:
-        if (DEBUG) Serial.println("enter");
         pastAnalog = analogRead(analogInput);
         edit = false;
         lastAction = millis();
         done = true;
         break;
       case UP:
-        if (DEBUG) Serial.println("up");
         lastAction = millis();
         switch (selection) {
           case 0:
@@ -338,7 +392,6 @@ void setTimeUser() {
         }
         break;
       case DOWN:
-        if (DEBUG) Serial.println("down");
         lastAction = millis();
         switch (selection) {
           case 0:
@@ -352,6 +405,115 @@ void setTimeUser() {
           case 2:
             if (second() == 0) setTime(hour(), minute(), 59, day(), month(), year());
             else setTime(hour(), minute(), second() - 1, day(), month(), year());
+            break;
+          default:
+            break;
+        }
+        break;
+      default:
+        break;
+    }
+    if (done) {
+      for (int i = 0; i < 6; i++) {
+        blink[i] = false;
+      }
+    }
+  }
+}
+
+void setAlarmUser() {
+  unsigned long lastAction = millis();
+  boolean done = false;
+  boolean edit = false;
+  byte selection = 1;
+  int pastAnalog = analogRead(analogInput);
+  while (!done) {
+    displayAlarm();
+    flip();
+    for (int i = 0; i < 6; i++) {
+      if ((i == (2 * selection)) || (i == ((2 * selection) + 1))) {
+        blink[i] = true;
+      }
+      else {
+        blink[i] = false;
+      }
+    }
+    if ((analogRead(analogInput) > (pastAnalog + 5)) || (analogRead(analogInput) < (pastAnalog - 5))) {
+      edit = true;
+      lastAction = millis();
+      pastAnalog = analogRead(analogInput);
+    }
+    if (edit) {
+      switch (selection) {
+        case 1:
+          alarmHour = map(analogRead(analogInput), 0, ANALOGLIMIT, 0, 23);
+          break;
+        case 2:
+          alarmMinute = map(analogRead(analogInput), 0, ANALOGLIMIT, 0, 59);
+          break;
+        default:
+          break;
+      }
+    }
+    if (millis() - lastAction > TIMEOUT) {
+      done = true;
+    }
+    if (readButton()) {
+      selection ++;
+      pastAnalog = analogRead(analogInput);
+      edit = false;
+      lastAction = millis();
+      if (selection == 3) {
+        done = true;
+      }
+    }
+    int irValue = readIR();
+    switch (irValue) {
+      case RIGHT:
+        selection++;
+        pastAnalog = analogRead(analogInput);
+        edit = false;
+        lastAction = millis();
+        if (selection == 3) selection = 2;
+        break;
+      case LEFT:
+        selection--;
+        pastAnalog = analogRead(analogInput);
+        edit = false;
+        lastAction = millis();
+        if (selection == 0) selection = 1;
+        break;
+      case ENTER:
+        pastAnalog = analogRead(analogInput);
+        edit = false;
+        lastAction = millis();
+        done = true;
+        break;
+      case UP:
+        lastAction = millis();
+        switch (selection) {
+          case 1:
+            alarmHour++;
+            if (alarmHour == 24) alarmHour = 0;
+            break;
+          case 2:
+            alarmMinute++;
+            if (alarmMinute == 60) alarmMinute = 0;
+            break;
+          default:
+            break;
+        }
+        break;
+      case DOWN:
+        lastAction = millis();
+        switch (selection) {
+          case 1:
+            alarmHour--;
+            if (alarmHour == -1) alarmHour = 23;
+            break;
+          case 2:
+            alarmMinute--;
+            if (alarmMinute == -1) alarmMinute = 59;
             break;
           default:
             break;
@@ -388,17 +550,18 @@ void setDateUser() {
     if ((analogRead(analogInput) > (pastAnalog + 5)) || (analogRead(analogInput) < (pastAnalog - 5))) {
       edit = true;
       lastAction = millis();
+      pastAnalog = analogRead(analogInput);
     }
     if (edit) {
       switch (selection) {
         case 0:
-          setTime(hour(), minute(), second(), map(analogRead(analogInput), 0, 1023, 1, 31), month(), year());
+          setTime(hour(), minute(), second(), map(analogRead(analogInput), 0, ANALOGLIMIT, 1, 31), month(), year());
           break;
         case 1:
-          setTime(hour(), minute(), second(), day(), map(analogRead(analogInput), 0, 1023, 1, 12), year());
+          setTime(hour(), minute(), second(), day(), map(analogRead(analogInput), 0, ANALOGLIMIT, 1, 12), year());
           break;
         case 2:
-          setTime(hour(), minute(), second(), day(), month(), map(analogRead(analogInput), 0, 1023, 2015, 2080));
+          setTime(hour(), minute(), second(), day(), month(), map(analogRead(analogInput), 0, ANALOGLIMIT, 2015, 2080));
           break;
         default:
           break;
@@ -417,10 +580,8 @@ void setDateUser() {
       }
     }
     int irValue = readIR();
-    if (DEBUG && irValue != 999) Serial.println(irValue);
     switch (irValue) {
       case RIGHT:
-        if (DEBUG) Serial.println("right");
         selection++;
         pastAnalog = analogRead(analogInput);
         edit = false;
@@ -428,7 +589,6 @@ void setDateUser() {
         if (selection == 3) selection = 2;
         break;
       case LEFT:
-        if (DEBUG) Serial.println("left");
         selection--;
         pastAnalog = analogRead(analogInput);
         edit = false;
@@ -436,14 +596,12 @@ void setDateUser() {
         if (selection == -1) selection = 0;
         break;
       case ENTER:
-        if (DEBUG) Serial.println("enter");
         pastAnalog = analogRead(analogInput);
         edit = false;
         lastAction = millis();
         done = true;
         break;
       case UP:
-        if (DEBUG) Serial.println("up");
         lastAction = millis();
         switch (selection) {
           case 0:
@@ -460,7 +618,6 @@ void setDateUser() {
         }
         break;
       case DOWN:
-        if (DEBUG) Serial.println("down");
         lastAction = millis();
         switch (selection) {
           case 0:
@@ -507,7 +664,6 @@ int readIR() {
       //if (value.startsWith("a")) irRemoteState = false;
       //else if (value.startsWith("2")) irRemoteState = true;
       value.remove(0, 1);
-      if (DEBUG) Serial.println(value);
       //if (irRemoteState != lastIrRemoteState) {
       //lastIrRemoteState  = irRemoteState;
       if (value == left[0] || value == left[1] || value == left[2]) return LEFT;
@@ -554,3 +710,46 @@ int readButton() {
     return 0;
   }
 }
+
+void alarm() {
+  digitalWrite(led, LOW);
+  boolean done = false;
+  buttonDuration = 0;
+  while (!done) {
+    for (int i = 0; i < STARWARSLENGTH; i++) {
+      if (!done) {
+        if (starWarsSong[i][0] != 0) tone(speaker, starWarsSong[i][0]);
+        unsigned long pastSongMillis = millis();
+        while (millis() - pastSongMillis < starWarsSong[i][2]) {
+          flip();
+          displayTime(displaySeconds);
+          if (readButton()) done = true;
+          irMainValue = readIR();
+          switch (irMainValue) {
+            case ENTER:
+              done = true;
+              break;
+            default:
+              break;
+          }
+        }
+        noTone(speaker);
+        pastSongMillis = millis();
+        while (millis() - pastSongMillis < 10) {
+          flip();
+          displayTime(displaySeconds);
+          if (readButton()) done = true;
+          irMainValue = readIR();
+          switch (irMainValue) {
+            case ENTER:
+              done = true;
+              break;
+            default:
+              break;
+          }
+        }
+      }
+    }
+  }
+}
+

@@ -12,7 +12,10 @@ void setTimeUser();
 void setDateUser();
 void displayDate();
 void displayTime(boolean displaySec);
+void displayAlarm();
+void setAlarmUser();
 int readIR();
 int readButton();
+void ringAlarm();
 
 #endif

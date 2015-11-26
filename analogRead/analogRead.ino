@@ -3,6 +3,6 @@ void setup() {
 }
 
 void loop() {
-  Serial.println(analogRead(A1));
+  Serial.println(analogRead(A3));
   delay(10);
 }
