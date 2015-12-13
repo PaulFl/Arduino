@@ -1,6 +1,6 @@
 //******************************************************************************
 // IRremote
-// Version 0.1 July, 2009
+// Version 2.0.1 June, 2015
 // Copyright 2009 Ken Shirriff
 // For details, see http://arcfn.com/2009/08/multi-protocol-infrared-remote-library.html
 //
@@ -47,7 +47,8 @@ typedef
 		// The fields are ordered to reduce memory over caused by struct-padding
 		uint8_t       rcvstate;        // State Machine state
 		uint8_t       recvpin;         // Pin connected to IR data from detector
-		uint8_t       blinkflag;       // true -> enable blinking of pin 13 on IR processing
+		uint8_t       blinkpin;
+		uint8_t       blinkflag;       // true -> enable blinking of pin on IR processing
 		uint8_t       rawlen;          // counter of entries in rawbuf
 		unsigned int  timer;           // State timer, counts 50uS ticks.
 		unsigned int  rawbuf[RAWBUF];  // raw data
@@ -70,6 +71,7 @@ EXTERN  volatile irparams_t  irparams;
 //------------------------------------------------------------------------------
 // Defines for blinking the LED
 //
+
 #if defined(CORE_LED0_PIN)
 #	define BLINKLED        CORE_LED0_PIN
 #	define BLINKLED_ON()   (digitalWrite(CORE_LED0_PIN, HIGH))
@@ -168,7 +170,7 @@ EXTERN  volatile irparams_t  irparams;
 	//#define IR_USE_TIMER3   // tx = pin 9
 	#define IR_USE_TIMER4_HS  // tx = pin 10
 
-// Teensy 3.0
+// Teensy 3.0 / Teensy 3.1
 #elif defined(__MK20DX128__) || defined(__MK20DX256__)
 	#define IR_USE_TIMER_CMT  // tx = pin 5
 
@@ -191,10 +193,18 @@ EXTERN  volatile irparams_t  irparams;
 #elif defined(__AVR_ATmega8P__) || defined(__AVR_ATmega8__)
 	#define IR_USE_TIMER1     // tx = pin 9
 
+// ATtiny84
+#elif defined(__AVR_ATtiny84__)
+  #define IR_USE_TIMER1     // tx = pin 6
+
+//ATtiny85
+#elif defined(__AVR_ATtiny85__)
+  #define IR_USE_TIMER_TINY0   // tx = pin 1
+
 // Arduino Duemilanove, Diecimila, LilyPad, Mini, Fio, Nano, etc
 #else
-	#define IR_USE_TIMER1   // tx = pin 9
-	//#define IR_USE_TIMER2     // tx = pin 3
+	//#define IR_USE_TIMER1   // tx = pin 9
+	#define IR_USE_TIMER2     // tx = pin 3
 
 #endif
 
@@ -294,6 +304,8 @@ EXTERN  volatile irparams_t  irparams;
 #	define TIMER_PWM_PIN  11             // Arduino Mega
 #elif defined(__AVR_ATmega644P__) || defined(__AVR_ATmega644__)
 #	define TIMER_PWM_PIN  13             // Sanguino
+#elif defined(__AVR_ATtiny84__)
+# define TIMER_PWM_PIN  6
 #else
 #	define TIMER_PWM_PIN  9              // Arduino Duemilanove, Diecimila, LilyPad, etc
 #endif
@@ -547,7 +559,39 @@ EXTERN  volatile irparams_t  irparams;
 })
 #define TIMER_PWM_PIN        16
 
+// defines for timer_tiny0 (8 bits)
+#elif defined(IR_USE_TIMER_TINY0)
+#define TIMER_RESET
+#define TIMER_ENABLE_PWM     (TCCR0A |= _BV(COM0B1))
+#define TIMER_DISABLE_PWM    (TCCR0A &= ~(_BV(COM0B1)))
+#define TIMER_ENABLE_INTR    (TIMSK |= _BV(OCIE0A))
+#define TIMER_DISABLE_INTR   (TIMSK &= ~(_BV(OCIE0A)))
+#define TIMER_INTR_NAME      TIMER0_COMPA_vect
+#define TIMER_CONFIG_KHZ(val) ({ \
+  const uint8_t pwmval = SYSCLOCK / 2000 / (val); \
+  TCCR0A = _BV(WGM00); \
+  TCCR0B = _BV(WGM02) | _BV(CS00); \
+  OCR0A = pwmval; \
+  OCR0B = pwmval / 3; \
+})
+#define TIMER_COUNT_TOP      (SYSCLOCK * USECPERTICK / 1000000)
+#if (TIMER_COUNT_TOP < 256)
+#define TIMER_CONFIG_NORMAL() ({ \
+  TCCR0A = _BV(WGM01); \
+  TCCR0B = _BV(CS00); \
+  OCR0A = TIMER_COUNT_TOP; \
+  TCNT0 = 0; \
+})
+#else
+#define TIMER_CONFIG_NORMAL() ({ \
+  TCCR0A = _BV(WGM01); \
+  TCCR0B = _BV(CS01); \
+  OCR0A = TIMER_COUNT_TOP / 8; \
+  TCNT0 = 0; \
+})
+#endif
 
+#define TIMER_PWM_PIN        1  /* ATtiny85 */
 
 //---------------------------------------------------------
 // Unknown Timer

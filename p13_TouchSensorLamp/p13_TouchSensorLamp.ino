@@ -1,46 +1,46 @@
+#define DEBUG 0
+#define HIGHTHRESHOLD 250
+#define LOWTHRESHOLD 50
 
 #include <CapacitiveSensor.h>
 
-// create an instance of the library
-// pin 4 sends electrical energy
-// pin 2 senses senses a change
-CapacitiveSensor capSensor = CapacitiveSensor(4,6);
+short sendPin = A5;
+short receivePin = A2;
 
-// threshold for turning the lamp on
-int sensorThreshold = 50;
+short relay = 9;
+short led = 13;
 
-boolean ledState = LOW;
+bool relayState = LOW;
+bool touched = false;
 
-unsigned long time;
-
-// pin the LED is connected to
-const int ledPin = 13;
-
+CapacitiveSensor capSensor = CapacitiveSensor(sendPin, receivePin);
+long sensorValue;
 
 void setup() {
-  // open a serial connection
-  Serial.begin(9600);
-  // set the LED pin as an output
-  pinMode(ledPin, OUTPUT);
-  time = millis();
+  if (DEBUG) Serial.begin(9600);
+
+  pinMode(relay, OUTPUT);
+  digitalWrite(relay, LOW);
+
+  pinMode(led, OUTPUT);
+  pinMode(led, HIGH);
 }
 
 void loop() {
-  // store the value reported by the sensor in a variable
-  long sensorValue = capSensor.capacitiveSensor(30);
+  sensorValue = capSensor.capacitiveSensor(30);
 
-  // print out the sensor value
-  Serial.println(sensorValue); 
+  if (DEBUG) Serial.println(sensorValue);
 
-  // if the value is greater than the threshold
-  if(sensorValue > sensorThreshold && millis()-time>1000) {
-    // turn the LED on
-    ledState = !ledState;
-    time = millis();
-    digitalWrite(ledPin, ledState);
+  if (sensorValue > HIGHTHRESHOLD && !touched) {
+    touched = true;
+    digitalWrite(led, HIGH);
+    relayState = !relayState;
+    if (DEBUG) Serial.println("Switched");
+    digitalWrite(relay, relayState);
+  } else if (sensorValue < LOWTHRESHOLD && touched) {
+    touched = false;
+    digitalWrite(led, LOW);
   }
- 
-
   delay(10);
 }
 

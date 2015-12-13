@@ -2,12 +2,12 @@
 #include "IRremoteInt.h"
 
 //+=============================================================================
-void  IRsend::sendRaw (unsigned int buf[],  int len,  int hz)
+void  IRsend::sendRaw (unsigned int buf[],  unsigned int len,  unsigned int hz)
 {
 	// Set IR carrier frequency
 	enableIROut(hz);
 
-	for (int i = 0;  i < len;  i++) {
+	for (unsigned int i = 0;  i < len;  i++) {
 		if (i & 1)  space(buf[i]) ;
 		else        mark (buf[i]) ;
 	}
@@ -19,10 +19,10 @@ void  IRsend::sendRaw (unsigned int buf[],  int len,  int hz)
 // Sends an IR mark for the specified number of microseconds.
 // The mark output is modulated at the PWM frequency.
 //
-void  IRsend::mark (int time)
+void  IRsend::mark (unsigned int time)
 {
 	TIMER_ENABLE_PWM; // Enable pin 3 PWM output
-	if (time > 0) delayMicroseconds(time);
+	if (time > 0) custom_delay_usec(time);
 }
 
 //+=============================================================================
@@ -30,11 +30,15 @@ void  IRsend::mark (int time)
 // Sends an IR space for the specified number of microseconds.
 // A space is no output, so the PWM output is disabled.
 //
-void  IRsend::space (int time)
+void  IRsend::space (unsigned int time)
 {
 	TIMER_DISABLE_PWM; // Disable pin 3 PWM output
-	if (time > 0) delayMicroseconds(time);
+	if (time > 0) IRsend::custom_delay_usec(time);
 }
+
+
+
+
 
 //+=============================================================================
 // Enables IR output.  The khz value controls the modulation frequency in kilohertz.
@@ -62,5 +66,22 @@ void  IRsend::enableIROut (int khz)
 	// CS2  = 000: no prescaling
 	// The top value for the timer.  The modulation frequency will be SYSCLOCK / 2 / OCR2A.
 	TIMER_CONFIG_KHZ(khz);
+}
+
+//+=============================================================================
+// Custom delay function that circumvents Arduino's delayMicroseconds limit
+
+void IRsend::custom_delay_usec(unsigned long uSecs) {
+  if (uSecs > 4) {
+    unsigned long start = micros();
+    unsigned long endMicros = start + uSecs - 4;
+    if (endMicros < start) { // Check if overflow
+      while ( micros() > start ) {} // wait until overflow
+    }
+    while ( micros() < endMicros ) {} // normal wait
+  } 
+  //else {
+  //  __asm__("nop\n\t"); // must have or compiler optimizes out
+  //}
 }
 
