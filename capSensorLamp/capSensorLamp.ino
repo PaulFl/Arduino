@@ -1,3 +1,7 @@
+//Conductive surface (capacitive sensor) used to switch a relay
+//Adjust onThreshold and offT5hreshold values to suit the capacitive sensor surface (I an using a can here)
+
+
 #include <CapacitiveSensor.h>
 
 #define DEBUG 1
