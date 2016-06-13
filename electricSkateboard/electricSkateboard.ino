@@ -9,9 +9,10 @@
 #define ACCELERATIONDELAY 30
 #define BLINKPATTERNLENGTH 750
 #define TIMEOUTDELAY 400
-#define DELAYSOFTBRAKE 200
-#define DELAYHARDBRAKE 1000
 #define STARTSPEED 30
+#define COLORCHANGESPEED 3
+#define STILLCOLOR 2000
+#define BUTTONDELAY 400
 
 float decelerationFactor = 0.02;
 float voltageRef = 4.67;
@@ -24,14 +25,29 @@ short RF24csnPin = 8;
 short powerLedPin = A4;
 short batteryLedPin = A3;
 
-short firstBrakePin = 2;
-short secondBrakePin = A0;
-
 short motorPin = 9;
 short lipoCellPin = A6;
 
 short USBLedPin = A2;
 short USBHubPin = A5;
+
+short redPin = 3;
+short greenPin = 5;
+short bluePin = 6;
+
+int newBlue = 0;
+int newRed = 0;
+int newGreen = 0;
+
+int blueValue = 0;
+int greenValue = 0;
+int redValue = 0;
+
+short color = 0;
+
+short nextPin = A0;
+short middlePin = A1;
+short previousPin = A5;
 
 float voltage;
 float batteryPercentage;
@@ -39,17 +55,19 @@ int motorSpeed;
 int holdSpeed;
 int restart;
 int valueBeforeStop;
-bool softBrake = false;
-bool hardBrake = false;
 bool lowBattery = false;
 bool hold = false;
 bool holdRenewed = true;
+bool buttonPressed = false;
+bool discoMode = false;
 
-long startBraking;
 long lipoBlinkMillis;
 long lastAcceleration;
 long lastRead;
 long lastStop;
+long lastColorChange;
+long lastColorDisco;
+long lastButtonRelease;
 
 int msg[1];
 
@@ -69,29 +87,83 @@ void setup() {
 
   pinMode(powerLedPin, OUTPUT);
   digitalWrite(powerLedPin, HIGH);
-  pinMode(firstBrakePin, OUTPUT);
-  pinMode(secondBrakePin, OUTPUT);
   pinMode(batteryLedPin, OUTPUT);
   digitalWrite(batteryLedPin, HIGH);
   pinMode(USBLedPin, OUTPUT);
   digitalWrite(USBLedPin, HIGH);
   pinMode(USBHubPin, OUTPUT);
   digitalWrite(USBHubPin, LOW);
+  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
+  pinMode(bluePin, OUTPUT);
+  pinMode(nextPin, INPUT_PULLUP);
+  pinMode(previousPin, INPUT_PULLUP);
+  pinMode(middlePin, INPUT_PULLUP);
 
-  startBraking = millis();
   lipoBlinkMillis = millis();
   lastAcceleration = millis();
   lastRead = millis();
   lastStop = millis();
+  lastColorChange = millis();
+  lastColorDisco = millis();
+  lastButtonRelease = millis();
 
-  digitalWrite(firstBrakePin, HIGH);
-  digitalWrite(secondBrakePin, HIGH);
   delay(6000);
-  digitalWrite(firstBrakePin, LOW);
-  digitalWrite(secondBrakePin, LOW);
 }
 
 void loop() {
+  //Leds strips
+  analogWrite(bluePin, blueValue);
+  analogWrite(greenPin, greenValue);
+  analogWrite(redPin, redValue);
+
+  if (millis() - lastColorChange > COLORCHANGESPEED) {
+    lastColorChange = millis();
+    if (blueValue > newBlue) {
+      blueValue--;
+    } else if ( blueValue < newBlue) {
+      blueValue++;
+    }
+    if (greenValue > newGreen) {
+      greenValue--;
+    } else if (greenValue < newGreen) {
+      greenValue++;
+    }
+    if (redValue > newRed) {
+      redValue--;
+    } else if (redValue < newRed) {
+      redValue++;
+    }
+  }
+
+  if (discoMode && (millis() - lastColorDisco) > STILLCOLOR) {
+    lastColorDisco = millis();
+    if (color == 6) color = 0;
+    else color++;
+    setColor();
+  }
+  if (digitalRead(previousPin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY)) {
+    lastButtonRelease = millis();
+    if (color == 0) color = 6;
+    else color--;
+    discoMode = false;
+    buttonPressed = true;
+    setColor();
+  } else if (digitalRead(nextPin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY)) {
+    lastButtonRelease = millis();
+    if (color == 6) color = 0;
+    else color++;
+    discoMode = false;
+    buttonPressed = true;
+    setColor();
+  } else if (digitalRead(middlePin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY)) {
+    lastButtonRelease = millis();
+    discoMode = true;
+    buttonPressed = true;
+  } else {
+    buttonPressed = false;
+  }
+
   //Get data
   if (millis() - lastRead > TIMEOUTDELAY) {
     motor.write(MOTORMIN);
@@ -105,12 +177,17 @@ void loop() {
     while (radio.available()) radio.read(msg, 2);
     if (msg[0] == 200) {
       if (holdRenewed) {
+        if (color == 6) color = 0;
+        else color++;
+        discoMode = false;
+        buttonPressed = true;
+        setColor();
         hold = !hold;
         holdRenewed = false;
         holdSpeed = motor.read();
       }
       lastRead = millis();
-    } else hardBrake = false;
+    }
     if (msg[0] <= 180 && msg[0] >= MOTORMIN) {
       hold = false;
       holdRenewed = true;
@@ -131,45 +208,12 @@ void loop() {
     }
   } else digitalWrite(powerLedPin, LOW);
 
-  if (!softBrake && !hardBrake /*&& !lowBattery*/) {
-    if (motorSpeed < motor.read()) motor.write(motorSpeed);
-    else if (motorSpeed > motor.read() && (millis() - lastAcceleration) > ACCELERATIONDELAY) {
-      motor.write(motor.read() + 1);
-      lastAcceleration = millis();
-    }
+  if (motorSpeed < motor.read()) motor.write(motorSpeed);
+  else if (motorSpeed > motor.read() && (millis() - lastAcceleration) > ACCELERATIONDELAY) {
+    motor.write(motor.read() + 1);
+    lastAcceleration = millis();
   }
-  else motor.write(MOTORMIN);
 
-  //Brakes
-
-  if (hardBrake) {
-    motor.write(MOTORMIN);
-    motorSpeed = MOTORMIN;
-    if (millis() - startBraking > DELAYHARDBRAKE) {
-      digitalWrite(firstBrakePin, HIGH);
-      digitalWrite(secondBrakePin, HIGH);
-    } else if (millis() - startBraking > DELAYSOFTBRAKE) {
-      digitalWrite(firstBrakePin, HIGH);
-      digitalWrite(secondBrakePin, LOW);
-    } else {
-      digitalWrite(firstBrakePin, LOW);
-      digitalWrite(secondBrakePin, LOW);
-    }
-  } else if (softBrake) {
-    motor.write(MOTORMIN);
-    motorSpeed = MOTORMIN;
-    if (millis() - startBraking > DELAYSOFTBRAKE) {
-      digitalWrite(firstBrakePin, HIGH);
-      digitalWrite(secondBrakePin, LOW);
-    } else {
-      digitalWrite(firstBrakePin, LOW);
-      digitalWrite(secondBrakePin, LOW);
-    }
-  } else {
-    digitalWrite(firstBrakePin, LOW);
-    digitalWrite(secondBrakePin, LOW);
-    startBraking = millis();
-  }
 
   //Battery percentage
   voltage = analogRead(lipoCellPin) * (voltageRef / 1023.0);
@@ -207,3 +251,44 @@ void loop() {
     digitalWrite(batteryLedPin, HIGH);
   }
 }
+
+void setColor() {
+  switch (color) {
+    case 0:
+      newBlue = 255;
+      newGreen = 0;
+      newRed = 0;
+      break;
+    case 1:
+      newBlue = 0;
+      newGreen = 255;
+      newRed = 0;
+      break;
+    case 2:
+      newBlue = 0;
+      newGreen = 0;
+      newRed = 255;
+      break;
+    case 3:
+      newBlue = 255;
+      newGreen = 255;
+      newRed = 0;
+      break;
+    case 4:
+      newBlue = 0;
+      newGreen = 255;
+      newRed = 255;
+      break;
+    case 5:
+      newBlue = 255;
+      newGreen = 0;
+      newRed = 255;
+      break;
+    case 6:
+      newBlue = 255;
+      newGreen = 255;
+      newRed = 255;
+      break;
+  }
+}
+
