@@ -1,26 +1,27 @@
 #ifndef PINS
 #define PINS
 
-short speaker = A4;
-short analogInput = A3;
+short speaker = A7;
+short analogInput = A6;
 short button = 10;
-short led = 9;
-short iRReceiver = A5;
+short led = A5;
+short iRReceiver = 5;
+short alarmSwitch = A4;
 
-short cathodeSegments[6] = {1, //SEG 1
-	2, //SEG 2
-	3, //SEG 3
-	4, //SEG 4
-	5, //SEG 5
+short cathodeSegments[6] = {12, //SEG 1
+	11, //SEG 2
+	9, //SEG 3
+	8, //SEG 4
+	7, //SEG 5
 	6}; //SEG 6
 
-short anodeSegments[8] = {7, //SEG A
-	8, //SEG B
-	11, //SEG C
-	12, //SEG D
-	13, //SEG E
-	A0, //SEG F
-	A1, //SEG G
-	A2}; //SEG H
+short anodeSegments[8] = {13, //SEG A
+	A0, //SEG B
+	2, //SEG C
+	A2, //SEG D
+	3, //SEG E
+	A1, //SEG F
+	A3, //SEG G
+	4}; //SEG H
 
 #endif 

@@ -25,6 +25,7 @@ boolean blinkState = true;
 boolean segments[6][8];
 boolean blink[6] = {false};
 boolean displaySeconds = true;
+boolean lastAlarmSwitchState;
 byte onSegment = 0;
 byte actualDisplay;
 
@@ -80,6 +81,8 @@ void setup() {
   digitalWrite(speaker, LOW);
 
   pinMode(led, OUTPUT);
+  pinMode(alarmSwitch, INPUT_PULLUP);
+  lastAlarmSwitchState = digitalRead(alarmSwitch);
 }
 
 void loop() {
@@ -271,6 +274,10 @@ void setSeparators(boolean separators[6]) {
 
 void flip() {
   if (micros() - flipmicros > REFRESHSPEED) {
+    if (lastAlarmSwitchState != digitalRead(alarmSwitch)) {
+      alarmEnabled = !alarmEnabled;
+      lastAlarmSwitchState = digitalRead(alarmSwitch);
+    }
     digitalWrite(cathodeSegments[onSegment], LOW);
     onSegment++;
     if (onSegment == 6) {
@@ -611,7 +618,7 @@ void setDateUser() {
             setTime(hour(), minute(), second(), day(), month() + 1, year());
             break;
           case 2:
-            setTime(hour(), minute(), second(), day(), month() + 1, year());
+            setTime(hour(), minute(), second(), day(), month(), year() + 1);
             break;
           default:
             break;
@@ -621,8 +628,7 @@ void setDateUser() {
         lastAction = millis();
         switch (selection) {
           case 0:
-            if (day() == 1) setTime(hour(), minute(), second(), 31, month(), year());
-            else setTime(hour(), minute(), second(), day() - 1, month(), year());
+            if (day() != 1) setTime(hour(), minute(), second(), day() - 1, month(), year());
             break;
           case 1:
             if (month() == 1) setTime(hour(), minute(), second(), day(), 12, year());

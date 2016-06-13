@@ -1,6 +1,7 @@
 /*
-  Firmata.h - Firmata library v2.5.0 - 2015-11-7
+  Firmata.h - Firmata library v2.5.2 - 2016-2-15
   Copyright (c) 2006-2008 Hans-Christoph Steiner.  All rights reserved.
+  Copyright (C) 2009-2015 Jeff Hoefs.  All rights reserved.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -16,14 +17,34 @@
 #include "Boards.h"  /* Hardware Abstraction Layer + Wiring/Arduino */
 
 /* Version numbers for the protocol.  The protocol is still changing, so these
- * version numbers are important.  This number can be queried so that host
- * software can test whether it will be compatible with the currently
- * installed firmware. */
-#define FIRMATA_MAJOR_VERSION   2 // for non-compatible changes
-#define FIRMATA_MINOR_VERSION   5 // for backwards compatible changes
-#define FIRMATA_BUGFIX_VERSION  0 // for bugfix releases
+ * version numbers are important.
+ * Query using the REPORT_VERSION message.
+ */
+#define FIRMATA_PROTOCOL_MAJOR_VERSION  2 // for non-compatible changes
+#define FIRMATA_PROTOCOL_MINOR_VERSION  5 // for backwards compatible changes
+#define FIRMATA_PROTOCOL_BUGFIX_VERSION 1 // for bugfix releases
 
-#define MAX_DATA_BYTES          64 // max number of data bytes in incoming messages
+/* Version numbers for the Firmata library.
+ * The firmware version will not always equal the protocol version going forward.
+ * Query using the REPORT_FIRMWARE message.
+ */
+#define FIRMATA_FIRMWARE_MAJOR_VERSION  2
+#define FIRMATA_FIRMWARE_MINOR_VERSION  5
+#define FIRMATA_FIRMWARE_BUGFIX_VERSION 2
+
+/* DEPRECATED as of Firmata v2.5.1. As of 2.5.1 there are separate version numbers for
+ * the protocol version and the firmware version.
+ */
+#define FIRMATA_MAJOR_VERSION           2 // same as FIRMATA_PROTOCOL_MAJOR_VERSION
+#define FIRMATA_MINOR_VERSION           5 // same as FIRMATA_PROTOCOL_MINOR_VERSION
+#define FIRMATA_BUGFIX_VERSION          1 // same as FIRMATA_PROTOCOL_BUGFIX_VERSION
+
+#define MAX_DATA_BYTES                  64 // max number of data bytes in incoming messages
+
+// Arduino 101 also defines SET_PIN_MODE as a macro in scss_registers.h
+#ifdef SET_PIN_MODE
+#undef SET_PIN_MODE
+#endif
 
 // message command bytes (128-255/0x80-0xFF)
 #define DIGITAL_MESSAGE         0x90 // send data for a digital port (collection of 8 pins)
@@ -94,6 +115,7 @@
 #define ONEWIRE                 0x07 // same as PIN_MODE_ONEWIRE
 #define STEPPER                 0x08 // same as PIN_MODE_STEPPER
 #define ENCODER                 0x09 // same as PIN_MODE_ENCODER
+#define IGNORE                  0x7F // same as PIN_MODE_IGNORE
 
 extern "C" {
   // callback function types
@@ -118,9 +140,12 @@ class FirmataClass
     void printFirmwareVersion(void);
     //void setFirmwareVersion(byte major, byte minor);  // see macro below
     void setFirmwareNameAndVersion(const char *name, byte major, byte minor);
+    void disableBlinkVersion();
     /* serial receive handling */
     int available(void);
     void processInput(void);
+    void parse(unsigned char value);
+    boolean isParsingMessage(void);
     /* serial send handling */
     void sendAnalog(byte pin, int value);
     void sendDigital(byte pin, int value); // TODO implement this
@@ -135,6 +160,13 @@ class FirmataClass
     void attach(byte command, stringCallbackFunction newFunction);
     void attach(byte command, sysexCallbackFunction newFunction);
     void detach(byte command);
+
+    /* access pin state and config */
+    byte getPinMode(byte pin);
+    void setPinMode(byte pin, byte config);
+    /* access pin state */
+    int getPinState(byte pin);
+    void setPinState(byte pin, int state);
 
     /* utility methods */
     void sendValueAsTwo7bitBytes(int value);
@@ -154,6 +186,10 @@ class FirmataClass
     /* sysex */
     boolean parsingSysex;
     int sysexBytesRead;
+    /* pin configuration */
+    byte pinConfig[TOTAL_PINS];
+    int pinState[TOTAL_PINS];
+
     /* callback functions */
     callbackFunction currentAnalogCallback;
     callbackFunction currentDigitalCallback;
@@ -165,10 +201,12 @@ class FirmataClass
     stringCallbackFunction currentStringCallback;
     sysexCallbackFunction currentSysexCallback;
 
+    boolean blinkVersionDisabled = false;
+
     /* private methods ------------------------------ */
     void processSysexMessage(void);
     void systemReset(void);
-    void strobeBlinkPin(int count, int onInterval, int offInterval);
+    void strobeBlinkPin(byte pin, int count, int onInterval, int offInterval);
 };
 
 extern FirmataClass Firmata;

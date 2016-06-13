@@ -1,16 +1,13 @@
-//une sortie analogique sur la broche 6
-const int sortieAnalogique = 11;
-const int potentiometre = A1;
-int valeur;
+#include <SoftPWM.h>
+#include <SoftPWM_timer.h>
 
-void setup()
-{
-    pinMode(sortieAnalogique, OUTPUT);
+const short analogOut = 13;
+const short analogIn = A1;
+
+void setup() {
+  SoftPWMBegin(SOFTPWM_NORMAL);
 }
 
-void loop()
-{
-  valeur = map(analogRead(potentiometre), 0, 1023, 255, 0);
-    //on met un rapport cyclique de 107/255 = 42 %
-    analogWrite(sortieAnalogique, valeur);
+void loop() {
+  SoftPWMSet(analogOut, map(analogRead(analogIn), 0, 1023, 255, 0));
 }
