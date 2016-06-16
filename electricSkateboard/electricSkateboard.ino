@@ -142,21 +142,21 @@ void loop() {
     else color++;
     setColor();
   }
-  if (digitalRead(previousPin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY)) {
-    lastButtonRelease = millis();
-    if (color == 0) color = 6;
-    else color--;
-    discoMode = false;
-    buttonPressed = true;
-    setColor();
-  } else if (digitalRead(nextPin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY)) {
-    lastButtonRelease = millis();
-    if (color == 6) color = 0;
-    else color++;
-    discoMode = false;
-    buttonPressed = true;
-    setColor();
-  } else if (digitalRead(middlePin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY)) {
+  /* if (digitalRead(previousPin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY)) {
+     lastButtonRelease = millis();
+     if (color == 0) color = 6;
+     else color--;
+     discoMode = false;
+     buttonPressed = true;
+     setColor();
+    } else if (digitalRead(nextPin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY)) {
+     lastButtonRelease = millis();
+     if (color == 6) color = 0;
+     else color++;
+     discoMode = false;
+     buttonPressed = true;
+     setColor();
+    } else*/ if (digitalRead(middlePin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY) && (motor.read() == MOTORMIN)) {
     lastButtonRelease = millis();
     discoMode = true;
     buttonPressed = true;
@@ -177,11 +177,13 @@ void loop() {
     while (radio.available()) radio.read(msg, 2);
     if (msg[0] == 200) {
       if (holdRenewed) {
-        if (color == 6) color = 0;
-        else color++;
-        discoMode = false;
-        buttonPressed = true;
-        setColor();
+        if (motor.read() == MOTORMIN) {
+          if (color == 6) color = 0;
+          else color++;
+          discoMode = false;
+          buttonPressed = true;
+          setColor();
+        }
         hold = !hold;
         holdRenewed = false;
         holdSpeed = motor.read();
