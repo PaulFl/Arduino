@@ -1,4 +1,3 @@
-
 #define SPEED 50
 short red = 3;
 short green = 5;

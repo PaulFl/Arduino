@@ -1,3 +1,13 @@
+/*!!!!!!!!! in IRremonteInt.h, set 
+ 
+ // Arduino Duemilanove, Diecimila, LilyPad, Mini, Fio, Nano, etc
+#else
+  #define IR_USE_TIMER1   // tx = pin 9
+  //#define IR_USE_TIMER2     // tx = pin 3
+
+#endif */
+
+
 #include "segments.h"
 #include "pins.h"
 #include "pitches.h"

@@ -1,7 +1,7 @@
 #include <IRremote.h>
 
 
-IRrecv irrecv(11);
+IRrecv irrecv(7);
 decode_results results;
 String value;
 

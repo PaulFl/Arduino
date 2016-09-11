@@ -6,13 +6,20 @@
 #include <Servo.h>
 
 #define MOTORMIN 20
-#define ACCELERATIONDELAY 30
+#define ACCELERATIONDELAY 40
+#define ACCELERATIONDELAYBEGINNER 60
 #define BLINKPATTERNLENGTH 750
+#define MAXSPEED 180
+#define MAXBEGINNERSPEED 95
 #define TIMEOUTDELAY 400
-#define STARTSPEED 30
+#define STARTSPEED 27
 #define COLORCHANGESPEED 3
 #define STILLCOLOR 2000
+#define STILLCOLORCRAZY 300
 #define BUTTONDELAY 400
+
+int stillColor = STILLCOLOR;
+int colorChangeSpeed = COLORCHANGESPEED;
 
 float decelerationFactor = 0.02;
 float voltageRef = 4.67;
@@ -49,6 +56,9 @@ short nextPin = A0;
 short middlePin = A1;
 short previousPin = A5;
 
+int speedLimit = MAXSPEED;
+int acceleration = ACCELERATIONDELAY;
+
 float voltage;
 float batteryPercentage;
 int motorSpeed;
@@ -60,6 +70,7 @@ bool hold = false;
 bool holdRenewed = true;
 bool buttonPressed = false;
 bool discoMode = false;
+bool beginnersMode = false;
 
 long lipoBlinkMillis;
 long lastAcceleration;
@@ -117,7 +128,7 @@ void loop() {
   analogWrite(greenPin, greenValue);
   analogWrite(redPin, redValue);
 
-  if (millis() - lastColorChange > COLORCHANGESPEED) {
+  if (millis() - lastColorChange > colorChangeSpeed) {
     lastColorChange = millis();
     if (blueValue > newBlue) {
       blueValue--;
@@ -136,7 +147,7 @@ void loop() {
     }
   }
 
-  if (discoMode && (millis() - lastColorDisco) > STILLCOLOR) {
+  if (discoMode && (millis() - lastColorDisco) > stillColor) {
     lastColorDisco = millis();
     if (color == 6) color = 0;
     else color++;
@@ -156,10 +167,40 @@ void loop() {
      discoMode = false;
      buttonPressed = true;
      setColor();
-    } else*/ if (digitalRead(middlePin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY) && (motor.read() == MOTORMIN)) {
+    } else*/
+  if (digitalRead(middlePin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY) && (motor.read() == MOTORMIN)) {
     lastButtonRelease = millis();
     discoMode = true;
+    stillColor = STILLCOLOR;
+    colorChangeSpeed = COLORCHANGESPEED;
     buttonPressed = true;
+  } else if (digitalRead(previousPin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY) && (motor.read() == MOTORMIN)) {
+    lastButtonRelease = millis();
+    discoMode = true;
+    stillColor = STILLCOLORCRAZY;
+    colorChangeSpeed = 0;
+    buttonPressed = true;
+  } else if (digitalRead(nextPin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY) && (motor.read() == MOTORMIN)) {
+    lastButtonRelease = millis();
+    buttonPressed = true;
+    beginnersMode = !beginnersMode;
+    short loops;
+    if (beginnersMode) {
+      loops = 3;
+      speedLimit = MAXBEGINNERSPEED;
+      acceleration = ACCELERATIONDELAY;
+    }
+    else {
+      loops = 5;
+      speedLimit = MAXSPEED;
+      acceleration = ACCELERATIONDELAYBEGINNER;
+    }
+    for (int i = 0; i < loops; i++) {
+      digitalWrite(powerLedPin, HIGH);
+      delay(100);
+      digitalWrite(powerLedPin, LOW);
+      delay(70);
+    }
   } else {
     buttonPressed = false;
   }
@@ -194,7 +235,7 @@ void loop() {
       hold = false;
       holdRenewed = true;
       lastRead = millis();
-      motorSpeed = map(msg[0], MOTORMIN, 180, STARTSPEED, 180);
+      motorSpeed = map(msg[0], MOTORMIN, 180, STARTSPEED, speedLimit);
       restart = motor.read() - ((millis() - lastStop) * decelerationFactor);
       if (restart >= MOTORMIN) motor.write(restart);
     } else if (msg[0] == 0) {
@@ -211,7 +252,7 @@ void loop() {
   } else digitalWrite(powerLedPin, LOW);
 
   if (motorSpeed < motor.read()) motor.write(motorSpeed);
-  else if (motorSpeed > motor.read() && (millis() - lastAcceleration) > ACCELERATIONDELAY) {
+  else if (motorSpeed > motor.read() && (millis() - lastAcceleration) > acceleration) {
     motor.write(motor.read() + 1);
     lastAcceleration = millis();
   }
