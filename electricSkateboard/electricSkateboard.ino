@@ -70,6 +70,7 @@ bool hold = false;
 bool holdRenewed = true;
 bool buttonPressed = false;
 bool discoMode = false;
+bool crazyColor = false;
 bool beginnersMode = false;
 
 long lipoBlinkMillis;
@@ -89,6 +90,7 @@ const uint64_t pipe = 0xE8E8F0F0E1LL;
 
 void setup() {
   Serial.begin(9600);
+  Serial.println("Booting...");
   motor.attach(motorPin);
   motor.write(MOTORMIN);
 
@@ -118,8 +120,10 @@ void setup() {
   lastColorChange = millis();
   lastColorDisco = millis();
   lastButtonRelease = millis();
+  Serial.println("Initialisation complete");
 
   delay(6000);
+  Serial.println("ESC started");
 }
 
 void loop() {
@@ -171,29 +175,38 @@ void loop() {
   if (digitalRead(middlePin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY) && (motor.read() == MOTORMIN)) {
     lastButtonRelease = millis();
     discoMode = true;
-    stillColor = STILLCOLOR;
-    colorChangeSpeed = COLORCHANGESPEED;
+    Serial.println("Color change");
+    crazyColor = !crazyColor;
+    if (crazyColor) {
+      stillColor = STILLCOLORCRAZY;
+      colorChangeSpeed = 0;
+    } else {
+      stillColor = STILLCOLOR;
+      colorChangeSpeed = COLORCHANGESPEED;
+    }
     buttonPressed = true;
-  } else if (digitalRead(previousPin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY) && (motor.read() == MOTORMIN)) {
+  } /*else if (digitalRead(previousPin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY) && (motor.read() == MOTORMIN)) {
     lastButtonRelease = millis();
     discoMode = true;
     stillColor = STILLCOLORCRAZY;
     colorChangeSpeed = 0;
     buttonPressed = true;
-  } else if (digitalRead(nextPin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY) && (motor.read() == MOTORMIN)) {
+  }*/ else if (digitalRead(nextPin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY) && (motor.read() == MOTORMIN)) {
     lastButtonRelease = millis();
     buttonPressed = true;
     beginnersMode = !beginnersMode;
     short loops;
     if (beginnersMode) {
+      Serial.println("Beginner mode enabled");
       loops = 3;
       speedLimit = MAXBEGINNERSPEED;
-      acceleration = ACCELERATIONDELAY;
+      acceleration = ACCELERATIONDELAYBEGINNER;
     }
     else {
+      Serial.println("Pro mode enabled");
       loops = 5;
       speedLimit = MAXSPEED;
-      acceleration = ACCELERATIONDELAYBEGINNER;
+      acceleration = ACCELERATIONDELAY;
     }
     for (int i = 0; i < loops; i++) {
       digitalWrite(powerLedPin, HIGH);
@@ -223,6 +236,7 @@ void loop() {
           else color++;
           discoMode = false;
           buttonPressed = true;
+          Serial.println("Color change");
           setColor();
         }
         hold = !hold;
@@ -249,6 +263,12 @@ void loop() {
         lastStop = millis();
       }
     }
+    Serial.print("Remote: ");
+    Serial.print(motorSpeed);
+    Serial.print("\tMotor: ");
+    Serial.print(motor.read());
+    Serial.print("\tVoltage: ");
+    Serial.println(voltage);
   } else digitalWrite(powerLedPin, LOW);
 
   if (motorSpeed < motor.read()) motor.write(motorSpeed);
