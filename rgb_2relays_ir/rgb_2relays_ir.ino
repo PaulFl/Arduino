@@ -13,8 +13,8 @@
 #include <IRremoteInt.h>
 
 #define DEBUG 1
-#define HIGHTHRESHOLD 9000
-#define LOWTHRESHOLD 8500
+#define HIGHTHRESHOLD 6600
+#define LOWTHRESHOLD 6300
 #define SPEED 100
 #define LEDPAUSE 5000
 #define IRDELAY 100
