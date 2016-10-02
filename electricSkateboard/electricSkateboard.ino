@@ -153,7 +153,7 @@ void loop() {
 
   if (discoMode && (millis() - lastColorDisco) > stillColor) {
     lastColorDisco = millis();
-    if (color == 6) color = 0;
+    if (color >= 6) color = 0;
     else color++;
     setColor();
   }
@@ -174,12 +174,12 @@ void loop() {
     } else*/
   if (digitalRead(middlePin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY) && (motor.read() == MOTORMIN)) {
     lastButtonRelease = millis();
-    if (color == 6) color = 0;
-          else color++;
-          discoMode = false;
-          buttonPressed = true;
-          Serial.println("Color change");
-          setColor();
+    if (color >= 6) color = 0;
+    else color++;
+    discoMode = false;
+    buttonPressed = true;
+    Serial.println("Color change");
+    setColor();
     buttonPressed = true;
   } /*else if (digitalRead(previousPin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY) && (motor.read() == MOTORMIN)) {
     lastButtonRelease = millis();
@@ -228,16 +228,23 @@ void loop() {
     if (msg[0] == 200) {
       if (holdRenewed) {
         if (motor.read() == MOTORMIN) {
-          discoMode = true;
-    Serial.println("Color change");
-    crazyColor = !crazyColor;
-    if (crazyColor) {
-      stillColor = STILLCOLORCRAZY;
-      colorChangeSpeed = 0;
-    } else {
-      stillColor = STILLCOLOR;
-      colorChangeSpeed = COLORCHANGESPEED;
-    }
+          if (discoMode && !crazyColor) {
+            discoMode = false;
+            Serial.println("Color stop");
+            color = 7;
+            setColor();
+          } else {
+            discoMode = true;
+            Serial.println("Color change");
+            crazyColor = !crazyColor;
+            if (crazyColor) {
+              stillColor = STILLCOLORCRAZY;
+              colorChangeSpeed = 0;
+            } else {
+              stillColor = STILLCOLOR;
+              colorChangeSpeed = COLORCHANGESPEED;
+            }
+          }
         }
         hold = !hold;
         holdRenewed = false;
@@ -351,6 +358,11 @@ void setColor() {
       newBlue = 255;
       newGreen = 255;
       newRed = 255;
+      break;
+    case 7:
+      newBlue = 0;
+      newGreen = 0;
+      newRed = 0;
       break;
   }
 }
