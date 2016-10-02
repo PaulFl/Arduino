@@ -174,16 +174,12 @@ void loop() {
     } else*/
   if (digitalRead(middlePin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY) && (motor.read() == MOTORMIN)) {
     lastButtonRelease = millis();
-    discoMode = true;
-    Serial.println("Color change");
-    crazyColor = !crazyColor;
-    if (crazyColor) {
-      stillColor = STILLCOLORCRAZY;
-      colorChangeSpeed = 0;
-    } else {
-      stillColor = STILLCOLOR;
-      colorChangeSpeed = COLORCHANGESPEED;
-    }
+    if (color == 6) color = 0;
+          else color++;
+          discoMode = false;
+          buttonPressed = true;
+          Serial.println("Color change");
+          setColor();
     buttonPressed = true;
   } /*else if (digitalRead(previousPin) == LOW && !buttonPressed && ((millis() - lastButtonRelease) > BUTTONDELAY) && (motor.read() == MOTORMIN)) {
     lastButtonRelease = millis();
@@ -232,12 +228,16 @@ void loop() {
     if (msg[0] == 200) {
       if (holdRenewed) {
         if (motor.read() == MOTORMIN) {
-          if (color == 6) color = 0;
-          else color++;
-          discoMode = false;
-          buttonPressed = true;
-          Serial.println("Color change");
-          setColor();
+          discoMode = true;
+    Serial.println("Color change");
+    crazyColor = !crazyColor;
+    if (crazyColor) {
+      stillColor = STILLCOLORCRAZY;
+      colorChangeSpeed = 0;
+    } else {
+      stillColor = STILLCOLOR;
+      colorChangeSpeed = COLORCHANGESPEED;
+    }
         }
         hold = !hold;
         holdRenewed = false;
