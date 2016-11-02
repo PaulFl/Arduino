@@ -15,6 +15,11 @@
 #define STILLCOLORCRAZY 300
 #define BUTTONDELAY 400
 
+#define MOTOR 0
+#define HORIZONTAL 1
+#define CBUTTON 2
+#define ZBUTTON 3
+
 int stillColor = STILLCOLOR;
 int colorChangeSpeed = COLORCHANGESPEED;
 
@@ -39,13 +44,16 @@ short color = 0;
 
 int acceleration = ACCELERATIONDELAY;
 
-int motorSpeed;
 int holdSpeed;
 bool hold = false;
 bool holdRenewed = true;
 bool discoMode = false;
 bool crazyColor = false;
 bool beginnersMode = false;
+
+bool lastCButtonState = false;
+bool lastZButtonState = false;
+int lastHorizontalValue;
 
 long lastAcceleration;
 long lastRead;
@@ -57,6 +65,51 @@ int msg[4];
 Servo motor;
 RF24 radio(RF24cePin, RF24csnPin);
 const uint64_t pipe = 0xE8E8F0F0E1LL;
+
+void setColor() {
+  switch (color) {
+    case 0:
+      newBlue = 255;
+      newGreen = 0;
+      newRed = 0;
+      break;
+    case 1:
+      newBlue = 0;
+      newGreen = 255;
+      newRed = 0;
+      break;
+    case 2:
+      newBlue = 0;
+      newGreen = 0;
+      newRed = 255;
+      break;
+    case 3:
+      newBlue = 255;
+      newGreen = 255;
+      newRed = 0;
+      break;
+    case 4:
+      newBlue = 0;
+      newGreen = 255;
+      newRed = 255;
+      break;
+    case 5:
+      newBlue = 255;
+      newGreen = 0;
+      newRed = 255;
+      break;
+    case 6:
+      newBlue = 255;
+      newGreen = 255;
+      newRed = 255;
+      break;
+    case 7:
+      newBlue = 0;
+      newGreen = 0;
+      newRed = 0;
+      break;
+  }
+}
 
 void refreshLed() {
   if (millis() - lastColorChange > colorChangeSpeed) {
@@ -90,14 +143,40 @@ void refreshLed() {
   analogWrite(redPin, redValue);
 }
 
-getData() {
+void getData() {
   if (millis() - lastRead > TIMEOUTDELAY) {
     motor.write(MOTORIDLE);
-    motorSpeed = MOTORIDLE;
     hold = false;
     holdRenewed = true;
   }
-  //Continue here!!
+  if (radio.available()) {
+    while (radio.available()) radio.read(msg, 4);
+    if (msg[ZBUTTON]) {
+      motor.write(motor.read());
+    } else {
+      motor.write(msg[MOTOR]);
+    }
+    if (!msg[ZBUTTON] && msg[CBUTTON] && !lastCButtonState) {
+      lastCButtonState = true;
+      if (discoMode && !crazyColor) { //Turn led off
+        discoMode = false;
+        color = 7;
+        setColor();
+      } else {
+        discoMode = true;
+        crazyColor = !crazyColor;
+        if (crazyColor) {
+          stillColor = STILLCOLORCRAZY;
+          colorChangeSpeed = 0;
+        } else {
+          stillColor = STILLCOLOR;
+          colorChangeSpeed = COLORCHANGESPEED;
+        }
+      }
+      
+    }
+    
+  }
 }
 
 void setup() {

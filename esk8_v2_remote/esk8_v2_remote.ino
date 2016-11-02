@@ -15,6 +15,12 @@
 
 #define DELAY 25
 
+
+#define VERTICAL 0
+#define HORIZONTAL 1
+#define CBUTTON 2
+#define ZBUTTON 3
+
 short cButtonPin = A5;
 short zButtonPin = A4;
 
@@ -46,10 +52,10 @@ void setup() {
 void loop() {
   delay(DELAY);
   
-  msg[0] = map(analogRead(analogVerticalPin), ANALOGMINVERTICAL, ANALOGMAXVERTICAL, VERTICALMIN, VERTICALMAX);
-  msg[1] = map(analogRead(analogHorizontalPin), ANALOGMINHORIZONTAL, ANALOGMAXHORIZONTAL, HORIZONTALMIN, HORIZONTALMAX);
-  msg[2] = int(digitalRead(cButtonPin));
-  msg[3] = int(digitalRead(zButtonPin));
+  msg[VERTICAL] = map(analogRead(analogVerticalPin), ANALOGMINVERTICAL, ANALOGMAXVERTICAL, VERTICALMIN, VERTICALMAX);
+  msg[HORIZONTAL] = map(analogRead(analogHorizontalPin), ANALOGMINHORIZONTAL, ANALOGMAXHORIZONTAL, HORIZONTALMIN, HORIZONTALMAX);
+  msg[CBUTTON] = int(digitalRead(cButtonPin));
+  msg[ZBUTTON] = int(digitalRead(zButtonPin));
   
   radio.write(msg,4);
 }
