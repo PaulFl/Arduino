@@ -5,6 +5,7 @@
 
 #include <Servo.h>
 
+//Settings
 #define ACCELERATIONDELAY 40
 #define ACCELERATIONDELAYBEGINNER 60
 #define MAXBEGINNERSPEED 95
@@ -15,14 +16,7 @@
 #define STILLCOLORCRAZY 300
 #define BUTTONDELAY 400
 
-#define MOTOR 0
-#define HORIZONTAL 1
-#define CBUTTON 2
-#define ZBUTTON 3
-
-int stillColor = STILLCOLOR;
-int colorChangeSpeed = COLORCHANGESPEED;
-
+//Pins
 short RF24cePin = 7;
 short RF24csnPin = 8;
 
@@ -31,6 +25,15 @@ short motorPin = 9;
 short redPin = 3;
 short greenPin = 5;
 short bluePin = 6;
+
+#define MOTOR 0
+#define HORIZONTAL 1
+#define CBUTTON 2
+#define ZBUTTON 3
+
+//Leds
+int stillColor = STILLCOLOR;
+int colorChangeSpeed = COLORCHANGESPEED;
 
 int newBlue = 0;
 int newRed = 0;
@@ -42,18 +45,17 @@ int redValue = 0;
 
 short color = 0;
 
+//Initialisations
 int acceleration = ACCELERATIONDELAY;
 
-int holdSpeed;
 bool hold = false;
-bool holdRenewed = true;
 bool discoMode = false;
 bool crazyColor = false;
 bool beginnersMode = false;
 
 bool lastCButtonState = false;
 bool lastZButtonState = false;
-int lastHorizontalValue;
+int lastHorizontalValue = 50;
 
 long lastAcceleration;
 long lastRead;
@@ -143,39 +145,38 @@ void refreshLed() {
   analogWrite(redPin, redValue);
 }
 
+void ledButtonPressed() {
+  if (discoMode && !crazyColor) { //Turn led off
+    discoMode = false;
+    color = 7;
+    setColor();
+  } else {
+    discoMode = true;
+    crazyColor = !crazyColor;
+    if (crazyColor) {
+      stillColor = STILLCOLORCRAZY;
+      colorChangeSpeed = 0;
+    } else {
+      stillColor = STILLCOLOR;
+      colorChangeSpeed = COLORCHANGESPEED;
+    }
+  }
+}
+
 void getData() {
-  if (millis() - lastRead > TIMEOUTDELAY) {
+  if (millis() - lastRead > TIMEOUTDELAY) { // Let go if signal timeout
     motor.write(MOTORIDLE);
-    hold = false;
-    holdRenewed = true;
   }
   if (radio.available()) {
-    while (radio.available()) radio.read(msg, 4);
-    if (msg[ZBUTTON]) {
-      motor.write(motor.read());
-    } else {
-      motor.write(msg[MOTOR]);
-    }
-    if (!msg[ZBUTTON] && msg[CBUTTON] && !lastCButtonState) {
-      lastCButtonState = true;
-      if (discoMode && !crazyColor) { //Turn led off
-        discoMode = false;
-        color = 7;
-        setColor();
-      } else {
-        discoMode = true;
-        crazyColor = !crazyColor;
-        if (crazyColor) {
-          stillColor = STILLCOLORCRAZY;
-          colorChangeSpeed = 0;
-        } else {
-          stillColor = STILLCOLOR;
-          colorChangeSpeed = COLORCHANGESPEED;
-        }
-      }
-      
-    }
+    while (radio.available()) radio.read(msg, 4); //Get data
+    if (msg[CBUTTON] && !lastCButtonState) ledButtonPressed();
+    if (!msg[ZBUTTON]) motor.write(msg[MOTOR]);
+    else if (msg[ZBUTTON]) motor.write(motor.read());
     
+    
+    lastZButtonState = msg[ZBUTTON];
+    lastCButtonState = msg[CBUTTON];
+    lastHorizontalValue = msg[HORIZONTAL];
   }
 }
 
