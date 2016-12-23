@@ -5,9 +5,12 @@
 
 #include <Servo.h>
 
-#define DEBUG 1
+#define DEBUG 0
 
 //Settings
+#define DEADZONECRUISE 10
+#define SENSIBILITYDIV 20
+#define ACCELERATIONDELAY 200
 #define MAXBEGINNERSPEED 95
 #define MOTORIDLE 90
 #define TIMEOUTDELAY 400
@@ -59,6 +62,7 @@ int lastHorizontalValue = 50;
 long lastRead;
 long lastColorChange;
 long lastColorDisco;
+long lastAcceleration;
 
 int msg[4];
 
@@ -172,7 +176,20 @@ void getData() {
     while (radio.available()) radio.read(msg, 8); //Get data
     if (!msg[CBUTTON] && lastCButtonState) ledButtonPressed();
     if (msg[ZBUTTON]) motor.write(msg[MOTOR]);
-    else if (!msg[ZBUTTON]) motor.write(motor.read());
+    else if (!msg[ZBUTTON] && motor.read() >= 89) { //If zbutton and not braking
+      if (msg[MOTOR] < (180 - DEADZONECRUISE) / 2 && (motor.read() - ((180 - DEADZONECRUISE) / 2 - msg[MOTOR]) / SENSIBILITYDIV) >= 89 && lastAcceleration - millis() > ACCELERATIONDELAY) { //if doesnt not imply brakes
+        motor.write(motor.read() - ((180 - DEADZONECRUISE) / 2 - msg[MOTOR]) / SENSIBILITYDIV); //reduce speed
+        lastAcceleration = millis();
+      } else if (msg[MOTOR] <= (180 + DEADZONECRUISE) / 2 && lastAcceleration - millis() > ACCELERATIONDELAY) { //If in deadzone
+        motor.write(motor.read());
+        lastAcceleration = millis();
+      } else if (lastAcceleration - millis() > ACCELERATIONDELAY) {
+        motor.write(motor.read() + (msg[MOTOR] - (180 + DEADZONECRUISE) / 2) / SENSIBILITYDIV);
+        lastAcceleration = millis();
+      } else {
+        motor.write(motor.read());
+      }
+    }
 
 
     lastZButtonState = msg[ZBUTTON];
@@ -200,6 +217,7 @@ void setup() {
   lastRead = millis();
   lastColorChange = millis();
   lastColorDisco = millis();
+  lastAcceleration = millis();
 }
 
 void loop() {
@@ -208,6 +226,5 @@ void loop() {
   if (DEBUG) {
     Serial.println(motor.read());
   }
-
 
 }

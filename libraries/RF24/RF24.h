@@ -76,7 +76,6 @@ private:
   bool dynamic_payloads_enabled; /**< Whether dynamic payloads are enabled. */
   uint8_t pipe0_reading_address[5]; /**< Last address set on pipe 0 for reading. */
   uint8_t addr_width; /**< The address width to use - 3,4 or 5 bytes. */
-  uint32_t txRxDelay; /**< Var for adjusting delays depending on datarate */
   
 
 protected:
@@ -877,7 +876,7 @@ s   *
   /**
    * Get the CRC length
    * <br>CRC checking cannot be disabled if auto-ack is enabled
-   * @return RF24_DISABLED if disabled or RF24_CRC_8 for 8-bit or RF24_CRC_16 for 16-bit
+   * @return RF24_CRC_DISABLED if disabled or RF24_CRC_8 for 8-bit or RF24_CRC_16 for 16-bit
    */
   rf24_crclength_e getCRCLength(void);
 
@@ -905,6 +904,31 @@ s   *
   * @param rx_ready Mask payload received interrupts
   */
   void maskIRQ(bool tx_ok,bool tx_fail,bool rx_ready);
+  
+  /**
+  * 
+  * The driver will delay for this duration when stopListening() is called
+  * 
+  * When responding to payloads, faster devices like ARM(RPi) are much faster than Arduino:
+  * 1. Arduino sends data to RPi, switches to RX mode
+  * 2. The RPi receives the data, switches to TX mode and sends before the Arduino radio is in RX mode
+  * 3. If AutoACK is disabled, this can be set as low as 0. If AA/ESB enabled, set to 100uS minimum on RPi
+  *
+  * @warning If set to 0, ensure 130uS delay after stopListening() and before any sends
+  */
+  
+  uint32_t txDelay;
+
+  /**
+  * 
+  * On all devices but Linux and ATTiny, a small delay is added to the CSN toggling function
+  * 
+  * This is intended to minimise the speed of SPI polling due to radio commands
+  *
+  * If using interrupts or timed requests, this can be set to 0 Default:5
+  */
+  
+  uint32_t csDelay=5;
   
   /**@}*/
   /**
@@ -1344,6 +1368,7 @@ private:
  * @li <a href="https://github.com/TMRh20/RF24/archive/master.zip"><b>Download</b></a>
  * @li <a href="https://github.com/tmrh20/RF24/"><b>Source Code</b></a>
  * @li <a href="http://tmrh20.blogspot.com/2014/03/high-speed-data-transfers-and-wireless.html"><b>My Blog:</b> RF24 Optimization Overview</a> 
+ * @li <a href="http://tmrh20.blogspot.com/2016/08/raspberry-pilinux-with-nrf24l01.html"><b>My Blog:</b> RPi/Linux w/RF24Gateway</a> 
  * @li <a href="http://www.nordicsemi.com/files/Product/data_sheet/nRF24L01_Product_Specification_v2_0.pdf">Chip Datasheet</a>
  *
  * **Additional Information and Add-ons**
