@@ -5,9 +5,9 @@
 
 #include <Servo.h>
 
+#define DEBUG 1
+
 //Settings
-#define ACCELERATIONDELAY 40
-#define ACCELERATIONDELAYBEGINNER 60
 #define MAXBEGINNERSPEED 95
 #define MOTORIDLE 90
 #define TIMEOUTDELAY 400
@@ -28,8 +28,8 @@ short bluePin = 6;
 
 #define MOTOR 0
 #define HORIZONTAL 1
-#define CBUTTON 2
-#define ZBUTTON 3
+#define CBUTTON 3
+#define ZBUTTON 2
 
 //Leds
 int stillColor = STILLCOLOR;
@@ -46,7 +46,6 @@ int redValue = 0;
 short color = 0;
 
 //Initialisations
-int acceleration = ACCELERATIONDELAY;
 
 bool hold = false;
 bool discoMode = false;
@@ -57,7 +56,6 @@ bool lastCButtonState = false;
 bool lastZButtonState = false;
 int lastHorizontalValue = 50;
 
-long lastAcceleration;
 long lastRead;
 long lastColorChange;
 long lastColorDisco;
@@ -166,21 +164,28 @@ void ledButtonPressed() {
 void getData() {
   if (millis() - lastRead > TIMEOUTDELAY) { // Let go if signal timeout
     motor.write(MOTORIDLE);
+    if (DEBUG) {
+      Serial.println("FAULT: Timeout");
+    }
   }
   if (radio.available()) {
-    while (radio.available()) radio.read(msg, 4); //Get data
-    if (msg[CBUTTON] && !lastCButtonState) ledButtonPressed();
-    if (!msg[ZBUTTON]) motor.write(msg[MOTOR]);
-    else if (msg[ZBUTTON]) motor.write(motor.read());
-    
-    
+    while (radio.available()) radio.read(msg, 8); //Get data
+    if (!msg[CBUTTON] && lastCButtonState) ledButtonPressed();
+    if (msg[ZBUTTON]) motor.write(msg[MOTOR]);
+    else if (!msg[ZBUTTON]) motor.write(motor.read());
+
+
     lastZButtonState = msg[ZBUTTON];
     lastCButtonState = msg[CBUTTON];
     lastHorizontalValue = msg[HORIZONTAL];
+    lastRead = millis();
   }
 }
 
 void setup() {
+  if (DEBUG) {
+    Serial.begin(9600);
+  }
   motor.attach(motorPin);
   motor.write(MOTORIDLE);
 
@@ -192,7 +197,6 @@ void setup() {
   pinMode(greenPin, OUTPUT);
   pinMode(bluePin, OUTPUT);
 
-  lastAcceleration = millis();
   lastRead = millis();
   lastColorChange = millis();
   lastColorDisco = millis();
@@ -201,5 +205,9 @@ void setup() {
 void loop() {
   getData();
   refreshLed();
+  if (DEBUG) {
+    Serial.println(motor.read());
+  }
+
 
 }

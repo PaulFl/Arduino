@@ -3,7 +3,7 @@
 #include <RF24.h>
 #include <RF24_config.h>
 
-int msg[1];
+int msg[4];
 RF24 radio(7, 8);
 const uint64_t pipe = 0xE8E8F0F0E1LL;
 
@@ -21,8 +21,15 @@ void loop(void) {
   if (radio.available()) {
     digitalWrite(led, HIGH);
     while (radio.available()) {
-      radio.read(msg, 2);
+      radio.read(msg, 8);
     }
-    Serial.println(msg[0]);
+    Serial.print(msg[0]);
+    Serial.print("\t");
+    Serial.print(msg[1]);
+    Serial.print("\t");
+    Serial.print(msg[2]);
+    Serial.print("\t");
+    Serial.print(msg[3]);
+    Serial.println("\t");
   } else digitalWrite(led, LOW);
 }

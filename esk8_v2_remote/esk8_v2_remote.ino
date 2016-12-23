@@ -24,10 +24,10 @@
 short cButtonPin = A5;
 short zButtonPin = A4;
 
-short analogVerticalPin = A0;
-short analogHorizontalPin = A1;
+short analogVerticalPin = A3;
+short analogHorizontalPin = A2;
 
-short ledPin = 6;
+short ledPin = 9;
 
 short RF24cePin = 7;
 short RF24csnPin = 8;
@@ -54,8 +54,10 @@ void loop() {
   
   msg[VERTICAL] = map(analogRead(analogVerticalPin), ANALOGMINVERTICAL, ANALOGMAXVERTICAL, VERTICALMIN, VERTICALMAX);
   msg[HORIZONTAL] = map(analogRead(analogHorizontalPin), ANALOGMINHORIZONTAL, ANALOGMAXHORIZONTAL, HORIZONTALMIN, HORIZONTALMAX);
-  msg[CBUTTON] = int(digitalRead(cButtonPin));
-  msg[ZBUTTON] = int(digitalRead(zButtonPin));
+  if (digitalRead(cButtonPin)) { msg[CBUTTON] = 1;
+  } else { msg[CBUTTON] = 0;}
+  if (digitalRead(zButtonPin)) { msg[ZBUTTON] = 1;
+  } else { msg[ZBUTTON] = 0;}
   
-  radio.write(msg,4);
+  radio.write(msg,8);
 }
