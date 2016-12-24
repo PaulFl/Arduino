@@ -166,30 +166,39 @@ void ledButtonPressed() {
   }
 }
 
+void sendMotor(int value) {
+  if (value >= 89 && !beginnerMode) motor.write(value);
+  else if (value >= 89 && value <= (90 + 90/BEGINNERDIV)) motor.write(value);
+  else if (value >= (90 + 90/BEGINNERDIV)) motor.write((90 + 90/BEGINNERDIV));
+  else if (value < 89 && brakeAllowed) motor.write(value);
+  else motor.write(MOTORIDLE);
+}
+
 void getData() {
   if (millis() - lastRead > TIMEOUTDELAY) { // Let go if signal timeout
-    motor.write(MOTORIDLE);
+    sendMotor(MOTORIDLE);
     if (DEBUG) Serial.println("FAULT: Timeout");
   }
   if (radio.available()) {
     while (radio.available()) radio.read(msg, 8); //Get data
+    if (msg[MOTOR] >= 89) brakeAllowed = true;
     if (!msg[CBUTTON] && lastCButtonState) ledButtonPressed();
-    if (msg[ZBUTTON] && !beginnerMode) motor.write(msg[MOTOR]);
-    else if(msg[ZBUTTON] && beginnerMode) motor.write(map(msg[MOTOR], 0, 180, (90 - 90/BEGINNERDIV), (90 + 90/BEGINNERDIV)));
+    if (msg[ZBUTTON] && !beginnerMode) sendMotor(msg[MOTOR]);
+    else if(msg[ZBUTTON] && beginnerMode) sendMotor(map(msg[MOTOR], 0, 180, (90 - 90/BEGINNERDIV), (90 + 90/BEGINNERDIV)));
     else if (!msg[ZBUTTON] && motor.read() >= 89) { //If zbutton and not braking
       if (msg[MOTOR] < (180 - DEADZONECRUISE) / 2 && (motor.read() - ((180 - DEADZONECRUISE) / 2 - msg[MOTOR]) / SENSIBILITYDIV) >= 89 && lastAcceleration - millis() > ACCELERATIONDELAY) { //if doesnt not imply brakes
-        motor.write(motor.read() - ((180 - DEADZONECRUISE) / 2 - msg[MOTOR]) / SENSIBILITYDIV); //reduce speed
+        sendMotor(motor.read() - ((180 - DEADZONECRUISE) / 2 - msg[MOTOR]) / SENSIBILITYDIV); //reduce speed
         brakeAllowed = false;
         lastAcceleration = millis();
       } else if (msg[MOTOR] <= (180 + DEADZONECRUISE) / 2 && lastAcceleration - millis() > ACCELERATIONDELAY) { //If in deadzone
-        brakeAllowed = true;
-        motor.write(motor.read());
+        sendMotor(motor.read());
         lastAcceleration = millis();
       } else if (lastAcceleration - millis() > ACCELERATIONDELAY) {
-        motor.write(motor.read() + (msg[MOTOR] - (180 + DEADZONECRUISE) / 2) / SENSIBILITYDIV);
+        sendMotor(motor.read() + (msg[MOTOR] - (180 + DEADZONECRUISE) / 2) / SENSIBILITYDIV);
         lastAcceleration = millis();
+        brakeAllowed = true;
       } else {
-        motor.write(motor.read());
+        sendMotor(motor.read());
       }
     }
     if (msg[HORIZONTAL] >= 95) beginnerMode = true;
@@ -205,7 +214,7 @@ void getData() {
 void setup() {
   if (DEBUG) Serial.begin(9600);
   motor.attach(motorPin);
-  motor.write(MOTORIDLE);
+  sendMotor(MOTORIDLE);
 
   radio.begin();
   radio.openReadingPipe(1, pipe);
