@@ -10,8 +10,8 @@
 //Settings
 #define DEADZONECRUISE 10
 #define SENSIBILITYDIV 20
-#define ACCELERATIONDELAY 200
-#define MAXBEGINNERSPEED 95
+#define ACCELERATIONDELAY 300
+#define BEGINNERDIV 3
 #define MOTORIDLE 90
 #define TIMEOUTDELAY 400
 #define COLORCHANGESPEED 3
@@ -53,7 +53,8 @@ short color = 0;
 bool hold = false;
 bool discoMode = false;
 bool crazyColor = false;
-bool beginnersMode = false;
+bool beginnerMode = false;
+bool brakeAllowed = true;
 
 bool lastCButtonState = false;
 bool lastZButtonState = false;
@@ -168,19 +169,20 @@ void ledButtonPressed() {
 void getData() {
   if (millis() - lastRead > TIMEOUTDELAY) { // Let go if signal timeout
     motor.write(MOTORIDLE);
-    if (DEBUG) {
-      Serial.println("FAULT: Timeout");
-    }
+    if (DEBUG) Serial.println("FAULT: Timeout");
   }
   if (radio.available()) {
     while (radio.available()) radio.read(msg, 8); //Get data
     if (!msg[CBUTTON] && lastCButtonState) ledButtonPressed();
-    if (msg[ZBUTTON]) motor.write(msg[MOTOR]);
+    if (msg[ZBUTTON] && !beginnerMode) motor.write(msg[MOTOR]);
+    else if(msg[ZBUTTON] && beginnerMode) motor.write(map(msg[MOTOR], 0, 180, (90 - 90/BEGINNERDIV), (90 + 90/BEGINNERDIV)));
     else if (!msg[ZBUTTON] && motor.read() >= 89) { //If zbutton and not braking
       if (msg[MOTOR] < (180 - DEADZONECRUISE) / 2 && (motor.read() - ((180 - DEADZONECRUISE) / 2 - msg[MOTOR]) / SENSIBILITYDIV) >= 89 && lastAcceleration - millis() > ACCELERATIONDELAY) { //if doesnt not imply brakes
         motor.write(motor.read() - ((180 - DEADZONECRUISE) / 2 - msg[MOTOR]) / SENSIBILITYDIV); //reduce speed
+        brakeAllowed = false;
         lastAcceleration = millis();
       } else if (msg[MOTOR] <= (180 + DEADZONECRUISE) / 2 && lastAcceleration - millis() > ACCELERATIONDELAY) { //If in deadzone
+        brakeAllowed = true;
         motor.write(motor.read());
         lastAcceleration = millis();
       } else if (lastAcceleration - millis() > ACCELERATIONDELAY) {
@@ -190,6 +192,7 @@ void getData() {
         motor.write(motor.read());
       }
     }
+    if (msg[HORIZONTAL] >= 95) beginnerMode = true;
 
 
     lastZButtonState = msg[ZBUTTON];
@@ -200,9 +203,7 @@ void getData() {
 }
 
 void setup() {
-  if (DEBUG) {
-    Serial.begin(9600);
-  }
+  if (DEBUG) Serial.begin(9600);
   motor.attach(motorPin);
   motor.write(MOTORIDLE);
 
@@ -223,8 +224,6 @@ void setup() {
 void loop() {
   getData();
   refreshLed();
-  if (DEBUG) {
-    Serial.println(motor.read());
-  }
+  if (DEBUG) Serial.println(motor.read());
 
 }
