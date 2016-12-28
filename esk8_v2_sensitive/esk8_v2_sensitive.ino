@@ -5,7 +5,7 @@
 
 #include <Servo.h>
 
-#define DEBUG 0
+#define DEBUG 1
 
 //Settings
 #define DEADZONECRUISE 10
@@ -168,8 +168,8 @@ void ledButtonPressed() {
 
 void sendMotor(int value) {
   if (value >= 89 && !beginnerMode) motor.write(value);
-  else if (value >= 89 && value <= (90 + 90/BEGINNERDIV)) motor.write(value);
-  else if (value >= (90 + 90/BEGINNERDIV)) motor.write((90 + 90/BEGINNERDIV));
+  else if (value >= 89 && value <= (90 + 90 / BEGINNERDIV)) motor.write(value);
+  else if (value >= (90 + 90 / BEGINNERDIV)) motor.write((90 + 90 / BEGINNERDIV));
   else if (value < 89 && brakeAllowed) motor.write(value);
   else motor.write(MOTORIDLE);
 }
@@ -180,11 +180,20 @@ void getData() {
     if (DEBUG) Serial.println("FAULT: Timeout");
   }
   if (radio.available()) {
-    while (radio.available()) radio.read(msg, 8); //Get data
+    while (radio.available()) radio.read(msg, 7); //Get data
+    if (DEBUG) {
+      Serial.print(msg[0]);
+      Serial.print("\t");
+      Serial.print(msg[1]);
+      Serial.print("\t");
+      Serial.print(msg[2]);
+      Serial.print("\t");
+      Serial.println(msg[3]);
+    }
     if (msg[MOTOR] >= 89) brakeAllowed = true;
     if (!msg[CBUTTON] && lastCButtonState) ledButtonPressed();
     if (msg[ZBUTTON] && !beginnerMode) sendMotor(msg[MOTOR]);
-    else if(msg[ZBUTTON] && beginnerMode) sendMotor(map(msg[MOTOR], 0, 180, (90 - 90/BEGINNERDIV), (90 + 90/BEGINNERDIV)));
+    else if (msg[ZBUTTON] && beginnerMode) sendMotor(map(msg[MOTOR], 0, 180, (90 - 90 / BEGINNERDIV), (90 + 90 / BEGINNERDIV)));
     else if (!msg[ZBUTTON] && motor.read() >= 89) { //If zbutton and not braking
       if (msg[MOTOR] < (180 - DEADZONECRUISE) / 2 && (motor.read() - ((180 - DEADZONECRUISE) / 2 - msg[MOTOR]) / SENSIBILITYDIV) >= 89 && lastAcceleration - millis() > ACCELERATIONDELAY) { //if doesnt not imply brakes
         sendMotor(motor.read() - ((180 - DEADZONECRUISE) / 2 - msg[MOTOR]) / SENSIBILITYDIV); //reduce speed
@@ -193,6 +202,8 @@ void getData() {
       } else if (msg[MOTOR] <= (180 + DEADZONECRUISE) / 2 && lastAcceleration - millis() > ACCELERATIONDELAY) { //If in deadzone
         sendMotor(motor.read());
         lastAcceleration = millis();
+        if (msg[HORIZONTAL] >= 95) beginnerMode = true;
+        else if (msg[HORIZONTAL] <= 5) beginnerMode = false;
       } else if (lastAcceleration - millis() > ACCELERATIONDELAY) {
         sendMotor(motor.read() + (msg[MOTOR] - (180 + DEADZONECRUISE) / 2) / SENSIBILITYDIV);
         lastAcceleration = millis();
@@ -201,8 +212,6 @@ void getData() {
         sendMotor(motor.read());
       }
     }
-    if (msg[HORIZONTAL] >= 95) beginnerMode = true;
-
 
     lastZButtonState = msg[ZBUTTON];
     lastCButtonState = msg[CBUTTON];
@@ -233,6 +242,6 @@ void setup() {
 void loop() {
   getData();
   refreshLed();
-  if (DEBUG) Serial.println(motor.read());
+  if (0) Serial.println(motor.read());
 
 }
