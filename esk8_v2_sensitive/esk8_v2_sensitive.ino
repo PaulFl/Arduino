@@ -195,9 +195,14 @@ void getData() {
     if (msg[ZBUTTON] && !beginnerMode) sendMotor(msg[MOTOR]);
     else if (msg[ZBUTTON] && beginnerMode) sendMotor(map(msg[MOTOR], 0, 180, (90 - 90 / BEGINNERDIV), (90 + 90 / BEGINNERDIV)));
     else if (!msg[ZBUTTON] && motor.read() >= 89) { //If zbutton and not braking
+<<<<<<< Updated upstream
       if (msg[MOTOR] < (180 - DEADZONECRUISE) / 2 && (motor.read() - ((180 - DEADZONECRUISE) / 2 - msg[MOTOR]) / SENSIBILITYDIV) >= 89 && lastAcceleration - millis() > ACCELERATIONDELAY) { //if doesnt not imply brakes
         sendMotor(motor.read() - ((180 - DEADZONECRUISE) / 2 - msg[MOTOR]) / SENSIBILITYDIV); //reduce speed
         brakeAllowed = false;
+=======
+      if (msg[MOTOR] < (180 - DEADZONECRUISE) / 2 && (motor.read() - ((180 - DEADZONECRUISE) / 2w - msg[MOTOR]) / SENSIBILITYDIV) >= 89 && lastAcceleration - millis() > ACCELERATIONDELAY) { //if doesnt not imply brakes
+        motor.write(motor.read() - ((180 - DEADZONECRUISE) / 2 - msg[MOTOR]) / SENSIBILITYDIV); //reduce speed
+>>>>>>> Stashed changes
         lastAcceleration = millis();
       } else if (msg[MOTOR] <= (180 + DEADZONECRUISE) / 2 && lastAcceleration - millis() > ACCELERATIONDELAY) { //If in deadzone
         sendMotor(motor.read());
