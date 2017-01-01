@@ -1,14 +1,44 @@
+#include <buffer.h>
+#include <crc.h>
+#include <datatypes.h>
+#include <local_datatypes.h>
+#include <printf.h>
+#include <VescUart.h>
 #include <SoftwareSerial.h>
 #include <LiquidCrystal.h>
 
-LiquidCrystal lcd(2,4,7,8,12,A0);
+#define SERIALIO Serial
+
+
+LiquidCrystal lcd(2, 4, 7, 8, 12, A0);
+
+struct bldcMeasure measuredValues;
+/* Values:
+    avgMotorCurrent
+    avgInputCurrent
+    dutyCycleNow
+    rpm
+    inpVoltage
+    ampHours
+    ampHoursCharged
+    tachometer
+    tachometerAbs
+*/
 
 void setup() {
-  lcd.begin(16,2);
+  SERIALIO.begin(9600); //Vesc serial (Serial)
+  lcd.begin(16, 2);
   lcd.print("test");
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
+  delay(25);
+  if (VescUartGetValue(measuredValues)) {
+    lcd.setCursor(0, 0);
+    lcd.print("Voltage: ");
+    lcd.print(measuredValues.inpVoltage);
+    lcd.setCursor(0, 1);
+    lcd.print("RPM: ");
+    lcd.print(measuredValues.rpm);
+  }
 }
