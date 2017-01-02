@@ -28,17 +28,17 @@ struct bldcMeasure measuredValues;
 void setup() {
   SERIALIO.begin(9600); //Vesc serial (Serial)
   lcd.begin(16, 2);
-  lcd.print("test");
 }
 
 void loop() {
   delay(25);
   if (VescUartGetValue(measuredValues)) {
+    lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Voltage: ");
     lcd.print(measuredValues.inpVoltage);
     lcd.setCursor(0, 1);
-    lcd.print("RPM: ");
-    lcd.print(measuredValues.rpm);
+    lcd.print("Ah drawn: ");
+    lcd.print(measuredValues.ampHours);
   }
 }
