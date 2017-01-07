@@ -5,7 +5,6 @@
 
 #include <Servo.h>
 
-#define DEBUG 1
 
 //Settings
 #define DEADZONECRUISE 10
@@ -178,23 +177,16 @@ void getData() {
   if (millis() - lastRead > TIMEOUTDELAY) { // Let go if signal timeout
     sendMotor(MOTORIDLE);
     brakeAllowed = false;
-    if (DEBUG) Serial.println("FAULT: Timeout");
   }
   if (radio.available()) {
     while (radio.available()) radio.read(msg, 7); //Get data
-    if (DEBUG) {
-      Serial.print(msg[0]);
-      Serial.print("\t");
-      Serial.print(msg[1]);
-      Serial.print("\t");
-      Serial.print(msg[2]);
-      Serial.print("\t");
-      Serial.println(msg[3]);
-    }
     if (msg[MOTOR] >= 89) brakeAllowed = true;
     if (!msg[CBUTTON] && lastCButtonState) ledButtonPressed();
     if (msg[ZBUTTON] && !beginnerMode) sendMotor(msg[MOTOR]);
-    else if (msg[ZBUTTON] && beginnerMode) sendMotor(map(msg[MOTOR], 0, 180, (90 - 90 / BEGINNERDIV), (90 + 90 / BEGINNERDIV)));
+    else if (msg[ZBUTTON] && beginnerMode) {
+      if (msg[MOTOR] >= 89) sendMotor(map(msg[MOTOR], 0, 180, (90 - 90 / BEGINNERDIV), (90 + 90 / BEGINNERDIV)));
+      else sendMotor(msg[MOTOR]);
+    }
     else if (!msg[ZBUTTON] && motor.read() >= 89) { //If zbutton and not braking
       if (msg[MOTOR] < (180 - DEADZONECRUISE) / 2 && (motor.read() - ((180 - DEADZONECRUISE) / 2 - msg[MOTOR]) / SENSIBILITYDIV) >= 89 && lastAcceleration - millis() > ACCELERATIONDELAY) { //if doesnt not imply brakes
         sendMotor(motor.read() - ((180 - DEADZONECRUISE) / 2 - msg[MOTOR]) / SENSIBILITYDIV); //reduce speed
@@ -213,6 +205,8 @@ void getData() {
         sendMotor(motor.read());
       }
     }
+    if (msg[ZBUTTON] && msg[HORIZONTAL] >= 95 && lastHorizontalValue < 95) Serial.write(2);
+    else if (msg[ZBUTTON] && msg[HORIZONTAL] <= 5 && lastHorizontalValue > 5) Serial.write(1);
 
     lastZButtonState = msg[ZBUTTON];
     lastCButtonState = msg[CBUTTON];
@@ -222,7 +216,7 @@ void getData() {
 }
 
 void setup() {
-  if (DEBUG) Serial.begin(9600);
+  Serial.begin(9600);
   motor.attach(motorPin);
   sendMotor(MOTORIDLE);
 
@@ -243,6 +237,5 @@ void setup() {
 void loop() {
   getData();
   refreshLed();
-  if (0) Serial.println(motor.read());
 
 }
