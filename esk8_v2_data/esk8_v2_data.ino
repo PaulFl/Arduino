@@ -6,14 +6,18 @@
 #include <VescUart.h>
 #include <SoftwareSerial.h>
 #include <LiquidCrystal.h>
+#include <EEPROM.h>
 
 #define SERIALIO Serial
+#define SCHEMA 0x0101
+
 
 
 LiquidCrystal lcd(2, 4, 7, 8, 12, A0);
 int page = 0;
 int input;
 int maxSpeed = 0;
+int totalKm = 0;
 
 long stoppedTime = 0;
 long rollingTime = 0;
@@ -33,6 +37,24 @@ SoftwareSerial sensitiveLink(A1, A2);
     tachometer
     tachometerAbs
 */
+template <class T> int EEPROM_writeAnything(int ee, const T& value)
+{
+  const byte* p = (const byte*)(const void*)&value;
+  int i;
+  for (i = 0; i < sizeof(value); i++)
+    EEPROM.write(ee++, *p++);
+  return i;
+}
+
+
+template <class T> int EEPROM_readAnything(int ee, T& value)
+{
+  byte* p = (byte*)(void*)&value;
+  int i;
+  for (i = 0; i < sizeof(value); i++)
+    *p++ = EEPROM.read(ee++);
+  return i;
+}
 
 
 void setup() {
@@ -45,10 +67,13 @@ void setup() {
   lcd.print("Ah drawn: ");
   lastStop = millis();
   startTime = millis();
+  EEPROM_readAnything( sizeof(long) + 1, totalKm);
 }
 
 void loop() {
   delay(5);
+  totalKm += (int)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083);
+  EEPROM_writeAnything( sizeof(long) + 1, totalKm);
   if (VescUartGetValue(measuredValues)) {
 
     if (measuredValues.rpm * 60 * 15 * 3.1415926536 * 0.000083 / 36 / 7 > maxSpeed) {
@@ -103,12 +128,23 @@ void loop() {
       case 4:
         lcd.setCursor(0, 0);
         lcd.print("Time: ");
-        lcd.print((float)rollingTime / 1000.0 / 60.0);
-        lcd.print("min        ");
+        lcd.print((int)rollingTime / 1000 / 60);
+        lcd.print(":");
+        lcd.print((int)rollingTime / 1000 % 60);
         lcd.setCursor(0, 1);
         lcd.print("Avg Speed: ");
         lcd.print((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083 / ((float)rollingTime / 1000.0 / 60.0 / 60.0));
         lcd.print("        ");
+        break;
+       case 5:
+        lcd.setCursor(0, 0);
+        lcd.print("Total: ");
+        lcd.print(totalKm);
+        lcd.print("km        ");
+        lcd.setCursor(0, 1);
+        lcd.print("Dist: ");
+        lcd.print((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083);
+        lcd.print("km        ");
         break;
 
     }
@@ -120,14 +156,14 @@ void loop() {
     }
     if (input == 2) {
       page++;
-      if (page == 5) {
+      if (page == 6) {
         page = 0;
       }
     }
     if (input == 1) {
       page --;
       if (page == -1) {
-        page = 4;
+        page = 5;
       }
     }
   }
