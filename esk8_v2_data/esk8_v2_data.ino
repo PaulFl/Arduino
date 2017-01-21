@@ -17,7 +17,7 @@ LiquidCrystal lcd(2, 4, 7, 8, 12, A0);
 int page = 0;
 int input;
 int maxSpeed = 0;
-int totalKm = 0;
+float totalKm = 0;
 
 long stoppedTime = 0;
 long rollingTime = 0;
@@ -72,7 +72,7 @@ void setup() {
 
 void loop() {
   delay(5);
-  totalKm += (int)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083);
+  totalKm += (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083);
   EEPROM_writeAnything( sizeof(long) + 1, totalKm);
   if (VescUartGetValue(measuredValues)) {
 
@@ -82,7 +82,7 @@ void loop() {
     if (measuredValues.rpm * 60 * 15 * 3.1415926536 * 0.000083 / 36 / 7 <= 2) {
       stoppedTime += 5;
     }
-    rollingTime = millis() - startTime - stoppedTime;
+    rollingTime = millis() - startTime;
 
     switch (page) {
       case 0:
