@@ -72,8 +72,7 @@ void setup() {
 
 void loop() {
   delay(5);
-  totalKm += (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083);
-  EEPROM_writeAnything( sizeof(long) + 1, totalKm);
+  EEPROM_writeAnything( sizeof(long) + 1, (totalKm+(float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
   if (VescUartGetValue(measuredValues)) {
 
     if (measuredValues.rpm * 60 * 15 * 3.1415926536 * 0.000083 / 36 / 7 > maxSpeed) {
@@ -130,7 +129,8 @@ void loop() {
         lcd.print("Time: ");
         lcd.print((int)rollingTime / 1000 / 60);
         lcd.print(":");
-        lcd.print((int)rollingTime / 1000 % 60);
+        lcd.print((int)((int)rollingTime / 1000) % 60);
+        lcd.print("        ");
         lcd.setCursor(0, 1);
         lcd.print("Avg Speed: ");
         lcd.print((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083 / ((float)rollingTime / 1000.0 / 60.0 / 60.0));
@@ -139,7 +139,7 @@ void loop() {
        case 5:
         lcd.setCursor(0, 0);
         lcd.print("Total: ");
-        lcd.print(totalKm);
+        lcd.print((totalKm+(float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
         lcd.print("km        ");
         lcd.setCursor(0, 1);
         lcd.print("Dist: ");
