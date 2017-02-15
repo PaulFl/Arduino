@@ -6,11 +6,11 @@
 
 #define DEBUG 1
 
-int onThreshold = 1500;
-int offThreshold = 1200;
+int onThreshold = 3100;
+int offThreshold = 2200;
 
-short relay = 10;
-CapacitiveSensor sensor =  CapacitiveSensor(2, 12);
+short relay = 9;
+CapacitiveSensor sensor =  CapacitiveSensor(A5, A2);
 
 long time;
 long value;
@@ -29,7 +29,7 @@ void setup() {
 }
 
 void loop() {
-  value = sensor.capacitiveSensor(30);
+  value = sensor.capacitiveSensorRaw(100);
   if (value > onThreshold && state == false) {
     state = true;
     stateLamp = !stateLamp;
@@ -42,4 +42,5 @@ void loop() {
     Serial.println(value);
     delay(10);
   }
+  delay(30);
 }

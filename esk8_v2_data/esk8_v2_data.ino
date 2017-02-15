@@ -15,10 +15,10 @@ int page = 0;
 int input;
 int maxSpeed = 0;
 
-long stoppedTime = 0;
-long rollingTime = 0;
-long lastStop;
-long startTime;
+unsigned long stoppedTime = 0;
+unsigned long rollingTime = 0;
+unsigned long lastStop;
+unsigned long startTime;
 
 struct bldcMeasure measuredValues;
 SoftwareSerial sensitiveLink(A1, A2);
@@ -103,7 +103,7 @@ void loop() {
       case 4:
         lcd.setCursor(0, 0);
         lcd.print("Time: ");
-        lcd.print((float)rollingTime / 1000.0 / 60.0);
+        lcd.print(rollingTime/1000/60);
         lcd.print("min        ");
         lcd.setCursor(0, 1);
         lcd.print("Avg Speed: ");

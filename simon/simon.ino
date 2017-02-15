@@ -30,8 +30,8 @@
 
 #define OFFSEG 21
 
-short cathodeSegments[2] = {A1, //SEG 1
-	A0}; //SEG 2
+short cathodeSegments[2] = {A4, //SEG 1
+	A5}; //SEG 2
 
 short anodeSegments[7] = {5, //SEG A
 	6, //SEG B
@@ -42,9 +42,9 @@ short anodeSegments[7] = {5, //SEG A
 	8}; //SEG G
 
 const short leds[]    = {
-  9, 12, A2, A5};
+  9, 11, A0, A2};
 const short boutons[] = {
-  10, 11, A3, A4};
+  10, 12, A1, A3};
 const char buzzer  = 13;
 const int frequences[] = {
   NOTE_E4, NOTE_CS4, NOTE_A4, NOTE_E3};
