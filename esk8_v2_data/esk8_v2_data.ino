@@ -131,9 +131,9 @@ void loop() {
         lcd.print(rollTime);
         lcd.print("min        ");
         lcd.setCursor(0, 1);
-        lcd.print("Avg Speed: ");
-        lcd.print((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083 / ((float)rollingTime / 1000.0 / 60.0 / 60.0));
-        lcd.print("        ");
+        lcd.print("Dist: ");
+        lcd.print((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083);
+        lcd.print("km        ");
         break;
       case 4:
         lcd.setCursor(0, 0);
