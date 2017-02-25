@@ -19,7 +19,6 @@ int input;
 int maxSpeed = 0;
 float totalKm = 0;
 float totalAh = 0;
-bool charged = false;
 
 unsigned long stoppedTime = 0;
 unsigned long rollingTime = 0;
