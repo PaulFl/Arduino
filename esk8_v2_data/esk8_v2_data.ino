@@ -18,6 +18,8 @@ int page = 0;
 int input;
 int maxSpeed = 0;
 float totalKm = 0;
+float totalAh = 0;
+bool charged = false;
 
 unsigned long stoppedTime = 0;
 unsigned long rollingTime = 0;
@@ -68,12 +70,18 @@ void setup() {
   lastStop = millis();
   startTime = millis();
   EEPROM_readAnything( sizeof(long) + 1, totalKm);
+  EEPROM_readAnything( sizeof(long) + 10, totalAh);
 }
 
 void loop() {
   delay(5);
   EEPROM_writeAnything( sizeof(long) + 1, (totalKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
+  EEPROM_writeAnything( sizeof(long) + 10, (totalAh + (float)(measuredValues.ampHours)));
   if (VescUartGetValue(measuredValues)) {
+    if(measuredValues.inpVoltage>41){
+      totalAh = 0;
+      
+    }
 
     if (measuredValues.rpm * 60 * 15 * 3.1415926536 * 0.000083 / 36 / 7 > maxSpeed) {
       maxSpeed = measuredValues.rpm * 60 * 15 * 3.1415926536 * 0.000083 / 36 / 7;
@@ -93,51 +101,11 @@ void loop() {
         lcd.print(measuredValues.inpVoltage);
         lcd.print("V        ");
         lcd.setCursor(0, 1);
-        lcd.print("Ah drawn: ");
-        lcd.print(measuredValues.ampHours);
-        lcd.print("Ah        ");
-        break;
-      case 2:
-        lcd.setCursor(0, 0);
-        lcd.print("Avg Batt: ");
-        lcd.print(measuredValues.avgInputCurrent);
-        lcd.print("A        ");
-        lcd.setCursor(0, 1);
-        lcd.print("Avg Motor: ");
-        lcd.print(measuredValues.avgMotorCurrent);
-        lcd.print("A        ");
-        break;
-      case 1:
-        lcd.setCursor(0, 0);
         lcd.print("Max Speed: ");
         lcd.print(maxSpeed);
         lcd.print("kph        ");
-        lcd.setCursor(0, 1);
-        lcd.print("Dist: ");
-        lcd.print((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083);
-        lcd.print("km        ");
         break;
-      case 3:
-        lcd.setCursor(0, 0);
-        lcd.print("Ah drawn: ");
-        lcd.print(measuredValues.ampHours);
-        lcd.print("Ah        ");
-        lcd.setCursor(0, 1);
-        lcd.print("Ah regen: ");
-        lcd.print(measuredValues.ampHoursCharged);
-        lcd.print("Ah        ");
-        break;
-      case 4:
-        lcd.setCursor(0, 0);
-        lcd.print("Time: ");
-        lcd.print(rollTime);
-        lcd.print("min        ");
-        lcd.setCursor(0, 1);
-        lcd.print("Avg Speed: ");
-        lcd.print((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083 / ((float)rollingTime / 1000.0 / 60.0 / 60.0));
-        lcd.print("        ");
-        break;
-      case 5:
+      case 1:
         lcd.setCursor(0, 0);
         lcd.print("Total: ");
         lcd.print((totalKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
@@ -147,7 +115,47 @@ void loop() {
         lcd.print((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083);
         lcd.print("km        ");
         break;
-
+      case 2:
+        lcd.setCursor(0, 0);
+        lcd.print("Ah drawn: ");
+        lcd.print(measuredValues.ampHours);
+        lcd.print("Ah        ");
+        lcd.setCursor(0, 1);
+        lcd.print("Ah regen: ");
+        lcd.print(measuredValues.ampHoursCharged);
+        lcd.print("Ah        ");
+        break;
+      case 3:
+        lcd.setCursor(0, 0);
+        lcd.print("Time: ");
+        lcd.print(rollTime);
+        lcd.print("min        ");
+        lcd.setCursor(0, 1);
+        lcd.print("Avg Speed: ");
+        lcd.print((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083 / ((float)rollingTime / 1000.0 / 60.0 / 60.0));
+        lcd.print("        ");
+        break;
+      case 4:
+        lcd.setCursor(0, 0);
+        lcd.print("Wh drawn: ");
+        lcd.print((measuredValues.ampHours - measuredValues.ampHoursCharged) * measuredValues.inpVoltage);
+        lcd.print("Wh          ");
+        lcd.setCursor(0, 1);
+        lcd.print("Avg: ");
+        lcd.print(((measuredValues.ampHours - measuredValues.ampHoursCharged) * measuredValues.inpVoltage) / ((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083));
+        lcd.print("Wh/km       ");
+        break;
+      case 5:
+        lcd.setCursor(0, 0);
+        lcd.print("Total Ah: ");
+        lcd.print(totalAh + measuredValues.ampHours);
+        lcd.print("Ah          ");
+        lcd.setCursor(0, 1);
+        lcd.print("Total Wh: ");
+        lcd.print((totalAh + measuredValues.ampHours) * 37);
+        lcd.print("Wh          ");
+        
+        break;
     }
   }
   input = 0;
