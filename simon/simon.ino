@@ -11,7 +11,7 @@
 #define SPEED_MAX      200  //pause entre chaque note jouée
 #define SPEED_MIN 500
 #define ACCELERATION 30
-#define REFRESHSPEED 2
+#define REFRESHSPEED 12
 
 
 #define ACHAR 10
@@ -34,10 +34,10 @@ short cathodeSegments[2] = {A4, //SEG 1
 	A5}; //SEG 2
 
 short anodeSegments[7] = {5, //SEG A
-	6, //SEG B
-	7, //SEG C
-	2, //SEG D
-	3, //SEG E
+	2, //SEG B
+	6, //SEG C
+	3, //SEG D
+	7, //SEG E
 	4, //SEG F
 	8}; //SEG G
 
@@ -231,7 +231,7 @@ void loop() {
 
 void flip() {
     if (millis() - flipmillis > REFRESHSPEED) {
-        digitalWrite(cathodeSegments[onSegment], LOW);
+        digitalWrite(cathodeSegments[onSegment], !LOW);
         onSegment++;
         if (onSegment == 2) {
             onSegment = 0;
@@ -247,13 +247,13 @@ void flip() {
 	}
         */
 	for (int i = 0; i < 7; i++){
-		digitalWrite(anodeSegments[i], segments[onSegment][i]);
+		digitalWrite(anodeSegments[i], !segments[onSegment][i]);
 	}
 	//if (blink[onSegment]) {
 	//	digitalWrite(cathodeSegments[onSegment], blinkState);
 	//}
 	//else {
-        	digitalWrite(cathodeSegments[onSegment], HIGH);
+        	digitalWrite(cathodeSegments[onSegment], !HIGH);
 	//}
         flipmillis = millis();
     }
