@@ -11,7 +11,7 @@
 #define SPEED_MAX      200  //pause entre chaque note jouée
 #define SPEED_MIN 500
 #define ACCELERATION 30
-#define REFRESHSPEED 12
+#define REFRESHSPEED 5
 
 
 #define ACHAR 10
@@ -231,7 +231,7 @@ void loop() {
 
 void flip() {
     if (millis() - flipmillis > REFRESHSPEED) {
-        digitalWrite(cathodeSegments[onSegment], !LOW);
+        digitalWrite(cathodeSegments[onSegment], bool(onSegment));
         onSegment++;
         if (onSegment == 2) {
             onSegment = 0;
@@ -253,7 +253,7 @@ void flip() {
 	//	digitalWrite(cathodeSegments[onSegment], blinkState);
 	//}
 	//else {
-        	digitalWrite(cathodeSegments[onSegment], !HIGH);
+        	digitalWrite(cathodeSegments[onSegment], !bool(onSegment));
 	//}
         flipmillis = millis();
     }
