@@ -9,7 +9,7 @@
 #include <EEPROM.h>
 
 #define SERIALIO Serial
-#define SCHEMA 0x0101
+#define SCHEMA 0x0111
 
 
 
@@ -60,13 +60,20 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
 
 
 void setup() {
+  short schema;
+  EEPROM_readAnything(sizeof(long) + sizeof(int) + 30, schema);
+  if (schema != SCHEMA) {
+    EEPROM_writeAnything( sizeof(long) + 1, (float(230)));
+    schema = SCHEMA;
+    EEPROM_writeAnything(sizeof(long) + sizeof(int) + 30, schema);
+  }
   sensitiveLink.begin(9600);
   SERIALIO.begin(9600); //Vesc serial (Serial)
   lcd.begin(16, 2);
   lcd.setCursor(0, 0);
   lcd.print("Voltage: ");
   lcd.setCursor(0, 1);
-  lcd.print("Ah drawn: ");
+  lcd.print("Cycle: ");
   lastStop = millis();
   startTime = millis();
   EEPROM_readAnything( sizeof(long) + 1, totalKm);
@@ -75,7 +82,7 @@ void setup() {
 }
 
 void loop() {
-  delay(5);
+  delay(50);
   EEPROM_writeAnything( sizeof(long) + 1, (totalKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
   EEPROM_writeAnything( sizeof(long) + 10, (totalAh + (float)(measuredValues.ampHours)));
   EEPROM_writeAnything( sizeof(long) + 20, (totalChargeKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
