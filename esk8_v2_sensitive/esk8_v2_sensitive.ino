@@ -10,7 +10,7 @@
 #define DEADZONECRUISE 10
 #define SENSIBILITYDIV 20
 #define ACCELERATIONDELAY 300
-#define BEGINNERDIV 3
+#define BEGINNERDIV 2
 #define MOTORIDLE 90
 #define TIMEOUTDELAY 500
 #define COLORCHANGESPEED 3
@@ -152,6 +152,12 @@ void ledButtonPressed() {
     discoMode = false;
     color = 7;
     setColor();
+    redValue = 0;
+    blueValue = 0;
+    greenValue = 0;
+    analogWrite(bluePin, blueValue);
+    analogWrite(greenPin, greenValue);
+    analogWrite(redPin, redValue);
   } else {
     discoMode = true;
     crazyColor = !crazyColor;
