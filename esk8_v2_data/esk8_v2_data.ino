@@ -25,6 +25,7 @@ unsigned long stoppedTime = 0;
 unsigned long rollingTime = 0;
 unsigned long lastStop;
 unsigned long startTime;
+unsigned long lastValues;
 
 byte gamma[] = {
   B10001,
@@ -124,7 +125,7 @@ void setup() {
   short schema;
   EEPROM_readAnything(sizeof(long) + sizeof(int) + 30, schema);
   if (schema != SCHEMA) {
-    EEPROM_writeAnything( sizeof(long) + 1, (float(230)));
+    EEPROM_writeAnything( sizeof(long) + 1, (float(323.8)));
     schema = SCHEMA;
     EEPROM_writeAnything(sizeof(long) + sizeof(int) + 30, schema);
   }
@@ -145,24 +146,25 @@ void setup() {
   lcd.print("Paul Fleury ");
   lastStop = millis();
   startTime = millis();
+  lastValues = millis();
   EEPROM_readAnything( sizeof(long) + 1, totalKm);
   EEPROM_readAnything( sizeof(long) + 10, totalAh);
   EEPROM_readAnything( sizeof(long) + 20, totalChargeKm);
-  for (int i = 1; i<=4; i++){
-    for(int j = 1; j<=5; j++){
-      delay(3000/20);
-      lcd.setCursor(11+i,1);
+  for (int i = 1; i <= 4; i++) {
+    for (int j = 1; j <= 5; j++) {
+      delay(3000 / 20);
+      lcd.setCursor(11 + i, 1);
       lcd.write(byte(j));
     }
   }
 }
 
 void loop() {
-  delay(50);
   EEPROM_writeAnything( sizeof(long) + 1, (totalKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
   EEPROM_writeAnything( sizeof(long) + 10, (totalAh + (float)(measuredValues.ampHours)));
   EEPROM_writeAnything( sizeof(long) + 20, (totalChargeKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
-  if (VescUartGetValue(measuredValues)) {
+  if (VescUartGetValue(measuredValues)) {// delay(100) included
+    lastValues = millis();
     if (measuredValues.inpVoltage > 41) {
       totalAh = 0;
       totalChargeKm = 0;

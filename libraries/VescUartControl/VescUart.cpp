@@ -187,7 +187,7 @@ bool ProcessReadPacket(uint8_t* message, bldcMeasure& values, int len) {
 bool VescUartGetValue(bldcMeasure& values) {
 	uint8_t command[1] = { COMM_GET_VALUES };
 	uint8_t payload[256];
-	PackSendPayload(command, 1);
+    PackSendPayload(command, 1);
 	delay(100); //needed, otherwise data is not read
 	int lenPayload = ReceiveUartMessage(payload);
 	if (lenPayload > 55) {
