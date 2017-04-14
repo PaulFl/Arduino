@@ -1,4 +1,4 @@
-w#include <nRF24L01.h>
+#include <nRF24L01.h>
 #include <printf.h>
 #include <RF24.h>
 #include <RF24_config.h>
@@ -8,8 +8,8 @@ w#include <nRF24L01.h>
 
 //Settings
 #define DEADZONECRUISE 10
-#define SENSIBILITYDIV 20
-#define ACCELERATIONDELAY 300
+#define SENSIBILITYDIV 35
+#define ACCELERATIONDELAY 400
 #define BEGINNERDIV 2
 #define MOTORIDLE 90
 #define TIMEOUTDELAY 500

@@ -125,7 +125,7 @@ void setup() {
   short schema;
   EEPROM_readAnything(sizeof(long) + sizeof(int) + 30, schema);
   if (schema != SCHEMA) {
-    EEPROM_writeAnything( sizeof(long) + 1, (float(323.8)));
+    EEPROM_writeAnything( sizeof(long) + 1, (float(390)));
     schema = SCHEMA;
     EEPROM_writeAnything(sizeof(long) + sizeof(int) + 30, schema);
   }
@@ -164,6 +164,7 @@ void loop() {
   EEPROM_writeAnything( sizeof(long) + 10, (totalAh + (float)(measuredValues.ampHours)));
   EEPROM_writeAnything( sizeof(long) + 20, (totalChargeKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
   if (VescUartGetValue(measuredValues)) {// delay(100) included
+    measuredValues.inpVoltage /= 10;
     lastValues = millis();
     if (measuredValues.inpVoltage > 41) {
       totalAh = 0;
@@ -204,16 +205,6 @@ void loop() {
         break;
       case 2:
         lcd.setCursor(0, 0);
-        lcd.print("Ah drawn: ");
-        lcd.print(measuredValues.ampHours);
-        lcd.print("Ah        ");
-        lcd.setCursor(0, 1);
-        lcd.print("Ah regen: ");
-        lcd.print(measuredValues.ampHoursCharged);
-        lcd.print("Ah        ");
-        break;
-      case 3:
-        lcd.setCursor(0, 0);
         lcd.print("Max Speed: ");
         lcd.print(maxSpeed);
         lcd.print("kph        ");
@@ -222,7 +213,7 @@ void loop() {
         lcd.print(rollTime);
         lcd.print("min        ");
         break;
-      case 4:
+      case 3:
         lcd.setCursor(0, 0);
         lcd.print("Ride Wh: ");
         lcd.print((measuredValues.ampHours - measuredValues.ampHoursCharged) * measuredValues.inpVoltage);
@@ -232,7 +223,7 @@ void loop() {
         lcd.print(((measuredValues.ampHours - measuredValues.ampHoursCharged) * measuredValues.inpVoltage) / ((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083));
         lcd.print("Wh/km       ");
         break;
-      case 5:
+      case 4:
         lcd.setCursor(0, 0);
         lcd.print("Cycle Wh: ");
         lcd.print((totalAh + measuredValues.ampHours) * 37);
@@ -251,14 +242,14 @@ void loop() {
     }
     if (input == 2) {
       page++;
-      if (page == 6) {
+      if (page == 5) {
         page = 0;
       }
     }
     if (input == 1) {
       page --;
       if (page == -1) {
-        page = 5;
+        page = 4;
       }
     }
   }
