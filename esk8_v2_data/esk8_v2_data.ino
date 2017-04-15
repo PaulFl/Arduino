@@ -165,9 +165,9 @@ void setup() {
 short loops = 0;
 
 void loop() {
-  EEPROM_writeAnything( sizeof(long) + 1, (totalKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
+  EEPROM_writeAnything( sizeof(long) + 1, (totalKm + (float)((measuredValues.tachometerAbs / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
   EEPROM_writeAnything( sizeof(long) + 10, (totalAh + (float)(measuredValues.ampHours)));
-  EEPROM_writeAnything( sizeof(long) + 20, (totalChargeKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
+  EEPROM_writeAnything( sizeof(long) + 20, (totalChargeKm + (float)((measuredValues.tachometerAbs / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
   if (VescUartGetValue(measuredValues)) {
     loops++;
     measuredValues.inpVoltage /= 10;
@@ -242,17 +242,17 @@ void checkDelay() {
       lcd.print("V        ");
       lcd.setCursor(0, 1);
       lcd.print("Cycle: ");
-      lcd.print(totalChargeKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083));
+      lcd.print(totalChargeKm + (float)((measuredValues.tachometerAbs / 44) * 15 / 36 * 3.1415926536 * 0.000083));
       lcd.print("km        ");
       break;
     case 1:
       lcd.setCursor(0, 0);
       lcd.print("Total: ");
-      lcd.print((totalKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
+      lcd.print((totalKm + (float)((measuredValues.tachometerAbs / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
       lcd.print("km        ");
       lcd.setCursor(0, 1);
       lcd.print("Dist: ");
-      lcd.print((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083);
+      lcd.print((measuredValues.tachometerAbs / 44) * 15 / 36 * 3.1415926536 * 0.000083);
       lcd.print("km        ");
       break;
     case 2:
@@ -272,7 +272,7 @@ void checkDelay() {
       lcd.print("Wh          ");
       lcd.setCursor(0, 1);
       lcd.print("Avg: ");
-      lcd.print(((measuredValues.ampHours - measuredValues.ampHoursCharged) * measuredValues.inpVoltage) / ((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083));
+      lcd.print(((measuredValues.ampHours - measuredValues.ampHoursCharged) * measuredValues.inpVoltage) / ((measuredValues.tachometerAbs / 44) * 15 / 36 * 3.1415926536 * 0.000083));
       lcd.print("Wh/km       ");
       break;
     case 4:
@@ -282,7 +282,7 @@ void checkDelay() {
       lcd.print("Wh          ");
       lcd.setCursor(0, 1);
       lcd.print("Avg: ");
-      lcd.print((totalAh + measuredValues.ampHours) * 37 / (totalChargeKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
+      lcd.print((totalAh + measuredValues.ampHours) * 37 / (totalChargeKm + (float)((measuredValues.tachometerAbs / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
       lcd.print("Wh/km          ");
       break;
   }
