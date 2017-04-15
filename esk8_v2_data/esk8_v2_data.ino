@@ -11,7 +11,8 @@
 #define SERIALIO Serial
 #define SCHEMA 0x0111
 
-
+int dataRequest[] = {2, 1, 0, 0, 0, 3, 2, 1, 38, 68, 164, 3, 2, 11, 19, 99, 97, 110, 95, 109, 101, 109, 98, 101, 114, 163, 75, 3, 2, 7, 19, 102, 97, 117, 108, 116, 97, 38, 173, 3};
+int sizeDataRequest = 40;
 
 LiquidCrystal lcd(2, 4, 7, 8, 12, A0);
 int page = 0;
@@ -26,6 +27,9 @@ unsigned long rollingTime = 0;
 unsigned long lastStop;
 unsigned long startTime;
 unsigned long lastValues;
+unsigned long timeElapsed;
+
+int rollTime;
 
 byte gamma[] = {
   B10001,
@@ -125,7 +129,7 @@ void setup() {
   short schema;
   EEPROM_readAnything(sizeof(long) + sizeof(int) + 30, schema);
   if (schema != SCHEMA) {
-    EEPROM_writeAnything( sizeof(long) + 1, (float(390)));
+    EEPROM_writeAnything( sizeof(long) + 1, (float(400)));
     schema = SCHEMA;
     EEPROM_writeAnything(sizeof(long) + sizeof(int) + 30, schema);
   }
@@ -158,13 +162,37 @@ void setup() {
     }
   }
 }
+short loops = 0;
 
 void loop() {
   EEPROM_writeAnything( sizeof(long) + 1, (totalKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
   EEPROM_writeAnything( sizeof(long) + 10, (totalAh + (float)(measuredValues.ampHours)));
   EEPROM_writeAnything( sizeof(long) + 20, (totalChargeKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
-  if (VescUartGetValue(measuredValues)) {// delay(100) included
+  if (VescUartGetValue(measuredValues)) {
+    loops++;
     measuredValues.inpVoltage /= 10;
+    checkDelay();
+    if (loops == 10) {
+      loops = 0;
+      delay(100);
+      for (int i = 0; i < 6; i++) {
+        SERIALIO.write(dataRequest[i]);
+      }
+      checkDelay();
+      delay(50);
+      for (int i = 6; i < 12; i++) {
+        SERIALIO.write(dataRequest[i]);
+      }
+      delay(50);
+      checkDelay();
+      for (int i = 12; i < 28; i++) {
+        SERIALIO.write(dataRequest[i]);
+      }
+      delay(50);
+      for (int i = 28; i < sizeDataRequest; i++) {
+        SERIALIO.write(dataRequest[i]);
+      }
+    }
     lastValues = millis();
     if (measuredValues.inpVoltage > 41) {
       totalAh = 0;
@@ -179,62 +207,15 @@ void loop() {
     }
     rollingTime = millis() - startTime;
 
-    unsigned long timeElapsed = rollingTime / 1000 / 60;
-    int rollTime = int(timeElapsed);
+    timeElapsed = rollingTime / 1000 / 60;
+    rollTime = int(timeElapsed);
 
-    switch (page) {
-      case 0:
-        lcd.setCursor(0, 0);
-        lcd.print("Voltage: ");
-        lcd.print(measuredValues.inpVoltage);
-        lcd.print("V        ");
-        lcd.setCursor(0, 1);
-        lcd.print("Cycle: ");
-        lcd.print(totalChargeKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083));
-        lcd.print("km        ");
-        break;
-      case 1:
-        lcd.setCursor(0, 0);
-        lcd.print("Total: ");
-        lcd.print((totalKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
-        lcd.print("km        ");
-        lcd.setCursor(0, 1);
-        lcd.print("Dist: ");
-        lcd.print((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083);
-        lcd.print("km        ");
-        break;
-      case 2:
-        lcd.setCursor(0, 0);
-        lcd.print("Max Speed: ");
-        lcd.print(maxSpeed);
-        lcd.print("kph        ");
-        lcd.setCursor(0, 1);
-        lcd.print("Time: ");
-        lcd.print(rollTime);
-        lcd.print("min        ");
-        break;
-      case 3:
-        lcd.setCursor(0, 0);
-        lcd.print("Ride Wh: ");
-        lcd.print((measuredValues.ampHours - measuredValues.ampHoursCharged) * measuredValues.inpVoltage);
-        lcd.print("Wh          ");
-        lcd.setCursor(0, 1);
-        lcd.print("Avg: ");
-        lcd.print(((measuredValues.ampHours - measuredValues.ampHoursCharged) * measuredValues.inpVoltage) / ((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083));
-        lcd.print("Wh/km       ");
-        break;
-      case 4:
-        lcd.setCursor(0, 0);
-        lcd.print("Cycle Wh: ");
-        lcd.print((totalAh + measuredValues.ampHours) * 37);
-        lcd.print("Wh          ");
-        lcd.setCursor(0, 1);
-        lcd.print("Avg: ");
-        lcd.print((totalAh + measuredValues.ampHours) * 37 / (totalChargeKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
-        lcd.print("Wh/km          ");
-        break;
-    }
+
   }
+  checkDelay();
+}
+
+void checkDelay() {
   input = 0;
   if (sensitiveLink.available()) {
     while (sensitiveLink.available()) {
@@ -253,4 +234,58 @@ void loop() {
       }
     }
   }
+  switch (page) {
+    case 0:
+      lcd.setCursor(0, 0);
+      lcd.print("Voltage: ");
+      lcd.print(measuredValues.inpVoltage);
+      lcd.print("V        ");
+      lcd.setCursor(0, 1);
+      lcd.print("Cycle: ");
+      lcd.print(totalChargeKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083));
+      lcd.print("km        ");
+      break;
+    case 1:
+      lcd.setCursor(0, 0);
+      lcd.print("Total: ");
+      lcd.print((totalKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
+      lcd.print("km        ");
+      lcd.setCursor(0, 1);
+      lcd.print("Dist: ");
+      lcd.print((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083);
+      lcd.print("km        ");
+      break;
+    case 2:
+      lcd.setCursor(0, 0);
+      lcd.print("Max Speed: ");
+      lcd.print(maxSpeed);
+      lcd.print("kph        ");
+      lcd.setCursor(0, 1);
+      lcd.print("Time: ");
+      lcd.print(rollTime);
+      lcd.print("min        ");
+      break;
+    case 3:
+      lcd.setCursor(0, 0);
+      lcd.print("Ride Wh: ");
+      lcd.print((measuredValues.ampHours - measuredValues.ampHoursCharged) * measuredValues.inpVoltage);
+      lcd.print("Wh          ");
+      lcd.setCursor(0, 1);
+      lcd.print("Avg: ");
+      lcd.print(((measuredValues.ampHours - measuredValues.ampHoursCharged) * measuredValues.inpVoltage) / ((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083));
+      lcd.print("Wh/km       ");
+      break;
+    case 4:
+      lcd.setCursor(0, 0);
+      lcd.print("Cycle Wh: ");
+      lcd.print((totalAh + measuredValues.ampHours) * 37);
+      lcd.print("Wh          ");
+      lcd.setCursor(0, 1);
+      lcd.print("Avg: ");
+      lcd.print((totalAh + measuredValues.ampHours) * 37 / (totalChargeKm + (float)((measuredValues.tachometer / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
+      lcd.print("Wh/km          ");
+      break;
+  }
+
 }
+
