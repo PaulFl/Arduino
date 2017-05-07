@@ -211,8 +211,8 @@ void getData() {
         sendMotor(motor.read());
       }
     }
-    if (msg[ZBUTTON] && msg[HORIZONTAL] >= 95 && lastHorizontalValue < 95) Serial.write(2);
-    else if (msg[ZBUTTON] && msg[HORIZONTAL] <= 5 && lastHorizontalValue > 5) Serial.write(1);
+    if (msg[ZBUTTON] && msg[HORIZONTAL] >= 80 && lastHorizontalValue < 95) Serial.write(2);
+    else if (msg[ZBUTTON] && msg[HORIZONTAL] <= 20 && lastHorizontalValue > 5) Serial.write(1);
 
     lastZButtonState = msg[ZBUTTON];
     lastCButtonState = msg[CBUTTON];

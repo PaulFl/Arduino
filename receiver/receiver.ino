@@ -5,37 +5,34 @@
 #include <Servo.h>
 
 
-int msg[1];
+int msg[4];
 RF24 radio(7, 8);
-const uint64_t pipe = 0xE8E8F0F0E1LL;
+const uint64_t pipe = 0xE8E8F0F1E0LL;
+short motorPin = 9;
+
 
 Servo motor;
 long lastRead;
 
-
-void setup(void) {
-  Serial.begin(9600);
+void setup() {
+  motor.attach(motorPin);
+  motor.write(20);
   radio.begin();
   radio.openReadingPipe(1, pipe);
   radio.startListening();
-  motor.attach(9);
-  motor.write(15);
+
   lastRead = millis();
+  
 }
 
-void loop(void) {
-  if (millis() - lastRead > 400 && motor.read()>15) {
-    motor.write(motor.read() - 3);
+void loop() {
+  if (millis() - lastRead > 500) { // Let go if signal timeout
+    motor.write(20);
   }
-  if (radio.available()) {
-    while (radio.available()) radio.read(msg, 2);
-    if (msg[0] <= 180 && msg[0] >= 20) {
-      motor.write(map(msg[0], 20, 180, 15, 180));
-                  lastRead = millis();
-    } else if (motor.read() > 15){
-      motor.write(motor.read() - 3);
-    }
-
+  if (radio.available()){
+    while (radio.available()) radio.read(msg, 7);
+    motor.write(map(msg[0], 0, 180, 25, 170));
+    lastRead = millis();
   }
-
 }
+
