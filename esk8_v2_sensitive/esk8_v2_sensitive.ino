@@ -188,9 +188,10 @@ void getData() {
     while (radio.available()) radio.read(msg, 7); //Get data
     if (msg[MOTOR] >= 89) brakeAllowed = true;
     if (!msg[CBUTTON] && lastCButtonState) ledButtonPressed();
+    if (!msg[ZBUTTON] && lastZButtonState) Serial.write(2);
     if (msg[ZBUTTON] && !beginnerMode) sendMotor(msg[MOTOR]);
     else if (msg[ZBUTTON] && beginnerMode) {
-      if (msg[MOTOR] >= 89) sendMotor(map(msg[MOTOR], 0, 180, (90 - 90 / BEGINNERDIV), (90 + 90 / BEGINNERDIV)));
+      if (msg[MOTOR] >= 89) sendMotor(map(msg[MOTOR], 0, 180, (90 -30 -60 / BEGINNERDIV), (90 +30+ 60 / BEGINNERDIV)));
       else sendMotor(msg[MOTOR]);
     }
     else if (!msg[ZBUTTON] && motor.read() >= 89) { //If zbutton and not braking
