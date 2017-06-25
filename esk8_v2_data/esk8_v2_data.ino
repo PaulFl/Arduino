@@ -9,7 +9,7 @@
 #include <EEPROM.h>
 
 #define SERIALIO Serial
-#define SCHEMA 0x0111
+#define SCHEMA 0x0101
 
 int dataRequest[] = {2, 1, 0, 0, 0, 3, 2, 1, 38, 68, 164, 3, 2, 11, 19, 99, 97, 110, 95, 109, 101, 109, 98, 101, 114, 163, 75, 3, 2, 7, 19, 102, 97, 117, 108, 116, 97, 38, 173, 3};
 int sizeDataRequest = 40;
@@ -129,7 +129,7 @@ void setup() {
   short schema;
   EEPROM_readAnything(sizeof(long) + sizeof(int) + 30, schema);
   if (schema != SCHEMA) {
-    EEPROM_writeAnything( sizeof(long) + 1, (float(400)));
+    EEPROM_writeAnything( sizeof(long) + 1, (float(850)));
     schema = SCHEMA;
     EEPROM_writeAnything(sizeof(long) + sizeof(int) + 30, schema);
   }
