@@ -129,7 +129,7 @@ void setup() {
   short schema;
   EEPROM_readAnything(sizeof(long) + sizeof(int) + 30, schema);
   if (schema != SCHEMA) {
-    EEPROM_writeAnything( sizeof(long) + 1, (float(900)));
+    EEPROM_writeAnything( sizeof(long) + 1, (float(1000)));
     schema = SCHEMA;
     EEPROM_writeAnything(sizeof(long) + sizeof(int) + 30, schema);
   }
