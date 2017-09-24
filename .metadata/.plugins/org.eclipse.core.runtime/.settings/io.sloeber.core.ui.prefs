@@ -1,0 +1,7 @@
+Build\ before\ upload\ option=ASK
+Clean\ Serial\ Monitor\ after\ upload=false
+FmStatus=1
+Gui\ entry\ for\ private\ hardware\ paths=/Users/pfleury/Documents/Programmation/Arduino/hardware
+Gui\ entry\ for\ private\ library\ paths=/Users/pfleury/Documents/Programmation/Arduino/libraries
+Open\ serial\ connections\ with\ the\ monitor=true
+eclipse.preferences.version=1
