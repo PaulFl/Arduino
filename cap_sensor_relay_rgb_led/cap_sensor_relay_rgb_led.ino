@@ -8,8 +8,8 @@
   #endif */
 
 #define DEBUG 1
-#define HIGHTHRESHOLD 6100
-#define LOWTHRESHOLD 5800
+#define HIGHTHRESHOLD 9500
+#define LOWTHRESHOLD 8500
 #define SPEED 100
 #define LEDPAUSE 5000
 
