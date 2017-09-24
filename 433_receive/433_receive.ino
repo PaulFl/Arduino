@@ -9,6 +9,7 @@ void setup() {
 void loop() {
   int valeurs[4];
   byte taille_message = sizeof(valeurs);
+  
   vw_wait_rx();
   if (vw_get_message((byte *) &valeurs, &taille_message)) {
     Serial.print(valeurs[0]);
