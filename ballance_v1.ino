@@ -24,8 +24,8 @@ const uint64_t pipe = 0xE8E8F0F0E1LL;//White remote
 int xObj = 0;
 int yObj = 0;
 
-int vX;
-int vY;
+int vX = 0;
+int vY = 0;
 int vitesseMoteur1 = 0;
 int vitesseMoteur2 = 0;
 int vitesseMoteur3 = 0;
@@ -88,5 +88,18 @@ void loop() {
   }
   
   //Asservissement
+  vX = xObj-Acx/10000;
+  vY = yObj-Acy/10000;
   
+  vitesseMoteur1 = vX/sqrt32 + vY/sqrt32;
+  vitesseMoteur2 = -vX/sqrt32 + vY/sqrt32;
+  vitesseMoteur3 = vX;
+  
+  vitesseMoteur1 = map(vitesseMoteur1, 0, 100, 90, 180);
+  vitesseMoteur2 = map(vitesseMoteur2, 0, 100, 90, 180);
+  vitesseMoteur3 = map(vitesseMoteur3, 0, 100, 90, 180);
+  
+  moteur1.write(vitesseMoteur1);
+  moteur2.write(vitesseMoteur2);
+  moteur3.write(vitesseMoteur3);
 }
