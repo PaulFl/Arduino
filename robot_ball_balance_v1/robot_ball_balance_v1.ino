@@ -6,7 +6,7 @@
 #include <RF24_config.h>
 
 const int MPU_addr = 0x68;
-const float sqrt32 = sqrt(3)/2;
+const float sqrt32 = sqrt(3) / 2;
 
 int AcX, AcY, AcZ, Tmp, GyX, GyY, GyZ;
 short pin_moteur1 = 6;
@@ -62,8 +62,8 @@ void loop() {
   Serial.print("\t");
   Serial.print(AcY);
   Serial.print("\t");
-  Serial.print(AcZ);
-  Serial.print("\t");
+  //Serial.print(AcZ);
+  //Serial.print("\t");
   //Serial.print(GyX);
   //Serial.print("\t");
   //Serial.print(GyY);
@@ -71,8 +71,7 @@ void loop() {
   //Serial.print(GyZ);
   //Serial.print("\t");
   //Serial.print(Tmp / 340.00 + 36.53); //equation for temperature in degrees C from datasheet
-  Serial.println();
-  
+
   //Radio
   if (radio.available()) {
     while (radio.available()) {
@@ -84,22 +83,26 @@ void loop() {
     Serial.print("\t");
     Serial.print(msg[2]);
     Serial.print("\t");
-    Serial.println(msg[3]);
+    Serial.print(msg[3]);
   }
-  
+
   //Asservissement
-  vX = xObj-Acx/10000;
-  vY = yObj-Acy/10000;
-  
-  vitesseMoteur1 = vX/sqrt32 + vY/sqrt32;
-  vitesseMoteur2 = -vX/sqrt32 + vY/sqrt32;
+  vX = xObj - AcX / 100;
+  vY = yObj - AcY / 100;
+
+  vitesseMoteur1 = vX / sqrt32 + vY / sqrt32;
+  vitesseMoteur2 = -vX / sqrt32 + vY / sqrt32;
   vitesseMoteur3 = vX;
-  
+
   vitesseMoteur1 = map(vitesseMoteur1, 0, 100, 90, 180);
   vitesseMoteur2 = map(vitesseMoteur2, 0, 100, 90, 180);
   vitesseMoteur3 = map(vitesseMoteur3, 0, 100, 90, 180);
-  
+  Serial.print("\t");
+  Serial.print(vitesseMoteur1);
+
   moteur1.write(vitesseMoteur1);
   moteur2.write(vitesseMoteur2);
   moteur3.write(vitesseMoteur3);
+  Serial.println();
+  delay(10);
 }
