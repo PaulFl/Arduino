@@ -2,6 +2,8 @@
 #define DEBUGCI 1
 #define DEBUGMOTORSPEED 1
 
+#define AVERAGEPTS 5
+
 #include <Wire.h>
 #include <Servo.h>
 #include <nRF24L01.h>
@@ -19,6 +21,11 @@ const int AYMax = 14000;
 
 const int AXMiddle = 0;
 const int AYMiddle = 0;
+
+int avgAxArray[AVERAGEPTS];
+int avgAx = 0;
+int avgAyArray[AVERAGEPTS];
+int avgAy = 0;
 
 const int MPU_addr = 0x68;
 const float sqrt32 = sqrt(3) / 2;
@@ -95,18 +102,40 @@ void lireCentraleInertielle() {
   Wire.requestFrom(MPU_addr, 14, true);
   AcX = Wire.read() << 8 | Wire.read();
   AcX = map(AcX, AXMin, AXMax, -100, 100);
+  for (int i = 0; i < AVERAGEPTS - 1; i++) {
+    avgAxArray[i] = avgAxArray[i + 1];
+  }
+  avgAxArray[AVERAGEPTS - 1] = AcX;
+  avgAx = 0;
+  for (int i = 0; i < AVERAGEPTS; i++) {
+    avgAx += avgAxArray[i];
+  }
+  avgAx /= AVERAGEPTS;
   AcY = Wire.read() << 8 | Wire.read();
   AcY = map(AcY, AYMin, AYMax, -100, 100);
+  for (int i = 0; i < AVERAGEPTS - 1; i++) {
+    avgAyArray[i] = avgAyArray[i + 1];
+  }
+  avgAyArray[AVERAGEPTS - 1] = AcY;
+  avgAy = 0;
+  for (int i = 0; i < AVERAGEPTS; i++) {
+    avgAy += avgAyArray[i];
+  }
+  avgAy /= AVERAGEPTS;
   AcZ = Wire.read() << 8 | Wire.read();
   Tmp = Wire.read() << 8 | Wire.read();
   GyX = Wire.read() << 8 | Wire.read();
   GyY = Wire.read() << 8 | Wire.read();
   GyZ = Wire.read() << 8 | Wire.read();
   if (DEBUGCI) {
-    Serial.print(AcX);
+    Serial.print(avgAx);
     Serial.print("\t");
-    Serial.print(AcY);
+    Serial.print(avgAy);
     Serial.print("\t");
+    //Serial.print(AcX);
+    //Serial.print("\t");
+    //Serial.print(AcY);
+    //Serial.print("\t");
     //Serial.print(AcZ);
     //Serial.print("\t");
     //Serial.print(GyX);
