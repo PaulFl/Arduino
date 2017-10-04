@@ -1,8 +1,8 @@
-#define DEBUGRADIO 1
+#define DEBUGRADIO 0
 #define DEBUGCI 1
-#define DEBUGMOTORSPEED 1
+#define DEBUGMOTORSPEED 0
 
-#define AVERAGEPTS 5
+#define AVERAGEPTS 20
 
 #include <Wire.h>
 #include <Servo.h>
@@ -14,18 +14,18 @@
 void lireCentraleInertielle();
 void lireRadio();
 
-const int AXMax = 14000;
-const int AXMin = -14000;
-const int AYMin = -14000;
-const int AYMax = 14000;
+const int AXMax = 16000;
+const int AXMin = -16000;
+const int AYMin = -16000;
+const int AYMax = 16000;
 
 const int AXMiddle = 0;
 const int AYMiddle = 0;
 
-int avgAxArray[AVERAGEPTS];
-int avgAx = 0;
-int avgAyArray[AVERAGEPTS];
-int avgAy = 0;
+long int avgAxArray[AVERAGEPTS];
+long int avgAx = 0;
+long int avgAyArray[AVERAGEPTS];
+long int avgAy = 0;
 
 const int MPU_addr = 0x68;
 const float sqrt32 = sqrt(3) / 2;
@@ -66,6 +66,7 @@ void setup() {
   radio.openReadingPipe(1, pipe);
   radio.startListening();
   Serial.begin(9600);
+  Serial.println("Intitialisaton");
 }
 void loop() {
   lireCentraleInertielle();
@@ -85,13 +86,12 @@ void loop() {
   if (DEBUGMOTORSPEED) {
     Serial.print(vitesseMoteur1);
     Serial.print("\t");
+    Serial.println();
   }
 
   moteur1.write(vitesseMoteur1);
   moteur2.write(vitesseMoteur2);
   moteur3.write(vitesseMoteur3);
-  Serial.println();
-  delay(2);
 }
 
 void lireCentraleInertielle() {
@@ -101,7 +101,6 @@ void lireCentraleInertielle() {
   Wire.endTransmission(false);
   Wire.requestFrom(MPU_addr, 14, true);
   AcX = Wire.read() << 8 | Wire.read();
-  AcX = map(AcX, AXMin, AXMax, -100, 100);
   for (int i = 0; i < AVERAGEPTS - 1; i++) {
     avgAxArray[i] = avgAxArray[i + 1];
   }
@@ -112,7 +111,6 @@ void lireCentraleInertielle() {
   }
   avgAx /= AVERAGEPTS;
   AcY = Wire.read() << 8 | Wire.read();
-  AcY = map(AcY, AYMin, AYMax, -100, 100);
   for (int i = 0; i < AVERAGEPTS - 1; i++) {
     avgAyArray[i] = avgAyArray[i + 1];
   }
@@ -127,15 +125,19 @@ void lireCentraleInertielle() {
   GyX = Wire.read() << 8 | Wire.read();
   GyY = Wire.read() << 8 | Wire.read();
   GyZ = Wire.read() << 8 | Wire.read();
+  //  AcX = map(AcX, AXMin, AXMax, -100, 100);
+  //  AcY = map(AcY, AYMin, AYMax, -100, 100);
+  //  avgAx = map(avgAx, AXMin, AXMax, -100, 100);
+  //  avgAy = map(avgAy, AYMin, AYMax, -100, 100);
   if (DEBUGCI) {
     Serial.print(avgAx);
     Serial.print("\t");
     Serial.print(avgAy);
     Serial.print("\t");
-    //Serial.print(AcX);
-    //Serial.print("\t");
-    //Serial.print(AcY);
-    //Serial.print("\t");
+    Serial.print(AcX);
+    Serial.print("\t");
+    Serial.print(AcY);
+    Serial.print("\t");
     //Serial.print(AcZ);
     //Serial.print("\t");
     //Serial.print(GyX);
@@ -145,6 +147,7 @@ void lireCentraleInertielle() {
     //Serial.print(GyZ);
     //Serial.print("\t");
     //Serial.print(Tmp / 340.00 + 36.53); //equation for temperature in degrees C from datasheet
+    Serial.println();
   }
 }
 
@@ -154,18 +157,18 @@ void lireRadio() {
     while (radio.available()) {
       radio.read(msg, 8);
     }
-    msg[0] = map(msg[0], 0, 100, -100, 100);
-    msg[1] = map(msg[0], 0, 180, -100, 100);
+    msg[0] = map(msg[0], 0, 180, -100, 100);
+    msg[1] = map(msg[1], 0, 100, -100, 100);
     if (DEBUGRADIO) {
       Serial.print(msg[0]);
       Serial.print("\t");
       Serial.print(msg[1]);
       Serial.print("\t");
-      Serial.print(msg[2]);
+      Serial.print(msg[2]*100);
       Serial.print("\t");
-      Serial.print(msg[3]);
+      Serial.print(msg[3]*100);
       Serial.print("\t");
+      Serial.println();
     }
   }
 }
-
