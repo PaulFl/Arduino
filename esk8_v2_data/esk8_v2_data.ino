@@ -11,25 +11,45 @@
 #define SERIALIO Serial
 #define SCHEMA 0x0101
 
-int dataRequest[] = {2, 1, 0, 0, 0, 3, 2, 1, 38, 68, 164, 3, 2, 11, 19, 99, 97, 110, 95, 109, 101, 109, 98, 101, 114, 163, 75, 3, 2, 7, 19, 102, 97, 117, 108, 116, 97, 38, 173, 3};
-int sizeDataRequest = 40;
+const float gearingRatio = 15.0 / 36.0;
+const float wheelDiameter = 0.000083;
+const int magnets = 44;
+
+template <class T> int EEPROM_writeAnything(int ee, const T& value)
+{
+  const byte* p = (const byte*)(const void*)&value;
+  int i;
+  for (i = 0; i < sizeof(value); i++)
+    EEPROM.write(ee++, *p++);
+  return i;
+}
+
+
+template <class T> int EEPROM_readAnything(int ee, T& value)
+{
+  byte* p = (byte*)(void*)&value;
+  int i;
+  for (i = 0; i < sizeof(value); i++)
+    *p++ = EEPROM.read(ee++);
+  return i;
+}
 
 LiquidCrystal lcd(2, 4, 7, 8, 12, A0);
-int page = 0;
-int input;
-int maxSpeed = 0;
-float totalKm = 0;
-float totalChargeKm = 0;
-float totalAh = 0;
+SoftwareSerial sensitiveLink(A1, A2);
 
-unsigned long stoppedTime = 0;
-unsigned long rollingTime = 0;
-unsigned long lastStop;
-unsigned long startTime;
-unsigned long lastValues;
-unsigned long timeElapsed;
+struct bldcMeasure measuredValues;
 
-int rollTime;
+/* Values:
+    avgMotorCurrent
+    avgInputCurrent
+    dutyCycleNow
+    rpm
+    inpVoltage
+    ampHours
+    ampHoursCharged
+    tachometer
+    tachometerAbs
+*/
 
 byte gamma[] = {
   B10001,
@@ -92,38 +112,28 @@ byte fiveC[] = {
   B11111
 };
 
-struct bldcMeasure measuredValues;
-SoftwareSerial sensitiveLink(A1, A2);
-/* Values:
-    avgMotorCurrent
-    avgInputCurrent
-    dutyCycleNow
-    rpm
-    inpVoltage
-    ampHours
-    ampHoursCharged
-    tachometer
-    tachometerAbs
-*/
-template <class T> int EEPROM_writeAnything(int ee, const T& value)
-{
-  const byte* p = (const byte*)(const void*)&value;
-  int i;
-  for (i = 0; i < sizeof(value); i++)
-    EEPROM.write(ee++, *p++);
-  return i;
-}
+unsigned long stoppedTime = 0;
+unsigned long rollingTime = 0;
+unsigned long lastStop;
+unsigned long startTime;
+unsigned long lastValues;
+unsigned long timeElapsed;
 
+int dataRequest[] = {2, 1, 0, 0, 0, 3, 2, 1, 38, 68, 164, 3, 2, 11, 19, 99, 97, 110, 95, 109, 101, 109, 98, 101, 114, 163, 75, 3, 2, 7, 19, 102, 97, 117, 108, 116, 97, 38, 173, 3};
+int sizeDataRequest = 40;
 
-template <class T> int EEPROM_readAnything(int ee, T& value)
-{
-  byte* p = (byte*)(void*)&value;
-  int i;
-  for (i = 0; i < sizeof(value); i++)
-    *p++ = EEPROM.read(ee++);
-  return i;
-}
+int page = 0;
+short loops = 0;
+int input;
+int maxSpeed = 0;
+float totalKm = 0;
+float totalChargeKm = 0;
+float totalAh = 0;
+int rollTime;
+float distance = 0;
 
+float mapBatteryPercentage[] = {3.26, 3.435, 3.525, 3.635, 3.715, 3.79, 3.86, 3.94, 4.02, 4.07, 4.2};
+int batteryPercentage = 0;
 
 void setup() {
   short schema;
@@ -162,15 +172,22 @@ void setup() {
     }
   }
 }
-short loops = 0;
 
 void loop() {
-  EEPROM_writeAnything( sizeof(long) + 1, (totalKm + (float)((measuredValues.tachometerAbs / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
+  distance = (measuredValues.tachometerAbs / magnets) * gearingRatio * PI * wheelDiameter;
+  EEPROM_writeAnything( sizeof(long) + 1, (totalKm + distance));
   EEPROM_writeAnything( sizeof(long) + 10, (totalAh + (float)(measuredValues.ampHours)));
-  EEPROM_writeAnything( sizeof(long) + 20, (totalChargeKm + (float)((measuredValues.tachometerAbs / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
+  EEPROM_writeAnything( sizeof(long) + 20, (totalChargeKm + distance));
   if (VescUartGetValue(measuredValues)) {
     loops++;
     measuredValues.inpVoltage /= 10;
+    short battRange = 0;
+    for (int i = 0; i <= 9; i++) {
+      if (measuredValues.inpVoltage >= mapBatteryPercentage[i] * 10 && measuredValues.inpVoltage <= mapBatteryPercentage[i + 1] * 10) battRange = i;
+    }
+    batteryPercentage = int(map(measuredValues.inpVoltage, mapBatteryPercentage[battRange] * 10, mapBatteryPercentage[battRange + 1] * 10, battRange * 10, (battRange + 1) * 10)); //Linear approximation beetween two values of mapBatteryPercentage
+    if (measuredValues.inpVoltage <= mapBatteryPercentage[0] * 10) batteryPercentage = 0;
+    else if (measuredValues.inpVoltage >= mapBatteryPercentage[10] * 10) batteryPercentage = 100;
     checkDelay();
     if (loops == 10) {
       loops = 0;
@@ -199,10 +216,10 @@ void loop() {
       totalChargeKm = 0;
     }
 
-    if (measuredValues.rpm * 60 * 15 * 3.1415926536 * 0.000083 / 36 / 7 > maxSpeed) {
-      maxSpeed = measuredValues.rpm * 60 * 15 * 3.1415926536 * 0.000083 / 36 / 7;
+    if (measuredValues.rpm * 60 * gearingRatio * PI * wheelDiameter / 7 > maxSpeed) {
+      maxSpeed = measuredValues.rpm * 60 * gearingRatio * PI * wheelDiameter / 7;
     }
-    if (measuredValues.rpm * 60 * 15 * 3.1415926536 * 0.000083 / 36 / 7 <= 2) {
+    if (measuredValues.rpm * 60 * gearingRatio * PI * wheelDiameter / 7 <= 2) {
       stoppedTime += 5;
     }
     rollingTime = millis() - startTime;
@@ -223,37 +240,38 @@ void checkDelay() {
     }
     if (input == 2) {
       page++;
-      if (page == 5) {
+      if (page == 6) {
         page = 0;
       }
     }
     if (input == 1) {
       page --;
       if (page == -1) {
-        page = 4;
+        page = 5;
       }
     }
   }
   switch (page) {
     case 0:
       lcd.setCursor(0, 0);
+      lcd.print("Battery: ");
+      lcd.print(batteryPercentage);
+      lcd.print("%          ");
+      lcd.setCursor(0, 1);
       lcd.print("Voltage: ");
       lcd.print(measuredValues.inpVoltage);
       lcd.print("V        ");
-      lcd.setCursor(0, 1);
-      lcd.print("Cycle: ");
-      lcd.print(totalChargeKm + (float)((measuredValues.tachometerAbs / 44) * 15 / 36 * 3.1415926536 * 0.000083));
-      lcd.print("km        ");
       break;
     case 1:
       lcd.setCursor(0, 0);
       lcd.print("Total: ");
-      lcd.print((totalKm + (float)((measuredValues.tachometerAbs / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
+      lcd.print(totalKm + distance);
       lcd.print("km        ");
       lcd.setCursor(0, 1);
-      lcd.print("Dist: ");
-      lcd.print((measuredValues.tachometerAbs / 44) * 15 / 36 * 3.1415926536 * 0.000083);
+      lcd.print("Cycle: ");
+      lcd.print(totalChargeKm + distance);
       lcd.print("km        ");
+
       break;
     case 2:
       lcd.setCursor(0, 0);
@@ -261,28 +279,38 @@ void checkDelay() {
       lcd.print(maxSpeed);
       lcd.print("kph        ");
       lcd.setCursor(0, 1);
+      lcd.print("Dist: ");
+      lcd.print(distance);
+      lcd.print("km        ");
+      break;
+    case 3:
+      lcd.setCursor(0, 0);
       lcd.print("Time: ");
       lcd.print(rollTime);
       lcd.print("min        ");
+      lcd.setCursor(0, 1);
+      lcd.print("Duty: ");
+      lcd.print(measuredValues.dutyCycleNow);
+      lcd.print("%     ");
       break;
-    case 3:
+    case 4:
       lcd.setCursor(0, 0);
       lcd.print("Ride Wh: ");
       lcd.print((measuredValues.ampHours - measuredValues.ampHoursCharged) * measuredValues.inpVoltage);
       lcd.print("Wh          ");
       lcd.setCursor(0, 1);
       lcd.print("Avg: ");
-      lcd.print(((measuredValues.ampHours - measuredValues.ampHoursCharged) * measuredValues.inpVoltage) / ((measuredValues.tachometerAbs / 44) * 15 / 36 * 3.1415926536 * 0.000083));
+      lcd.print(((measuredValues.ampHours - measuredValues.ampHoursCharged) * measuredValues.inpVoltage) / distance);
       lcd.print("Wh/km       ");
       break;
-    case 4:
+    case 5:
       lcd.setCursor(0, 0);
       lcd.print("Cycle Wh: ");
       lcd.print((totalAh + measuredValues.ampHours) * 37);
       lcd.print("Wh          ");
       lcd.setCursor(0, 1);
       lcd.print("Avg: ");
-      lcd.print((totalAh + measuredValues.ampHours) * 37 / (totalChargeKm + (float)((measuredValues.tachometerAbs / 44) * 15 / 36 * 3.1415926536 * 0.000083) ));
+      lcd.print((totalAh + measuredValues.ampHours) * 37 / (totalChargeKm + distance));
       lcd.print("Wh/km          ");
       break;
   }
