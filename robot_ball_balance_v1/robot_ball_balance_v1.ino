@@ -14,6 +14,14 @@
 #define MOTOR2PIN 9
 #define MOTOR3PIN 10
 
+//CI CSTS
+#define ACXMAX 16000
+#define ACXMIN -16000
+#define ACYMAX 16000
+#define ACYMIN -16000
+#define ACXMIDDLE 0
+#define ACYMIDDLE 0
+
 //Libs
 #include <Wire.h>
 #include <Servo.h>
@@ -25,23 +33,19 @@
 void readCI();
 void readRadio();
 
-const int AXMax = 16000;
-const int AXMin = -16000;
-const int AYMin = -16000;
-const int AYMax = 16000;
-const int AXMiddle = 0;
-const int AYMiddle = 0;
-
 const int MPU_addr = 0x68;
 
 const float sqrt32 = sqrt(3) / 2;
 
 struct COORD {
   int ac;
+  int acMin;
+  int acMax;
+  int acMiddle;
   int gy;
   int angle;
-  long int avgArray[AVERAGEPTS];
-  long int avg = 0;
+  long int acAvgArray[AVERAGEPTS];
+  long int acAvg = 0;
   int target;
   int speed;
 };
@@ -51,6 +55,8 @@ struct MOTOR {
   Servo servo;
   int speed;
 };
+
+int maxMotorSpeed;
 
 COORD x;
 COORD y;
@@ -73,6 +79,23 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Intitialisaton");
 
+  //CI Setup
+  Wire.begin();
+  Wire.beginTransmission(MPU_addr);
+  Wire.write(0x6B);  // PWR_MGMT_1 register
+  Wire.write(0);     // set to zero (wakes up the MPU-6050)
+  Wire.endTransmission(true);
+  x.speed = 0;
+  y.speed = 0;
+  x.acMin = ACXMIN;
+  x.acMax = ACXMAX;
+  x.acMiddle = ACXMIDDLE;
+  y.acMin = ACYMIDDLE;
+  y.acMax = ACYMAX;
+  y.acMiddle = ACYMIDDLE;
+  x.target = x.acMiddle;
+  y.target = y.acMiddle;
+
   //Motors setup
   motor1.pin = MOTOR1PIN;
   motor2.pin = MOTOR2PIN;
@@ -83,17 +106,7 @@ void setup() {
   motor1.servo.attach(motor1.pin);
   motor2.servo.attach(motor2.pin);
   motor3.servo.attach(motor3.pin);
-
-  //CI Setup
-  Wire.begin();
-  Wire.beginTransmission(MPU_addr);
-  Wire.write(0x6B);  // PWR_MGMT_1 register
-  Wire.write(0);     // set to zero (wakes up the MPU-6050)
-  Wire.endTransmission(true);
-  x.target = AXMiddle;
-  y.target = AYMiddle;
-  x.speed = 0;
-  y.speed = 0;
+  maxMotorSpeed = x.acMax * sqrt(3);
 
   //Radio Setup
   radio.begin();
@@ -121,16 +134,16 @@ void loop() {
 
     case 2: //Balance still
       //Asservissement
-      x.speed = x.target - x.avg;
-      y.speed = y.target - y.avg;
+      x.speed = x.target - x.acAvg;
+      y.speed = y.target - y.acAvg;
 
       motor1.speed = x.speed / sqrt32 + y.speed / sqrt32;
       motor2.speed = -x.speed / sqrt32 + y.speed / sqrt32;
       motor3.speed = x.speed;
 
-      motor1.speed = map(motor1.speed, -27700, 27700, 0, 180);
-      motor2.speed = map(motor2.speed, -27700, 27700, 0, 180);
-      motor3.speed = map(motor3.speed, -27700, 27700, 0, 180);
+      motor1.speed = map(motor1.speed, -maxMotorSpeed, maxMotorSpeed, 0, 180);
+      motor2.speed = map(motor2.speed, -maxMotorSpeed, maxMotorSpeed, 0, 180);
+      motor3.speed = map(motor3.speed, -maxMotorSpeed, maxMotorSpeed, 0, 180);
       break;
 
     default: //OFF
@@ -159,18 +172,18 @@ void readCI() {
   Wire.requestFrom(MPU_addr, 14, true);
 
   x.ac = Wire.read() << 8 | Wire.read();
-  for (int i = 0; i < AVERAGEPTS - 1; i++) x.avgArray[i] = x.avgArray[i + 1];
-  x.avgArray[AVERAGEPTS - 1] = x.ac;
-  x.avg = 0;
-  for (int i = 0; i < AVERAGEPTS; i++) x.avg += x.avgArray[i];
-  x.avg /= AVERAGEPTS;
+  for (int i = 0; i < AVERAGEPTS - 1; i++) x.acAvgArray[i] = x.acAvgArray[i + 1];
+  x.acAvgArray[AVERAGEPTS - 1] = x.ac;
+  x.acAvg = 0;
+  for (int i = 0; i < AVERAGEPTS; i++) x.acAvg += x.acAvgArray[i];
+  x.acAvg /= AVERAGEPTS;
 
   y.ac = Wire.read() << 8 | Wire.read();
-  for (int i = 0; i < AVERAGEPTS - 1; i++) y.avgArray[i] = y.avgArray[i + 1];
-  y.avgArray[AVERAGEPTS - 1] = y.ac;
-  y.avg = 0;
-  for (int i = 0; i < AVERAGEPTS; i++) y.avg += y.avgArray[i];
-  y.avg /= AVERAGEPTS;
+  for (int i = 0; i < AVERAGEPTS - 1; i++) y.acAvgArray[i] = y.acAvgArray[i + 1];
+  y.acAvgArray[AVERAGEPTS - 1] = y.ac;
+  y.acAvg = 0;
+  for (int i = 0; i < AVERAGEPTS; i++) y.acAvg += y.acAvgArray[i];
+  y.acAvg /= AVERAGEPTS;
 
   z.ac = Wire.read() << 8 | Wire.read();
   Tmp = Wire.read() << 8 | Wire.read();
@@ -178,14 +191,19 @@ void readCI() {
   y.gy = Wire.read() << 8 | Wire.read();
   z.gy = Wire.read() << 8 | Wire.read();
 
+  x.angle = asin(x.acAvg / x.acMax);
+  y.angle = asin(y.acAvg / y.acMax);
+
   if (DEBUGCI) {
     Serial.print(x.ac);
     Serial.print("\t");
-    Serial.print(x.avg);
+    Serial.print(x.acAvg);
+    Serial.print("\t");
+    Serial.print(x.angle);
     Serial.print("\t");
     Serial.print(y.ac);
     Serial.print("\t");
-    Serial.print(y.avg);
+    Serial.print(y.acAvg);
     Serial.print("\t");
     //Serial.print(z.ac);
     //Serial.print("\t");
