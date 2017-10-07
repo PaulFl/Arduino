@@ -1,8 +1,10 @@
-#define DEBUGRADIO 0
-#define DEBUGCI 1
-#define DEBUGMOTORSPEED 0
+#define MODE 1 //0 OFF, 1 Motor control with remote, 2 balance still
 
-#define AVERAGEPTS 20
+#define DEBUGRADIO 0
+#define DEBUGCI 0
+#define DEBUGMOTORSPEED 1
+
+#define AVERAGEPTS 10
 
 #include <Wire.h>
 #include <Servo.h>
@@ -72,17 +74,40 @@ void loop() {
   lireCentraleInertielle();
   lireRadio();
 
-  //Asservissement
-  vX = xObj - AcX;
-  vY = yObj - AcY;
+  switch (MODE) {
+    case 1:
+      vX = msg[0];
+      vY = msg[1];
 
-  vitesseMoteur1 = vX / sqrt32 + vY / sqrt32;
-  vitesseMoteur2 = -vX / sqrt32 + vY / sqrt32;
-  vitesseMoteur3 = vX;
+      vitesseMoteur1 = vX / sqrt32 + vY / sqrt32;
+      vitesseMoteur2 = -vX / sqrt32 + vY / sqrt32;
+      vitesseMoteur3 = vX;
 
-  vitesseMoteur1 = map(vitesseMoteur1, -100 * sqrt32, 100 * sqrt32, 0, 180);
-  vitesseMoteur2 = map(vitesseMoteur2, -100 * sqrt32, 100 * sqrt32, 0, 180);
-  vitesseMoteur3 = map(vitesseMoteur3, -100 * sqrt32, 100 * sqrt32, 0, 180);
+      vitesseMoteur1 = map(vitesseMoteur1, -100*sqrt(3), 100*sqrt(3), 0, 180);
+      vitesseMoteur2 = map(vitesseMoteur2, -100*sqrt(3), 100*sqrt(3), 0, 180);
+      vitesseMoteur3 = map(vitesseMoteur3, -100*sqrt(3), 100*sqrt(3), 0, 180);
+      break;
+    case 2:
+      //Asservissement
+      vX = xObj - avgAx;
+      vY = yObj - avgAy;
+
+      vitesseMoteur1 = vX / sqrt32 + vY / sqrt32;
+      vitesseMoteur2 = -vX / sqrt32 + vY / sqrt32;
+      vitesseMoteur3 = vX;
+
+      vitesseMoteur1 = map(vitesseMoteur1, -27700, 27700, 0, 180);
+      vitesseMoteur2 = map(vitesseMoteur2, -27700, 27700, 0, 180);
+      vitesseMoteur3 = map(vitesseMoteur3, -27700, 27700, 0, 180);
+      break;
+    default:
+      vitesseMoteur1 = 0;
+      vitesseMoteur2 = 0;
+      vitesseMoteur3 = 0;
+      break;
+  }
+
+
   if (DEBUGMOTORSPEED) {
     Serial.print(vitesseMoteur1);
     Serial.print("\t");
@@ -164,9 +189,9 @@ void lireRadio() {
       Serial.print("\t");
       Serial.print(msg[1]);
       Serial.print("\t");
-      Serial.print(msg[2]*100);
+      Serial.print(msg[2] * 100);
       Serial.print("\t");
-      Serial.print(msg[3]*100);
+      Serial.print(msg[3] * 100);
       Serial.print("\t");
       Serial.println();
     }
