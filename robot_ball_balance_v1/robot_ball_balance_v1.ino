@@ -4,7 +4,7 @@
 
 //Debug options
 #define DEBUGRADIO 0
-#define DEBUGCI 0
+#define DEBUGCI 1
 #define DEBUGMOTORSPEED 0
 
 //Pins
@@ -43,9 +43,10 @@ struct COORD {
   int acMax;
   int acMiddle;
   int gy;
-  int angle;
+  float angle;
   long int acAvgArray[AVERAGEPTS];
   long int acAvg = 0;
+  long int acAvg2 = 0;
   int target;
   int speed;
 };
@@ -177,6 +178,7 @@ void readCI() {
   x.acAvg = 0;
   for (int i = 0; i < AVERAGEPTS; i++) x.acAvg += x.acAvgArray[i];
   x.acAvg /= AVERAGEPTS;
+  x.acAvg2 += 0.2*(x.ac-x.acAvg2);
 
   y.ac = Wire.read() << 8 | Wire.read();
   for (int i = 0; i < AVERAGEPTS - 1; i++) y.acAvgArray[i] = y.acAvgArray[i + 1];
@@ -191,20 +193,22 @@ void readCI() {
   y.gy = Wire.read() << 8 | Wire.read();
   z.gy = Wire.read() << 8 | Wire.read();
 
-  x.angle = asin(x.acAvg / x.acMax);
-  y.angle = asin(y.acAvg / y.acMax);
+  x.angle = asin(float(x.acAvg) / float(x.acMax)) * 180 / PI;
+  y.angle = asin(float(y.acAvg) / float(y.acMax)) * 180 / PI;
 
   if (DEBUGCI) {
     Serial.print(x.ac);
     Serial.print("\t");
     Serial.print(x.acAvg);
     Serial.print("\t");
-    Serial.print(x.angle);
+    Serial.print(x.acAvg2);
     Serial.print("\t");
-    Serial.print(y.ac);
-    Serial.print("\t");
-    Serial.print(y.acAvg);
-    Serial.print("\t");
+    //    Serial.print(x.angle);
+    //    Serial.print("\t");
+//    Serial.print(y.ac);
+//    Serial.print("\t");
+//    Serial.print(y.acAvg);
+//    Serial.print("\t");
     //Serial.print(z.ac);
     //Serial.print("\t");
     //Serial.print(x.gy);
