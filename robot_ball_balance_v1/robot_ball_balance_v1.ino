@@ -1,11 +1,11 @@
-#define MODE 0 //0 OFF, 1 Motor control with remote, 2 balance still
+#define MODE 1 //0 OFF, 1 Motor control with remote, 2 balance still
 
 #define AVERAGEPTS 10
 
 //Debug options
 #define DEBUGRADIO 0
-#define DEBUGCI 1
-#define DEBUGMOTORSPEED 0
+#define DEBUGCI 0
+#define DEBUGMOTORSPEED 1
 
 //Pins
 #define RADIOCEPIN 7
@@ -124,13 +124,13 @@ void loop() {
       x.speed = msg[0];
       y.speed = msg[1];
 
-      motor1.speed = x.speed / sqrt32 + y.speed / sqrt32;
+      motor1.speed = -x.speed / sqrt32 - y.speed / sqrt32;
       motor2.speed = -x.speed / sqrt32 + y.speed / sqrt32;
       motor3.speed = x.speed;
 
-      motor1.speed = map(motor1.speed, -100 * sqrt(3), 100 * sqrt(3), 0, 180);
-      motor2.speed = map(motor2.speed, -100 * sqrt(3), 100 * sqrt(3), 0, 180);
-      motor3.speed = map(motor3.speed, -100 * sqrt(3), 100 * sqrt(3), 0, 180);
+      motor1.speed = map(motor1.speed, -100 * sqrt(3), 100 * sqrt(3), 95-5, 95+5);
+      motor2.speed = map(motor2.speed, -100 * sqrt(3), 100 * sqrt(3), 95-5, 95+5);
+      motor3.speed = map(motor3.speed, -100 * sqrt(3), 100 * sqrt(3), 95-5, 95+5);
       break;
 
     case 2: //Balance still
@@ -148,9 +148,9 @@ void loop() {
       break;
 
     default: //OFF
-      motor1.speed = 0;
-      motor2.speed = 0;
-      motor3.speed = 0;
+      motor1.speed = 95;
+      motor2.speed = 95;
+      motor3.speed = 95;
       break;
   }
 
