@@ -19,6 +19,7 @@ along with this program.If not, see <http://www.gnu.org/licenses/>.
 #include "buffer.h"
 #include "crc.h"
 
+
 bool UnpackPayload(uint8_t* message, int lenMes, uint8_t* payload, int lenPa);
 bool ProcessReadPacket(uint8_t* message, bldcMeasure& values, int len);
 
@@ -187,7 +188,7 @@ bool ProcessReadPacket(uint8_t* message, bldcMeasure& values, int len) {
 bool VescUartGetValue(bldcMeasure& values) {
 	uint8_t command[1] = { COMM_GET_VALUES };
 	uint8_t payload[256];
-    PackSendPayload(command, 1);
+	PackSendPayload(command, 1);
 	delay(100); //needed, otherwise data is not read
 	int lenPayload = ReceiveUartMessage(payload);
 	if (lenPayload > 55) {

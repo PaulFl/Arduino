@@ -185,7 +185,7 @@ void loop() {
     for (int i = 0; i <= 9; i++) {
       if (measuredValues.inpVoltage >= mapBatteryPercentage[i] * 10 && measuredValues.inpVoltage <= mapBatteryPercentage[i + 1] * 10) battRange = i;
     }
-    batteryPercentage = int(map(measuredValues.inpVoltage, mapBatteryPercentage[battRange] * 10, mapBatteryPercentage[battRange + 1] * 10, battRange * 10, (battRange + 1) * 10)); //Linear approximation beetween two values of mapBatteryPercentage
+    batteryPercentage = int(map(measuredValues.inpVoltage, mapBatteryPercentage[battRange] * 10.0, mapBatteryPercentage[battRange + 1] * 10.0, float(battRange) * 10.0, float(battRange + 1) * 10.0)); //Linear approximation beetween two values of mapBatteryPercentage
     if (measuredValues.inpVoltage <= mapBatteryPercentage[0] * 10) batteryPercentage = 0;
     else if (measuredValues.inpVoltage >= mapBatteryPercentage[10] * 10) batteryPercentage = 100;
     checkDelay();
