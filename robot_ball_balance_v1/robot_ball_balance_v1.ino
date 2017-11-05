@@ -213,12 +213,12 @@ void readCI() {
     Serial.print("\t");
     Serial.print(x.acAvg2);
     Serial.print("\t");
-    //    Serial.print(x.angle);
-    //    Serial.print("\t");
-    //    Serial.print(y.ac);
-    //    Serial.print("\t");
-    //    Serial.print(y.acAvg);
-    //    Serial.print("\t");
+    //Serial.print(x.angle);
+    //Serial.print("\t");
+    //Serial.print(y.ac);
+    //Serial.print("\t");
+    //Serial.print(y.acAvg);
+    //Serial.print("\t");
     //Serial.print(z.ac);
     //Serial.print("\t");
     //Serial.print(x.gy);
