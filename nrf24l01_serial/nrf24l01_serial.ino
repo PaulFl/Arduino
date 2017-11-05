@@ -3,10 +3,12 @@
 #include <RF24.h>
 #include <RF24_config.h>
 
-int msg[4];
+#define MSGLENGTH 4 //nunchuck 4, ballance robot 5
+
+int msg[MSGLENGTH];
 RF24 radio(7, 8);
 //const uint64_t pipe = 0xE8E8F0F1E0LL;// RED remote
-const uint64_t pipe = 0xE8E8F0F0E1LL;//White remote
+const uint64_t pipe = 0xE8E8F0F0E1LL;//White remote, ballance robot
 
 
 void setup(void) {
@@ -19,14 +21,12 @@ void setup(void) {
 void loop(void) {
   if (radio.available()) {
     while (radio.available()) {
-      radio.read(msg, 8);
+      radio.read(msg, 2 * MSGLENGTH);
     }
-    Serial.print(msg[0]);
-    Serial.print("\t");
-    Serial.print(msg[1]);
-    Serial.print("\t");
-    Serial.print(msg[2]);
-    Serial.print("\t");
-    Serial.println(msg[3]);
-  } 
+    for (int i = 0; i < MSGLENGTH; i++) {
+      Serial.print(msg[i]);
+      Serial.print("\t");
+    }
+    Serial.println(" ");
+  }
 }

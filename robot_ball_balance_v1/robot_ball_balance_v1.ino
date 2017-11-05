@@ -1,4 +1,5 @@
-#define MODE 1 //0 OFF, 1 Motor control with remote, 2 balance still
+#define WIRELESSDEBUG 1 //not compatible with remote control of the robot
+#define MODE 0 //0 OFF, 1 Motor control with remote, 2 balance still
 
 #define AVERAGEPTS 10
 
@@ -72,7 +73,9 @@ int Tmp;
 int msg[4];
 
 RF24 radio(7, 8);
-const uint64_t pipe = 0xE8E8F0F0E1LL;//White remote
+const uint64_t pipe = 0xE8E8F0F0E1LL;//White remote, ballance robot
+
+int wirelessDebugArray[5]; //x acc, y acc, motor1, motor2, motor3
 
 
 void setup() {
@@ -111,16 +114,23 @@ void setup() {
 
   //Radio Setup
   radio.begin();
-  radio.openReadingPipe(1, pipe);
-  radio.startListening();
+  if (WIRELESSDEBUG) {
+    radio.begin();
+    radio.openWritingPipe(pipe);
+  } else if (MODE == 1) {
+    radio.begin();
+    radio.openReadingPipe(1, pipe);
+    radio.startListening();
+  }
 }
 
 void loop() {
   readCI();
-  readRadio();
 
   switch (MODE) {
     case 1: //Motor control with remote
+      readRadio();
+
       x.speed = msg[0];
       y.speed = msg[1];
 
@@ -128,9 +138,9 @@ void loop() {
       motor2.speed = -x.speed / sqrt32 + y.speed / sqrt32;
       motor3.speed = x.speed;
 
-      motor1.speed = map(motor1.speed, -100 * sqrt(3), 100 * sqrt(3), 95-5, 95+5);
-      motor2.speed = map(motor2.speed, -100 * sqrt(3), 100 * sqrt(3), 95-5, 95+5);
-      motor3.speed = map(motor3.speed, -100 * sqrt(3), 100 * sqrt(3), 95-5, 95+5);
+      motor1.speed = map(motor1.speed, -100 * sqrt(3), 100 * sqrt(3), 95 - 5, 95 + 5);
+      motor2.speed = map(motor2.speed, -100 * sqrt(3), 100 * sqrt(3), 95 - 5, 95 + 5);
+      motor3.speed = map(motor3.speed, -100 * sqrt(3), 100 * sqrt(3), 95 - 5, 95 + 5);
       break;
 
     case 2: //Balance still
@@ -178,7 +188,7 @@ void readCI() {
   x.acAvg = 0;
   for (int i = 0; i < AVERAGEPTS; i++) x.acAvg += x.acAvgArray[i];
   x.acAvg /= AVERAGEPTS;
-  x.acAvg2 += 0.2*(x.ac-x.acAvg2);
+  x.acAvg2 += 0.2 * (x.ac - x.acAvg2);
 
   y.ac = Wire.read() << 8 | Wire.read();
   for (int i = 0; i < AVERAGEPTS - 1; i++) y.acAvgArray[i] = y.acAvgArray[i + 1];
@@ -205,10 +215,10 @@ void readCI() {
     Serial.print("\t");
     //    Serial.print(x.angle);
     //    Serial.print("\t");
-//    Serial.print(y.ac);
-//    Serial.print("\t");
-//    Serial.print(y.acAvg);
-//    Serial.print("\t");
+    //    Serial.print(y.ac);
+    //    Serial.print("\t");
+    //    Serial.print(y.acAvg);
+    //    Serial.print("\t");
     //Serial.print(z.ac);
     //Serial.print("\t");
     //Serial.print(x.gy);
@@ -219,6 +229,16 @@ void readCI() {
     //Serial.print("\t");
     //Serial.print(Tmp / 340.00 + 36.53); //equation for temperature in degrees C from datasheet
     Serial.println();
+  }
+
+  if (WIRELESSDEBUG){
+    wirelessDebugArray[0] = x.ac;
+    wirelessDebugArray[1] = y.ac;
+    wirelessDebugArray[2] = motor1.speed;
+    wirelessDebugArray[3] = motor2.speed;
+    wirelessDebugArray[4] = motor3.speed;
+
+    radio.write(wirelessDebugArray, 10);
   }
 }
 
