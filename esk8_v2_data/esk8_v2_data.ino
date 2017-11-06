@@ -291,7 +291,7 @@ void checkDelay() {
       lcd.setCursor(0, 1);
       lcd.print("Duty: ");
       lcd.print(measuredValues.dutyCycleNow);
-      lcd.print("%     ");
+      lcd.print("      ");
       break;
     case 4:
       lcd.setCursor(0, 0);
