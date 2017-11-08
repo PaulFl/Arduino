@@ -42,6 +42,7 @@ const int MPU_addr = 0x68;
 const float sqrt32 = sqrt(3) / 2;
 
 struct COORD {
+  int offsetAc;
   int ac;
   int acMin;
   int acMax;
@@ -102,6 +103,8 @@ void setup() {
   y.acMiddle = ACYMIDDLE;
   x.target = x.acMiddle;
   y.target = y.acMiddle;
+  x.offsetAc = 1025;
+  y.offsetAc = 125;
 
   //Motors setup
   motor1.pin = MOTOR1PIN;
@@ -172,16 +175,34 @@ void loop() {
 
     case 2: //Balance still
       //Asservissement
-      x.speed = x.target - x.acAvg;
-      y.speed = y.target - y.acAvg;
 
-      motor1.speed = x.speed / sqrt32 + y.speed / sqrt32;
-      motor2.speed = -x.speed / sqrt32 + y.speed / sqrt32;
-      motor3.speed = x.speed;
+      readCI();
+       y.speed = 0;
+      x.speed = 0;
 
-      motor1.speed = map(motor1.speed, -maxMotorSpeed, maxMotorSpeed, 0, 180);
-      motor2.speed = map(motor2.speed, -maxMotorSpeed, maxMotorSpeed, 0, 180);
-      motor3.speed = map(motor3.speed, -maxMotorSpeed, maxMotorSpeed, 0, 180);
+      motor1.speed = y.speed;
+      motor2.speed = -x.speed - y.speed / sqrt32;
+      motor3.speed = +x.speed - y.speed / sqrt32;
+
+
+
+      motor1.speed = map(motor1.speed, -100, 100, 95 - sqrt32 * 95, 95 + sqrt32 * 95);
+      motor2.speed = map(motor2.speed, -100 - 100/sqrt32, +100 + 100/sqrt32 , 95 - 95 , 95 + 95);
+      motor3.speed = map(motor3.speed, -100 - 100/sqrt32, +100 + 100/sqrt32 , 95 - 95 , 95 + 95);
+
+        if (DEBUG) {
+        Serial.print(x.speed);
+        Serial.print("\t");
+        Serial.print(y.speed);
+        Serial.print("\t");
+        Serial.print(motor1.speed);
+        Serial.print("\t");
+        Serial.print(motor2.speed);
+        Serial.print("\t");
+        Serial.print(motor3.speed);
+        Serial.println("\t");
+
+      }
       break;
 
     case 3: //Playground, tests, debug
@@ -224,6 +245,9 @@ void readCI() {
   Wire.requestFrom(MPU_addr, 14, true);
 
   x.ac = Wire.read() << 8 | Wire.read();
+  x.ac = -x.ac;
+  x.ac += x.offsetAc;
+  y.ac += y.offsetAc;
   for (int i = 0; i < AVERAGEPTS - 1; i++) x.acAvgArray[i] = x.acAvgArray[i + 1];
   x.acAvgArray[AVERAGEPTS - 1] = x.ac;
   x.acAvg = 0;
@@ -248,18 +272,18 @@ void readCI() {
   y.angle = asin(float(y.acAvg) / float(y.acMax)) * 180 / PI;
 
   if (DEBUGCI) {
-    Serial.print(x.ac);
-    Serial.print("\t");
+ //   Serial.print(x.ac);
+  //  Serial.print("\t");
    // Serial.print(x.acAvg);
 //    Serial.print("\t");
-//    Serial.print(x.acAvg2);
-//    Serial.print("\t");
+    Serial.print(x.acAvg2);
+    Serial.print("\t");
     //Serial.print(x.angle);
     //Serial.print("\t");
-    Serial.print(y.ac);
+    //Serial.print(y.ac);
+   // Serial.print("\t");
+    Serial.print(y.acAvg);
     Serial.print("\t");
-    //Serial.print(y.acAvg);
-    //Serial.print("\t");
     //Serial.print(z.ac);
     //Serial.print("\t");
     //Serial.print(x.gy);
