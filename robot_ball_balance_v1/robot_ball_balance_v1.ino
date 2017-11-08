@@ -1,19 +1,22 @@
-#define WIRELESSDEBUG 1 //not compatible with remote control of the robot
-#define MODE 0 //0 OFF, 1 Motor control with remote, 2 balance still
+#define WIRELESSDEBUG 0 //not compatible with remote control of the robot
+#define MODE 2 //0 OFF, 1 Motor control with remote, 2 balance still, 3 playground, debug, tests
+
+#define MOTORON 0
 
 #define AVERAGEPTS 10
 
 //Debug options
 #define DEBUGRADIO 0
-#define DEBUGCI 0
-#define DEBUGMOTORSPEED 1
+#define DEBUGCI 1
+#define DEBUGMOTORSPEED 0
+#define DEBUG 0
 
 //Pins
 #define RADIOCEPIN 7
 #define RADIOCSNPIN 8
-#define MOTOR1PIN 6
+#define MOTOR1PIN 10
 #define MOTOR2PIN 9
-#define MOTOR3PIN 10
+#define MOTOR3PIN 6
 
 //CI CSTS
 #define ACXMAX 16000
@@ -111,6 +114,9 @@ void setup() {
   motor2.servo.attach(motor2.pin);
   motor3.servo.attach(motor3.pin);
   maxMotorSpeed = x.acMax * sqrt(3);
+  motor1.servo.write(95);
+  motor2.servo.write(95);
+  motor3.servo.write(95);
 
   //Radio Setup
   radio.begin();
@@ -131,16 +137,37 @@ void loop() {
     case 1: //Motor control with remote
       readRadio();
 
-      x.speed = msg[0];
-      y.speed = msg[1];
+      y.speed = msg[0]; //entre -100 et 100
+      x.speed = msg[1]; //entre -100 et 100
 
-      motor1.speed = -x.speed / sqrt32 - y.speed / sqrt32;
-      motor2.speed = -x.speed / sqrt32 + y.speed / sqrt32;
-      motor3.speed = x.speed;
+      y.speed = 10;
+      x.speed = 0;
 
-      motor1.speed = map(motor1.speed, -100 * sqrt(3), 100 * sqrt(3), 95 - 5, 95 + 5);
-      motor2.speed = map(motor2.speed, -100 * sqrt(3), 100 * sqrt(3), 95 - 5, 95 + 5);
-      motor3.speed = map(motor3.speed, -100 * sqrt(3), 100 * sqrt(3), 95 - 5, 95 + 5);
+      motor1.speed = y.speed;
+      motor2.speed = -x.speed - y.speed / sqrt32;
+      motor3.speed = +x.speed - y.speed / sqrt32;
+
+
+
+      motor1.speed = map(motor1.speed, -100, 100, 95 - sqrt32 * 95, 95 + sqrt32 * 95);
+      motor2.speed = map(motor2.speed, -100 - 100/sqrt32, +100 + 100/sqrt32 , 95 - 95 , 95 + 95);
+      motor3.speed = map(motor3.speed, -100 - 100/sqrt32, +100 + 100/sqrt32 , 95 - 95 , 95 + 95);
+
+        if (DEBUG) {
+        Serial.print(x.speed);
+        Serial.print("\t");
+        Serial.print(y.speed);
+        Serial.print("\t");
+        Serial.print(motor1.speed);
+        Serial.print("\t");
+        Serial.print(motor2.speed);
+        Serial.print("\t");
+        Serial.print(motor3.speed);
+        Serial.println("\t");
+
+      }
+    
+
       break;
 
     case 2: //Balance still
@@ -157,9 +184,17 @@ void loop() {
       motor3.speed = map(motor3.speed, -maxMotorSpeed, maxMotorSpeed, 0, 180);
       break;
 
+    case 3: //Playground, tests, debug
+      // +x:  95-v, moteur3 95+v
+      // +y moteur1 95+v, moteur2 95-v/sqrt32, moteur3 95-v/sqrt32
+      motor1.speed = 95 + 5;
+      motor2.speed = 95 - 5 / sqrt32;
+      motor3.speed = 95 - 5 / sqrt32;
+      break;
+
     default: //OFF
-      motor1.speed = 95;
-      motor2.speed = 95;
+      motor1.speed = 180;
+      motor2.speed = 0;
       motor3.speed = 95;
       break;
   }
@@ -168,12 +203,18 @@ void loop() {
   if (DEBUGMOTORSPEED) {
     Serial.print(motor1.speed);
     Serial.print("\t");
+    Serial.print(motor2.speed);
+    Serial.print("\t");
+    Serial.print(motor3.speed);
+    Serial.print("\t");
     Serial.println();
   }
 
-  motor1.servo.write(motor1.speed);
-  motor2.servo.write(motor2.speed);
-  motor3.servo.write(motor3.speed);
+  if (MOTORON) {
+    motor1.servo.write(motor1.speed);
+    motor2.servo.write(motor2.speed);
+    motor3.servo.write(motor3.speed);
+  }
 }
 
 void readCI() {
@@ -209,14 +250,14 @@ void readCI() {
   if (DEBUGCI) {
     Serial.print(x.ac);
     Serial.print("\t");
-    Serial.print(x.acAvg);
-    Serial.print("\t");
-    Serial.print(x.acAvg2);
-    Serial.print("\t");
+   // Serial.print(x.acAvg);
+//    Serial.print("\t");
+//    Serial.print(x.acAvg2);
+//    Serial.print("\t");
     //Serial.print(x.angle);
     //Serial.print("\t");
-    //Serial.print(y.ac);
-    //Serial.print("\t");
+    Serial.print(y.ac);
+    Serial.print("\t");
     //Serial.print(y.acAvg);
     //Serial.print("\t");
     //Serial.print(z.ac);
@@ -231,7 +272,7 @@ void readCI() {
     Serial.println();
   }
 
-  if (WIRELESSDEBUG){
+  if (WIRELESSDEBUG) {
     wirelessDebugArray[0] = x.ac;
     wirelessDebugArray[1] = y.ac;
     wirelessDebugArray[2] = motor1.speed;
@@ -256,11 +297,11 @@ void readRadio() {
       Serial.print("\t");
       Serial.print(msg[1]);
       Serial.print("\t");
-      Serial.print(msg[2] * 100);
-      Serial.print("\t");
-      Serial.print(msg[3] * 100);
-      Serial.print("\t");
-      Serial.println();
+      //  Serial.print(msg[2] * 100);
+      //  Serial.print("\t");
+      // Serial.print(msg[3] * 100);
+      //  Serial.print("\t");
+      // Serial.println();
     }
   }
 }
