@@ -13,10 +13,6 @@ void setup() {
   Wire.endTransmission(true);
   x.speed = 0;
   y.speed = 0;
-  x.acMin = ACXMIN;
-  x.acMax = ACXMAX;
-  y.acMin = ACYMIN;
-  y.acMax = ACYMAX;
   x.target = 0;
   y.target = 0;
 
@@ -83,8 +79,14 @@ void loop() {
       x.sumError += x.error;
       y.sumError += y.error;
 
-      x.speed = Kc * (Kp * x.error + Ki * x.sumError);
-      y.speed = Kc * (Kp * y.error + Ki * y.sumError);
+      x.dError = x.error - x.lastError;
+      y.dError = y.error - y.lastError;
+
+      x.speed = Kc * (Kp * x.error + Ki * x.sumError + Kd * x.dError);
+      y.speed = Kc * (Kp * y.error + Ki * y.sumError + Kd * y.dError);
+
+      x.lastError = x.error;
+      y.lastError = y.error;
 
       calculateMotorSpeeds();
 

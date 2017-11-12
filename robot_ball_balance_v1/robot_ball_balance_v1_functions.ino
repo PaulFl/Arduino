@@ -31,8 +31,8 @@ void readCI() {
   y.gy = Wire.read() << 8 | Wire.read();
   z.gy = Wire.read() << 8 | Wire.read();
 
-  x.angle = asin(float(x.acLowPass) / float(x.acMax)) * 180 / PI;
-  y.angle = asin(float(y.acLowPass) / float(y.acMax)) * 180 / PI;
+  x.angle = asin(float(x.acLowPass) / float(ACXMAX)) * 180 / PI;
+  y.angle = asin(float(y.acLowPass) / float(ACYMAX)) * 180 / PI;
 
   if (DEBUGCI) {
     //   Serial.print(x.ac);

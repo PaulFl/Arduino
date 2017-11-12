@@ -61,8 +61,6 @@ const float sqrt32 = sqrt(3) / 2;
 struct COORD {
   int acOffset;
   int ac;
-  int acMin;
-  int acMax;
   int gy;
   float angle;
   long int acLowPass = 0;
@@ -70,7 +68,7 @@ struct COORD {
   int speed;
   int error = 0;
   int lastError = 0;
-  int deltaError = 0;
+  int dError = 0;
   int sumError = 0;
 };
 
