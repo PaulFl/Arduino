@@ -57,7 +57,7 @@ void loop() {
       x.speed = msg[1]; //entre -100 et 100
 
       calculateMotorSpeeds();
-      
+
       if (DEBUG) {
         Serial.print(x.speed);
         Serial.print("\t");
@@ -76,9 +76,15 @@ void loop() {
 
     case 2: //Balance still
       readCI();
-      
-      y.speed = Kp*(y.acLowPass-y.target);
-      x.speed = Kp*(x.acLowPass-x.target);
+
+      x.error = x.acLowPass - x.target;
+      y.error = y.acLowPass - y.target;
+
+      x.sumError += x.error;
+      y.sumError += y.error;
+
+      x.speed = Kc * (Kp * x.error + Ki * x.sumError);
+      y.speed = Kc * (Kp * y.error + Ki * y.sumError);
 
       calculateMotorSpeeds();
 

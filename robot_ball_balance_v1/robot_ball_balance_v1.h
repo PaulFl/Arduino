@@ -33,7 +33,10 @@ const float acLowPass = 0.2;
 #define MOTORNEUTRAL 95
 
 //CSTS
-const float Kp = 1/ACXMAX;
+const float Kc = 1/ACXMAX; //angle accelerometre vers vitesse rotation moteur
+const float Kp = 1;
+const float Ki = 0;
+const float Kd = 0;
 
 //Libs
 #include <Arduino.h>
@@ -65,6 +68,10 @@ struct COORD {
   long int acLowPass = 0;
   int target;
   int speed;
+  int error = 0;
+  int lastError = 0;
+  int deltaError = 0;
+  int sumError = 0;
 };
 
 struct MOTOR {

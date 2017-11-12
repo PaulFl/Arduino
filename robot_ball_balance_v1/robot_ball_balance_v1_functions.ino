@@ -1,6 +1,6 @@
 #include "robot_ball_balance_v1.h"
 
-void calculateMotorSpeeds() { //calculate motor1,2,2.speed from x,y.speed
+void calculateMotorSpeeds() { //calculate motor1,2,3.speed from x,y.speed
   motor1.speed = y.speed;
   motor2.speed = -x.speed * sqrt32 - y.speed / 2.0;
   motor3.speed = +x.speed * sqrt32 - y.speed / 2.0;
