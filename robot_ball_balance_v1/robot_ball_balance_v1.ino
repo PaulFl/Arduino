@@ -17,8 +17,8 @@ void setup() {
   x.acMax = ACXMAX;
   y.acMin = ACYMIN;
   y.acMax = ACYMAX;
-  x.target = -x.acOffset;
-  y.target = -y.acOffset;
+  x.target = 0;
+  y.target = 0;
 
   //Motors setup
   motor1.pin = MOTOR1PIN;
@@ -77,8 +77,8 @@ void loop() {
     case 2: //Balance still
       readCI();
       
-      y.speed = Kp*y.acLowPass;
-      x.speed = Kp*x.acLowPass;
+      y.speed = Kp*(y.acLowPass-y.target);
+      x.speed = Kp*(x.acLowPass-x.target);
 
       calculateMotorSpeeds();
 
