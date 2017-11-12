@@ -77,8 +77,8 @@ void loop() {
     case 2: //Balance still
       readCI();
       
-      y.speed = 0;
-      x.speed = 0;
+      y.speed = Kp*y.acLowPass;
+      x.speed = Kp*x.acLowPass;
 
       calculateMotorSpeeds();
 
@@ -97,12 +97,7 @@ void loop() {
       }
       break;
 
-    case 3: //Playground, tests, debug
-      // +x:  MOTORNEUTRAL-v, moteur3 MOTORNEUTRAL+v
-      // +y moteur1 MOTORNEUTRAL+v, moteur2 MOTORNEUTRAL-v/sqrt32, moteur3 MOTORNEUTRAL-v/sqrt32
-      motor1.speed = MOTORNEUTRAL + 5;
-      motor2.speed = MOTORNEUTRAL - 5 / sqrt32;
-      motor3.speed = MOTORNEUTRAL - 5 / sqrt32;
+    case 3:
       break;
 
     default: //OFF

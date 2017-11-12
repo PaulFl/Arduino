@@ -9,7 +9,7 @@
 
 //Debug options
 #define DEBUGRADIO 0
-#define DEBUGCI 1
+#define DEBUGCI 0
 #define DEBUGMOTORSPEED 0
 #define DEBUG 0
 
@@ -31,6 +31,9 @@ const float acLowPass = 0.2;
 
 //Motors CSTS
 #define MOTORNEUTRAL 95
+
+//CSTS
+const float Kp = 1/ACXMAX;
 
 //Libs
 #include <Arduino.h>

@@ -26,15 +26,18 @@ def plotSpeedsDirection(): #en fonction de la direction
     angle = [i for i in range(-180, 181)]
     xSpeed = []
     ySpeed = []
+    robotSpeed = []
     motor1Speed = []
     motor2Speed = []
     motor3Speed = []
     for i in range(len(angle)):
         xSpeed.append(100*np.sin(angle[i]*np.pi/180))
         ySpeed.append(100*np.cos(angle[i]*np.pi/180))
+        robotSpeed.append((xSpeed[i]**2+ySpeed[i]**2)**0.5)
         motor1Speed.append(ySpeed[i])
-        motor2Speed.append(-xSpeed[i] - ySpeed[i]/sqrt32)
-        motor3Speed.append(-xSpeed[i] + ySpeed[i]/sqrt32)
+        motor2Speed.append(-xSpeed[i]*sqrt32 - ySpeed[i]/2)
+        motor3Speed.append(+xSpeed[i]*sqrt32 - ySpeed[i]/2)
+    plt.plot(angle, robotSpeed, label = "|speed|")
     plt.plot(angle, xSpeed, label = "x.speed")
     plt.plot(angle, ySpeed, label = "y.speed")
     plt.plot(angle, motor1Speed, label = "motor1.speed")

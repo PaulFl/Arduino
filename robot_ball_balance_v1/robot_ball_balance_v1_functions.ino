@@ -2,12 +2,12 @@
 
 void calculateMotorSpeeds() { //calculate motor1,2,2.speed from x,y.speed
   motor1.speed = y.speed;
-  motor2.speed = -x.speed - y.speed / sqrt32;
-  motor3.speed = +x.speed - y.speed / sqrt32;
+  motor2.speed = -x.speed * sqrt32 - y.speed / 2.0;
+  motor3.speed = +x.speed * sqrt32 - y.speed / 2.0;
 
-  motor1.speed = map(motor1.speed, -100, 100, MOTORNEUTRAL - sqrt32 * MOTORNEUTRAL, MOTORNEUTRAL + sqrt32 * MOTORNEUTRAL);
-  motor2.speed = map(motor2.speed, -100 - 100 / sqrt32, +100 + 100 / sqrt32 , MOTORNEUTRAL - MOTORNEUTRAL , MOTORNEUTRAL + MOTORNEUTRAL);
-  motor3.speed = map(motor3.speed, -100 - 100 / sqrt32, +100 + 100 / sqrt32 , MOTORNEUTRAL - MOTORNEUTRAL , MOTORNEUTRAL + MOTORNEUTRAL);
+  motor1.speed = map(motor1.speed, -100, 100, MOTORNEUTRAL - MOTORNEUTRAL, MOTORNEUTRAL + MOTORNEUTRAL);
+  motor2.speed = map(motor2.speed, -100, 100, MOTORNEUTRAL - MOTORNEUTRAL, MOTORNEUTRAL + MOTORNEUTRAL);
+  motor3.speed = map(motor3.speed, -100, 100, MOTORNEUTRAL - MOTORNEUTRAL, MOTORNEUTRAL + MOTORNEUTRAL);
 }
 
 void readCI() {
