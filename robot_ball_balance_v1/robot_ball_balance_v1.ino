@@ -15,6 +15,10 @@ void setup() {
   y.speed = 0;
   x.target = 0;
   y.target = 0;
+  x.acOffset = ACXOFFSET;
+  y.acOffset = ACYOFFSET;
+  x.gyOffset = GYXOFFSET;
+  y.gyOffset = GYYOFFSET;
 
   //Motors setup
   motor1.pin = MOTOR1PIN;
@@ -79,21 +83,15 @@ void loop() {
       x.sumError += x.error;
       y.sumError += y.error;
 
-      x.dError = x.error - x.lastError;
-      y.dError = y.error - y.lastError;
-
-      x.speed = Kc * (Kp * x.error + Ki * x.sumError + Kd * x.dError);
-      y.speed = Kc * (Kp * y.error + Ki * y.sumError + Kd * y.dError);
-
-      x.lastError = x.error;
-      y.lastError = y.error;
+      x.speed = Kc * (Kp * x.error + Ki * x.sumError + Kd * y.gy);
+      y.speed = Kc * (Kp * y.error + Ki * y.sumError + Kd * x.gy);
 
       calculateMotorSpeeds();
 
       if (DEBUG) {
         Serial.print(x.speed);
         Serial.print("\t");
-        Serial.print(y.speed);
+        Serial.print(y.error);
         Serial.print("\t");
         Serial.print(motor1.speed);
         Serial.print("\t");

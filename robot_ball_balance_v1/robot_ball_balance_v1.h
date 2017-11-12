@@ -9,7 +9,7 @@
 
 //Debug options
 #define DEBUGRADIO 0
-#define DEBUGCI 0
+#define DEBUGCI 1
 #define DEBUGMOTORSPEED 0
 #define DEBUG 0
 
@@ -25,18 +25,20 @@
 #define ACXMIN -16000
 #define ACYMAX 16000
 #define ACYMIN -16000
-#define ACXOFFSET 1025
-#define ACYOFFSET 125
-const float acLowPass = 0.2;
+#define ACXOFFSET 900
+#define ACYOFFSET 280
+#define GYXOFFSET 240
+#define GYYOFFSET -200
+const float acLowPass = 0.5;
 
 //Motors CSTS
 #define MOTORNEUTRAL 95
 
 //CSTS
-const float Kc = 1/ACXMAX; //angle accelerometre vers vitesse rotation moteur
-const float Kp = 1;
+const float Kc = -100.0/float(ACXMAX); //angle accelerometre vers vitesse rotation moteur
+const float Kp = 0;
 const float Ki = 0;
-const float Kd = 0;
+const float Kd = 1;
 
 //Libs
 #include <Arduino.h>
@@ -60,6 +62,7 @@ const float sqrt32 = sqrt(3) / 2;
 
 struct COORD {
   int acOffset;
+  int gyOffset;
   int ac;
   int gy;
   float angle;
@@ -67,8 +70,6 @@ struct COORD {
   int target;
   int speed;
   int error = 0;
-  int lastError = 0;
-  int dError = 0;
   int sumError = 0;
 };
 

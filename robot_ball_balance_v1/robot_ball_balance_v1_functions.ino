@@ -28,7 +28,11 @@ void readCI() {
   z.ac = Wire.read() << 8 | Wire.read();
   Tmp = Wire.read() << 8 | Wire.read();
   x.gy = Wire.read() << 8 | Wire.read();
+  x.gy += x.gyOffset;
+  x.gy *= (-1);
   y.gy = Wire.read() << 8 | Wire.read();
+  y.gy += y.gyOffset;
+  y.gy *= (-1);
   z.gy = Wire.read() << 8 | Wire.read();
 
   x.angle = asin(float(x.acLowPass) / float(ACXMAX)) * 180 / PI;
@@ -49,10 +53,10 @@ void readCI() {
     Serial.print("\t");
     //Serial.print(z.ac);
     //Serial.print("\t");
-    //Serial.print(x.gy);
-    //Serial.print("\t");
-    //Serial.print(y.gy);
-    //Serial.print("\t");
+    Serial.print(x.gy);
+    Serial.print("\t");
+    Serial.print(y.gy);
+    Serial.print("\t");
     //Serial.print(z.gy);
     //Serial.print("\t");
     //Serial.print(Tmp / 340.00 + 36.53); //equation for temperature in degrees C from datasheet
