@@ -3,9 +3,9 @@
 
 //Setup
 #define MODE 2 //0 OFF, 1 Motor control with remote, 2 balance still, 3 playground, debug, tests
-#define WIRELESSDEBUG 0 //not compatible with remote control of the robot
+#define WIRELESSDEBUG 1 //not compatible with remote control of the robot
 
-#define MOTORON 1  //Enable motors
+#define MOTORON 0  //Enable motors
 
 //Debug options
 #define DEBUGRADIO 0
@@ -35,10 +35,10 @@ const float acLowPass = 0.5;
 #define MOTORNEUTRAL 95
 
 //CSTS
-const float Kc = -100.0/float(ACXMAX); //angle accelerometre vers vitesse rotation moteur
-const float Kp = 0;
+const float Kc = -0.05;
+const float Kp = 0.9;
 const float Ki = 0;
-const float Kd = 1;
+const float Kd = 0.01;
 
 //Libs
 #include <Arduino.h>
