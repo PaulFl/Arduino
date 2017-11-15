@@ -27,12 +27,15 @@ void readCI() {
 
   z.ac = Wire.read() << 8 | Wire.read();
   Tmp = Wire.read() << 8 | Wire.read();
-  x.gy = Wire.read() << 8 | Wire.read();
-  x.gy += x.gyOffset;
-  x.gy *= (-1);
+  
   y.gy = Wire.read() << 8 | Wire.read();
   y.gy += y.gyOffset;
   y.gy *= (-1);
+  
+  x.gy = Wire.read() << 8 | Wire.read();
+  x.gy += x.gyOffset;
+  x.gy *= (-1);
+  
   z.gy = Wire.read() << 8 | Wire.read();
 
   x.angle = asin(float(x.acLowPass) / float(ACXMAX)) * 180 / PI;
