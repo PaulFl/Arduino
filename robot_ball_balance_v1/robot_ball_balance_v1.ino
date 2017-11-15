@@ -83,8 +83,8 @@ void loop() {
       x.sumError += x.error;
       y.sumError += y.error;
 
-      x.speed = Kc * (Kp * x.error + Ki * x.sumError + Kd * y.gy);
-      y.speed = Kc * (Kp * y.error + Ki * y.sumError + Kd * x.gy);
+      x.speed = Kc * (Kp * x.error + Ki * x.sumError + Kd * x.gy);
+      y.speed = Kc * (Kp * y.error + Ki * y.sumError + Kd * y.gy);
 
       calculateMotorSpeeds();
 
