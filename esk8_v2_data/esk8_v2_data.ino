@@ -139,7 +139,7 @@ void setup() {
   short schema;
   EEPROM_readAnything(sizeof(long) + sizeof(int) + 30, schema);
   if (schema != SCHEMA) {
-    EEPROM_writeAnything( sizeof(long) + 1, (float(1000)));
+    EEPROM_writeAnything( sizeof(long) + 1, (float(1220)));
     schema = SCHEMA;
     EEPROM_writeAnything(sizeof(long) + sizeof(int) + 30, schema);
   }
@@ -255,7 +255,7 @@ void checkDelay() {
     case 0:
       lcd.setCursor(0, 0);
       lcd.print("Battery: ");
-      lcd.print(batteryPercentage);
+      lcd.print(batteryPercentage/9.0);
       lcd.print("%          ");
       lcd.setCursor(0, 1);
       lcd.print("Voltage: ");
