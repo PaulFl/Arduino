@@ -27,39 +27,37 @@ void readCI() {
 
   z.ac = Wire.read() << 8 | Wire.read();
   Tmp = Wire.read() << 8 | Wire.read();
-  
+
   y.gy = Wire.read() << 8 | Wire.read();
   y.gy += y.gyOffset;
   y.gy *= (-1);
-  
+
   x.gy = Wire.read() << 8 | Wire.read();
   x.gy += x.gyOffset;
   x.gy *= (-1);
-  
+
   z.gy = Wire.read() << 8 | Wire.read();
 
   x.angle = asin(float(x.acLowPass) / float(ACXMAX)) * 180 / PI;
   y.angle = asin(float(y.acLowPass) / float(ACYMAX)) * 180 / PI;
 
   if (DEBUGCI) {
-    //   Serial.print(x.ac);
-    //  Serial.print("\t");
-    // Serial.print(x.acAvg);
+    //    Serial.print(x.ac);
     //    Serial.print("\t");
     Serial.print(x.acLowPass);
     Serial.print("\t");
     //Serial.print(x.angle);
     //Serial.print("\t");
-    //Serial.print(y.ac);
-    // Serial.print("\t");
+    //    Serial.print(y.ac);
+    //    Serial.print("\t");
     Serial.print(y.acLowPass);
     Serial.print("\t");
     //Serial.print(z.ac);
     //Serial.print("\t");
-    Serial.print(x.gy);
-    Serial.print("\t");
-    Serial.print(y.gy);
-    Serial.print("\t");
+    //    Serial.print(x.gy);
+    //    Serial.print("\t");
+    //    Serial.print(y.gy);
+    //    Serial.print("\t");
     //Serial.print(z.gy);
     //Serial.print("\t");
     //Serial.print(Tmp / 340.00 + 36.53); //equation for temperature in degrees C from datasheet
@@ -98,4 +96,45 @@ void readRadio() {
       // Serial.println();
     }
   }
+}
+
+void calibration() {
+  for (int i = 0; i <= 10; i++) {
+    readCI();
+    delay(10);
+    if (DEBUG) {
+      printDebug();
+    }
+  }
+  float tmpVar = acLowPass;
+  acLowPass = 0.05;
+  for (int i = 0; i <= 700; i++) {
+    readCI();
+    if (DEBUG) {
+      printDebug();
+    }
+  }
+  acLowPass = tmpVar;
+  x.acOffset = -x.acLowPass;
+  y.acOffset = -y.acLowPass;
+  for (int i = 0; i <= 100; i++) {
+    readCI();
+    if (DEBUG) {
+      printDebug();
+    }
+  }
+}
+
+void printDebug() {
+  Serial.print(x.acLowPass);
+  Serial.print("\t");
+  Serial.print(y.acLowPass);
+  Serial.print("\t");
+  Serial.print(motor1.speed);
+  Serial.print("\t");
+  Serial.print(motor2.speed);
+  Serial.print("\t");
+  Serial.print(motor3.speed);
+  Serial.print("\t");
+  Serial.println();
 }
