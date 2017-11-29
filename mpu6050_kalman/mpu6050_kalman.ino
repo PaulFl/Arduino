@@ -10,7 +10,7 @@ Kalman kalmanY2;
 
 /* IMU Data */
 double accX, accY, accZ;
-double gyroX, gyroY, gyroZ;
+double yGyro, xGyro, gyroZ;
 int16_t tempRaw;
 
 
@@ -69,8 +69,8 @@ void loop() {
   accY = ((i2cData[2] << 8) | i2cData[3]);
   accZ = ((i2cData[4] << 8) | i2cData[5]);
   tempRaw = (i2cData[6] << 8) | i2cData[7];
-  gyroX = (i2cData[8] << 8) | i2cData[9];
-  gyroY = (i2cData[10] << 8) | i2cData[11];
+  yGyro = (i2cData[8] << 8) | i2cData[9];
+  xGyro = (i2cData[10] << 8) | i2cData[11];
   gyroZ = (i2cData[12] << 8) | i2cData[13];
 
   double dt = (double)(micros() - timer) / 1000000; // Calculate delta time
@@ -85,8 +85,8 @@ void loop() {
   double xAngle2 = atan2(-accX, accZ) * RAD_TO_DEG;
 
 
-  double gyroXrate = gyroX / 131.0; // Convert to deg/s
-  double gyroYrate = gyroY / 131.0; // Convert to deg/s
+  double yGyroRate = yGyro / 131.0; // Convert to deg/s
+  double xGyroRate = xGyro / 131.0; // Convert to deg/s
 
 
 
@@ -95,20 +95,20 @@ void loop() {
     kalmanY2.setAngle(yAngle2);
     yAngleKal2 = yAngle2;
   } else
-    yAngleKal2 = kalmanY2.getAngle(yAngle2, gyroXrate, dt); // Calculate the angle using a Kalman filter
+    yAngleKal2 = kalmanY2.getAngle(yAngle2, yGyroRate, dt); // Calculate the angle using a Kalman filter
 
   if (abs(yAngleKal2) > 90)
-    gyroYrate = -gyroYrate; // Invert rate, so it fits the restriced accelerometer reading
-  xAngleKal = kalmanX.getAngle(xAngle, gyroYrate, dt);
+    xGyroRate = -xGyroRate; // Invert rate, so it fits the restriced accelerometer reading
+  xAngleKal = kalmanX.getAngle(xAngle, xGyroRate, dt);
   if ((xAngle2 < -90 && xAngleKal2 > 90) || (xAngle2 > 90 && xAngleKal2 < -90)) {
     kalmanX2.setAngle(xAngle2);
     xAngleKal2 = xAngle2;
   } else
-    xAngleKal2 = kalmanX2.getAngle(xAngle2, gyroYrate, dt); // Calculate the angle using a Kalman filter
+    xAngleKal2 = kalmanX2.getAngle(xAngle2, xGyroRate, dt); // Calculate the angle using a Kalman filter
 
   if (abs(xAngleKal2) > 90)
-    gyroXrate = -gyroXrate; // Invert rate, so it fits the restriced accelerometer reading
-  yAngleKal = kalmanY.getAngle(yAngle, gyroXrate, dt); // Calculate the angle using a Kalman filter
+    yGyroRate = -yGyroRate; // Invert rate, so it fits the restriced accelerometer reading
+  yAngleKal = kalmanY.getAngle(yAngle, yGyroRate, dt); // Calculate the angle using a Kalman filter
 
   Serial.print(yAngle); Serial.print("\t");
   Serial.print(yAngleKal); Serial.print("\t");
