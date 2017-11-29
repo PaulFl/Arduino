@@ -49,7 +49,7 @@ void setup() {
 }
 
 void loop() {
-  readCI();
+  readCIRaw();
 
   switch (MODE) {
     case 1: //Motor control with remote
@@ -63,7 +63,6 @@ void loop() {
       break;
 
     case 2: //Balance still
-      readCI();
 
       x.error = x.acLowPass - x.target;
       y.error = y.acLowPass - y.target;

@@ -11,7 +11,7 @@
 #define DEBUGRADIO 0
 #define DEBUGCI 0
 #define DEBUGMOTORSPEED 0
-#define DEBUG 1
+#define DEBUG 0
 
 //Pins
 #define RADIOCEPIN 7
@@ -49,10 +49,11 @@ const float Kd = 0;
 #include <printf.h>
 #include <RF24.h>
 #include <RF24_config.h>
+#include "Kalman.h"
 
 
 //Prototypes
-void readCI();
+void readCIRaw();
 void readRadio();
 void calculateMotorSpeeds();
 void calibration();
@@ -68,12 +69,18 @@ struct COORD {
   int gyOffset;
   int ac;
   int gy;
-  float angle;
+  double angle;
+  double angle2;
   long int acLowPass = 0;
   int target;
   int speed;
   int error = 0;
   int sumError = 0;
+//  Kalman kalman;
+//  Kalman kalman2;
+  double angleKal;
+  double angleKal2;
+  double gyroRate;
 };
 
 struct MOTOR {

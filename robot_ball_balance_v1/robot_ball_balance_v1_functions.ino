@@ -10,7 +10,7 @@ void calculateMotorSpeeds() { //calculate motor1,2,3.speed from x,y.speed
   motor3.speed = map(motor3.speed, -100, 100, MOTORNEUTRAL - MOTORNEUTRAL, MOTORNEUTRAL + MOTORNEUTRAL);
 }
 
-void readCI() {
+void readCIRaw() {
   Wire.beginTransmission(MPU_addr);
   Wire.write(0x3B);
   Wire.endTransmission(false);
@@ -38,8 +38,6 @@ void readCI() {
 
   z.gy = Wire.read() << 8 | Wire.read();
 
-  x.angle = asin(float(x.acLowPass) / float(ACXMAX)) * 180 / PI;
-  y.angle = asin(float(y.acLowPass) / float(ACYMAX)) * 180 / PI;
 
   if (DEBUGCI) {
     //    Serial.print(x.ac);
@@ -100,7 +98,7 @@ void readRadio() {
 
 void calibration() {
   for (int i = 0; i <= 10; i++) {
-    readCI();
+    readCIRaw();
     delay(10);
     if (DEBUG) {
       printDebug();
@@ -109,7 +107,7 @@ void calibration() {
   float tmpVar = acLowPass;
   acLowPass = 0.05;
   for (int i = 0; i <= 700; i++) {
-    readCI();
+    readCIRaw();
     if (DEBUG) {
       printDebug();
     }
@@ -118,7 +116,7 @@ void calibration() {
   x.acOffset = -x.acLowPass;
   y.acOffset = -y.acLowPass;
   for (int i = 0; i <= 100; i++) {
-    readCI();
+    readCIRaw();
     if (DEBUG) {
       printDebug();
     }
