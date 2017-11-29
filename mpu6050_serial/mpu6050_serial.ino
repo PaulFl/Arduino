@@ -27,10 +27,10 @@ void loop() {
   GyZ = Wire.read() << 8 | Wire.read();
   Serial.print(AcX);
   Serial.print("\t");
-  Serial.print(AcY);
-  Serial.print("\t");
-  Serial.print(AcZ);
-  Serial.print("\t");
+//  Serial.print(AcY);
+//  Serial.print("\t");
+//  Serial.print(AcZ);
+//  Serial.print("\t");
   //Serial.print(GyX);
   //Serial.print("\t");
   //Serial.print(GyY);
