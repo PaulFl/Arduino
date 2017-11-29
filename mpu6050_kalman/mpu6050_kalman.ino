@@ -2,10 +2,10 @@
 #include "Kalman.h" // Source: https://github.com/TKJElectronics/KalmanFilter
 
 
-Kalman kalmanX; // Create the Kalman instances
+Kalman kalmanX;
 Kalman kalmanY;
 
-Kalman kalmanX2; // Create the Kalman instances
+Kalman kalmanX2;
 Kalman kalmanY2;
 
 /* IMU Data */
@@ -14,9 +14,9 @@ double gyroX, gyroY, gyroZ;
 int16_t tempRaw;
 
 
-double kalAngleX, kalAngleY; // Calculated angle using a Kalman filter
+double yAngleKal2, xAngleKal; // Calculated angle using a Kalman filter
 
-double kalAngleX2, kalAngleY2;
+double yAngleKal, xAngleKal2;
 
 uint32_t timer;
 uint8_t i2cData[14]; // Buffer for I2C data
@@ -55,10 +55,10 @@ void setup() {
   double xAngle2 = atan2(-accX, accZ) * RAD_TO_DEG;
 
 
-  kalmanX.setAngle(yAngle2); // Set starting angle
-  kalmanY.setAngle(xAngle);
-  kalmanX2.setAngle(yAngle); // Set starting angle
-  kalmanY2.setAngle(xAngle2);
+  kalmanY2.setAngle(yAngle2); // Set starting angle
+  kalmanX.setAngle(xAngle);
+  kalmanY.setAngle(yAngle); // Set starting angle
+  kalmanX2.setAngle(xAngle2);
 
   timer = micros();
 }
@@ -91,29 +91,29 @@ void loop() {
 
 
   // This fixes the transition problem when the accelerometer angle jumps between -180 and 180 degrees
-  if ((yAngle2 < -90 && kalAngleX > 90) || (yAngle2 > 90 && kalAngleX < -90)) {
-    kalmanX.setAngle(yAngle2);
-    kalAngleX = yAngle2;
+  if ((yAngle2 < -90 && yAngleKal2 > 90) || (yAngle2 > 90 && yAngleKal2 < -90)) {
+    kalmanY2.setAngle(yAngle2);
+    yAngleKal2 = yAngle2;
   } else
-    kalAngleX = kalmanX.getAngle(yAngle2, gyroXrate, dt); // Calculate the angle using a Kalman filter
+    yAngleKal2 = kalmanY2.getAngle(yAngle2, gyroXrate, dt); // Calculate the angle using a Kalman filter
 
-  if (abs(kalAngleX) > 90)
+  if (abs(yAngleKal2) > 90)
     gyroYrate = -gyroYrate; // Invert rate, so it fits the restriced accelerometer reading
-  kalAngleY = kalmanY.getAngle(xAngle, gyroYrate, dt);
-  if ((xAngle2 < -90 && kalAngleY2 > 90) || (xAngle2 > 90 && kalAngleY2 < -90)) {
-    kalmanY2.setAngle(xAngle2);
-    kalAngleY2 = xAngle2;
+  xAngleKal = kalmanX.getAngle(xAngle, gyroYrate, dt);
+  if ((xAngle2 < -90 && xAngleKal2 > 90) || (xAngle2 > 90 && xAngleKal2 < -90)) {
+    kalmanX2.setAngle(xAngle2);
+    xAngleKal2 = xAngle2;
   } else
-    kalAngleY2 = kalmanY2.getAngle(xAngle2, gyroYrate, dt); // Calculate the angle using a Kalman filter
+    xAngleKal2 = kalmanX2.getAngle(xAngle2, gyroYrate, dt); // Calculate the angle using a Kalman filter
 
-  if (abs(kalAngleY2) > 90)
+  if (abs(xAngleKal2) > 90)
     gyroXrate = -gyroXrate; // Invert rate, so it fits the restriced accelerometer reading
-  kalAngleX2 = kalmanX2.getAngle(yAngle, gyroXrate, dt); // Calculate the angle using a Kalman filter
+  yAngleKal = kalmanY.getAngle(yAngle, gyroXrate, dt); // Calculate the angle using a Kalman filter
 
   Serial.print(yAngle); Serial.print("\t");
-  Serial.print(kalAngleX2); Serial.print("\t");
-  Serial.print(kalAngleY); Serial.print("\t");
+  Serial.print(yAngleKal); Serial.print("\t");
   Serial.print(xAngle); Serial.print("\t");
+  Serial.print(xAngleKal); Serial.print("\t");
 
 
   Serial.print("\r\n");
