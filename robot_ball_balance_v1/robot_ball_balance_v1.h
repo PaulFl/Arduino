@@ -3,13 +3,13 @@
 
 //Setup
 #define MODE 2 //0 OFF, 1 Motor control with remote, 2 balance still, 3 playground, debug, tests
-#define WIRELESSDEBUG 1 //not compatible with remote control of the robot
+#define WIRELESSDEBUG 0 //not compatible with remote control of the robot
 
-#define MOTORON 0  //Enable motors
+#define MOTORON 1  //Enable motors
 
 //Debug options
 #define DEBUGRADIO 0
-#define DEBUGCI 1
+#define DEBUGCI 0
 #define DEBUGMOTORSPEED 0
 #define DEBUG 0
 
@@ -25,20 +25,21 @@
 #define ACXMIN -16000
 #define ACYMAX 16000
 #define ACYMIN -16000
-#define ACXOFFSET 900
-#define ACYOFFSET 280
+#define ACXOFFSET 0
+#define ACYOFFSET 0
 #define GYXOFFSET 240
 #define GYYOFFSET -200
-const float acLowPass = 0.5;
+
+float acLowPass = 0.09;
 
 //Motors CSTS
 #define MOTORNEUTRAL 95
 
 //CSTS
-const float Kc = -0.05;
-const float Kp = 0.9;
+const float Kc = -0.008;
+const float Kp = 1;
 const float Ki = 0;
-const float Kd = 0.01;
+const float Kd = 0;
 
 //Libs
 #include <Arduino.h>
@@ -48,12 +49,15 @@ const float Kd = 0.01;
 #include <printf.h>
 #include <RF24.h>
 #include <RF24_config.h>
+#include "Kalman.h"
 
 
 //Prototypes
-void readCI();
+void readCIRaw();
 void readRadio();
 void calculateMotorSpeeds();
+void calibration();
+void printDebug();
 
 
 const int MPU_addr = 0x68;
@@ -65,12 +69,18 @@ struct COORD {
   int gyOffset;
   int ac;
   int gy;
-  float angle;
+  double angle;
+  double angle2;
   long int acLowPass = 0;
   int target;
   int speed;
   int error = 0;
   int sumError = 0;
+//  Kalman kalman;
+//  Kalman kalman2;
+  double angleKal;
+  double angleKal2;
+  double gyroRate;
 };
 
 struct MOTOR {

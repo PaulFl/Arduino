@@ -24,15 +24,15 @@ void setup() {
   motor1.pin = MOTOR1PIN;
   motor2.pin = MOTOR2PIN;
   motor3.pin = MOTOR3PIN;
-  motor1.speed = 0;
-  motor2.speed = 0;
-  motor3.speed = 0;
+  motor1.speed = MOTORNEUTRAL;
+  motor2.speed = MOTORNEUTRAL;
+  motor3.speed = MOTORNEUTRAL;
   motor1.servo.attach(motor1.pin);
   motor2.servo.attach(motor2.pin);
   motor3.servo.attach(motor3.pin);
-  motor1.servo.write(MOTORNEUTRAL);
-  motor2.servo.write(MOTORNEUTRAL);
-  motor3.servo.write(MOTORNEUTRAL);
+  motor1.servo.write(motor1.speed);
+  motor2.servo.write(motor2.speed);
+  motor3.servo.write(motor3.speed);
 
   //Radio Setup
   radio.begin();
@@ -44,10 +44,12 @@ void setup() {
     radio.openReadingPipe(1, pipe);
     radio.startListening();
   }
+
+  calibration();
 }
 
 void loop() {
-  readCI();
+  readCIRaw();
 
   switch (MODE) {
     case 1: //Motor control with remote
@@ -58,24 +60,9 @@ void loop() {
 
       calculateMotorSpeeds();
 
-      if (DEBUG) {
-        Serial.print(x.speed);
-        Serial.print("\t");
-        Serial.print(y.speed);
-        Serial.print("\t");
-        Serial.print(motor1.speed);
-        Serial.print("\t");
-        Serial.print(motor2.speed);
-        Serial.print("\t");
-        Serial.print(motor3.speed);
-        Serial.println("\t");
-
-      }
-
       break;
 
     case 2: //Balance still
-      readCI();
 
       x.error = x.acLowPass - x.target;
       y.error = y.acLowPass - y.target;
@@ -87,19 +74,8 @@ void loop() {
       y.speed = Kc * (Kp * y.error + Ki * y.sumError + Kd * y.gy);
 
       calculateMotorSpeeds();
-
       if (DEBUG) {
-        Serial.print(x.speed);
-        Serial.print("\t");
-        Serial.print(y.error);
-        Serial.print("\t");
-        Serial.print(motor1.speed);
-        Serial.print("\t");
-        Serial.print(motor2.speed);
-        Serial.print("\t");
-        Serial.print(motor3.speed);
-        Serial.println("\t");
-
+        printDebug();
       }
       break;
 
