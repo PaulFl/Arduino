@@ -7,9 +7,9 @@
 
   #endif */
 
-#define DEBUG 1
-#define HIGHTHRESHOLD 9500
-#define LOWTHRESHOLD 8500
+#define DEBUG 0
+#define HIGHTHRESHOLD 50
+#define LOWTHRESHOLD 10
 #define SPEED 100
 #define LEDPAUSE 5000
 
@@ -20,10 +20,12 @@
 short sendPin = 4;
 short receivePin = 7;
 
-short relay1 = A5;
+short ledPin = 13;
+
+short relay1 = 9;
 short red = 3;
-short green = 9;
-short blue = 10;
+short green = 5;
+short blue = 6;
 
 int newBlue = 0;
 int newRed = 0;
@@ -58,12 +60,14 @@ void setup() {
   if (DEBUG) Serial.begin(9600);
 
   pinMode(relay1, OUTPUT);
-  digitalWrite(relay1, LOW);
+  digitalWrite(relay1, HIGH);
 
 
   pinMode(red, OUTPUT);
   pinMode(blue, OUTPUT);
   pinMode(green, OUTPUT);
+  pinMode(ledPin, OUTPUT);
+  digitalWrite(ledPin, HIGH);
 
   lastChange = millis();
   lastColor = millis();
@@ -73,7 +77,7 @@ void setup() {
 void loop() {
 
 
-  sensorValue = capSensor.capacitiveSensorRaw(100);
+  sensorValue = capSensor.capacitiveSensor(50);
 
   if (DEBUG) Serial.println(sensorValue);
 
@@ -85,8 +89,10 @@ void loop() {
     relay1State = !relay1State;
     if (DEBUG) Serial.println("Switched");
     digitalWrite(relay1, relay1State);
+    digitalWrite(ledPin, HIGH);
   } else if (sensorValue < LOWTHRESHOLD && touched) {
     touched = false;
+    digitalWrite(ledPin, LOW);
     if (ledPower) {
       analogWrite(blue, blueValue);
       analogWrite(green, greenValue);
@@ -162,4 +168,3 @@ void setColor() {
       break;
   }
 }
-

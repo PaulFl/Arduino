@@ -9,7 +9,7 @@
 #include <EEPROM.h>
 
 #define SERIALIO Serial
-#define SCHEMA 0x0101
+#define SCHEMA 0x0111
 
 const float gearingRatio = 15.0 / 36.0;
 const float wheelDiameter = 0.000083;
