@@ -36,6 +36,9 @@ void setup() {
   motor2.servo.write(motor2.speed);
   motor3.servo.write(motor3.speed);
 
+  x.angleOffset = 0;
+  y.angleOffset = 0;
+
   //Radio Setup
   //  radio.begin();
   //  if (WIRELESSDEBUG) {

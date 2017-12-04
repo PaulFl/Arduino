@@ -9,7 +9,7 @@
 
 //Debug options
 #define DEBUGRADIO 0
-#define DEBUGCI 0
+#define DEBUGCI 1
 #define DEBUGMOTORSPEED 0
 #define DEBUG 0
 
@@ -81,6 +81,8 @@ struct COORD {
   double angleKal;
   double angleKal2;
   double gyroRate;
+  double angleCentered;
+  double angleOffset;
 };
 
 struct MOTOR {
