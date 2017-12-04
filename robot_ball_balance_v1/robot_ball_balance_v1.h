@@ -65,17 +65,17 @@ const int MPU_addr = 0x68;
 const float sqrt32 = sqrt(3) / 2;
 
 struct COORD {
-  int acOffset;
-  int gyOffset;
-  int ac;
-  int gy;
+  double acOffset;
+  double gyOffset;
+  double ac;
+  double gy;
   double angle;
   double angle2;
-  long int acLowPass = 0;
-  int target;
-  int speed;
-  int error = 0;
-  int sumError = 0;
+  double acLowPass = 0;
+  double target;
+  double speed;
+  double error = 0;
+  double sumError = 0;
   Kalman kalman;
   Kalman kalman2;
   double angleKal;

@@ -37,23 +37,34 @@ void setup() {
   motor3.servo.write(motor3.speed);
 
   //Radio Setup
-//  radio.begin();
-//  if (WIRELESSDEBUG) {
-//    radio.begin();
-//    radio.openWritingPipe(pipe);
-//  } else if (MODE == 1) {
-//    radio.begin();
-//    radio.openReadingPipe(1, pipe);
-//    radio.startListening();
-//  }
-//
-//  calibration();
+  //  radio.begin();
+  //  if (WIRELESSDEBUG) {
+  //    radio.begin();
+  //    radio.openWritingPipe(pipe);
+  //  } else if (MODE == 1) {
+  //    radio.begin();
+  //    radio.openReadingPipe(1, pipe);
+  //    radio.startListening();
+  //  }
+  //
+  //  calibration();
 }
 
 void loop() {
   //readCIRaw();
   delay(2);
   readCI();
+  if (DEBUGCI) {
+    Serial.print(x.angle);
+    Serial.print("\t");
+    Serial.print(x.angleKal);
+    Serial.print("\t");
+    Serial.print(y.angle);
+    Serial.print("\t");
+    Serial.print(y.angleKal);
+    Serial.println();
+  }
+
 
   switch (MODE) {
     case 1: //Motor control with remote
@@ -68,24 +79,17 @@ void loop() {
 
     case 2: //Balance still
 
-//      x.error = x.acLowPass - x.target;
-//      y.error = y.acLowPass - y.target;
-//
-//      x.sumError += x.error;
-//      y.sumError += y.error;
-//
-//      x.speed = Kc * (Kp * x.error + Ki * x.sumError + Kd * x.gy);
-//      y.speed = Kc * (Kp * y.error + Ki * y.sumError + Kd * y.gy);
+      //      x.error = x.acLowPass - x.target;
+      //      y.error = y.acLowPass - y.target;
+      //
+      //      x.sumError += x.error;
+      //      y.sumError += y.error;
+      //
+      //      x.speed = Kc * (Kp * x.error + Ki * x.sumError + Kd * x.gy);
+      //      y.speed = Kc * (Kp * y.error + Ki * y.sumError + Kd * y.gy);
 
-     // calculateMotorSpeeds();
-     Serial.print(x.ac);
-     Serial.print("\t");
-     Serial.print(y.ac);
-     Serial.print("\t");
-     Serial.print(x.kalman);
-     Serial.print("\t");
-     Serial.print(y.kalman);
-     Serial.println();
+      // calculateMotorSpeeds();
+
       if (DEBUG) {
       }
       break;

@@ -1,25 +1,35 @@
 #include <Wire.h>
 #include "Kalman.h" // Source: https://github.com/TKJElectronics/KalmanFilter
 
+struct COORD {
+  int acOffset;
+  int gyOffset;
+  double ac;
+  int gy;
+  double angle;
+  double angle2;
+  long int acLowPass = 0;
+  int target;
+  int speed;
+  int error = 0;
+  int sumError = 0;
+  Kalman kalman;
+  Kalman kalman2;
+  double angleKal;
+  double angleKal2;
+  double gyroRate;
+};
 
-Kalman kalmanX;
-Kalman kalmanY;
-
-Kalman kalmanX2;
-Kalman kalmanY2;
+COORD x;
+COORD y;
+COORD z;
 
 /* IMU Data */
-double accX, accY, accZ;
-double yGyro, xGyro, gyroZ;
-int16_t tempRaw;
-
-
-double yAngleKal2, xAngleKal; // Calculated angle using a Kalman filter
-
-double yAngleKal, xAngleKal2;
+int16_t Tmp;
 
 uint32_t timer;
 uint8_t i2cData[14]; // Buffer for I2C data
+
 
 void setup() {
   Serial.begin(115200);
@@ -43,77 +53,71 @@ void setup() {
 
   /* Set kalman and gyro starting angle */
   while (i2cRead(0x3B, i2cData, 6));
-  accX = (i2cData[0] << 8) | i2cData[1];
-  accY = (i2cData[2] << 8) | i2cData[3];
-  accZ = (i2cData[4] << 8) | i2cData[5];
-  // Source: http://www.freescale.com/files/sensors/doc/app_note/AN3461.pdf eq. 25 and eq. 26
-  // atan2 outputs the value of -π to π (radians) - see http://en.wikipedia.org/wiki/Atan2
-  // It is then converted from radians to degrees
-  double yAngle2  = atan2(accY, accZ) * RAD_TO_DEG;
-  double xAngle = atan(-accX / sqrt(accY * accY + accZ * accZ)) * RAD_TO_DEG;
-  double yAngle  = atan(accY / sqrt(accX * accX + accZ * accZ)) * RAD_TO_DEG;
-  double xAngle2 = atan2(-accX, accZ) * RAD_TO_DEG;
+  x.ac = (i2cData[0] << 8) | i2cData[1];
+  y.ac = (i2cData[2] << 8) | i2cData[3];
+  z.ac = (i2cData[4] << 8) | i2cData[5];
+  y.angle2  = atan2(y.ac, z.ac) * RAD_TO_DEG;
+  x.angle = atan(-x.ac / sqrt(y.ac * y.ac + z.ac * z.ac)) * RAD_TO_DEG;
+  y.angle  = atan(y.ac / sqrt(x.ac * x.ac + z.ac * z.ac)) * RAD_TO_DEG;
+  x.angle2 = atan2(-x.ac, z.ac) * RAD_TO_DEG;
 
 
-  kalmanY2.setAngle(yAngle2); // Set starting angle
-  kalmanX.setAngle(xAngle);
-  kalmanY.setAngle(yAngle); // Set starting angle
-  kalmanX2.setAngle(xAngle2);
+  y.kalman2.setAngle(y.angle2); // Set starting angle
+  x.kalman.setAngle(x.angle);
+  y.kalman.setAngle(y.angle); // Set starting angle
+  x.kalman2.setAngle(x.angle2);
 
   timer = micros();
 }
 
 void loop() {
   while (i2cRead(0x3B, i2cData, 14));
-  accX = ((i2cData[0] << 8) | i2cData[1]);
-  accY = ((i2cData[2] << 8) | i2cData[3]);
-  accZ = ((i2cData[4] << 8) | i2cData[5]);
-  tempRaw = (i2cData[6] << 8) | i2cData[7];
-  yGyro = (i2cData[8] << 8) | i2cData[9];
-  xGyro = (i2cData[10] << 8) | i2cData[11];
-  gyroZ = (i2cData[12] << 8) | i2cData[13];
+  x.ac = ((i2cData[0] << 8) | i2cData[1]);
+  y.ac = ((i2cData[2] << 8) | i2cData[3]);
+  z.ac = ((i2cData[4] << 8) | i2cData[5]);
+  Tmp = (i2cData[6] << 8) | i2cData[7];
+  y.gy = (i2cData[8] << 8) | i2cData[9];
+  x.gy = (i2cData[10] << 8) | i2cData[11];
+  z.gy = (i2cData[12] << 8) | i2cData[13];
 
   double dt = (double)(micros() - timer) / 1000000; // Calculate delta time
   timer = micros();
 
-  // Source: http://www.freescale.com/files/sensors/doc/app_note/AN3461.pdf eq. 25 and eq. 26
-  // atan2 outputs the value of -π to π (radians) - see http://en.wikipedia.org/wiki/Atan2
-  // It is then converted from radians to degrees
-  double yAngle2  = atan2(accY, accZ) * RAD_TO_DEG;
-  double xAngle = atan(-accX / sqrt(accY * accY + accZ * accZ)) * RAD_TO_DEG;
-  double yAngle  = atan(accY / sqrt(accX * accX + accZ * accZ)) * RAD_TO_DEG;
-  double xAngle2 = atan2(-accX, accZ) * RAD_TO_DEG;
+  y.angle2  = atan2(y.ac, z.ac) * RAD_TO_DEG;
+  x.angle = atan(-x.ac / sqrt(y.ac * y.ac + z.ac * z.ac)) * RAD_TO_DEG;
+  y.angle  = atan(y.ac / sqrt(x.ac * x.ac + z.ac * z.ac)) * RAD_TO_DEG;
+  x.angle2 = atan2(-x.ac, z.ac) * RAD_TO_DEG;
 
 
-  double yGyroRate = yGyro / 131.0; // Convert to deg/s
-  double xGyroRate = xGyro / 131.0; // Convert to deg/s
+  y.gyroRate = y.gy / 131.0; // Convert to deg/s
+  x.gyroRate = x.gy / 131.0; // Convert to deg/s
 
 
 
   // This fixes the transition problem when the accelerometer angle jumps between -180 and 180 degrees
-  if ((yAngle2 < -90 && yAngleKal2 > 90) || (yAngle2 > 90 && yAngleKal2 < -90)) {
-    kalmanY2.setAngle(yAngle2);
-    yAngleKal2 = yAngle2;
+  if ((y.angle2 < -90 && y.angleKal2 > 90) || (y.angle2 > 90 && y.angleKal2 < -90)) {
+    y.kalman2.setAngle(y.angle2);
+    y.angleKal2 = y.angle2;
   } else
-    yAngleKal2 = kalmanY2.getAngle(yAngle2, yGyroRate, dt); // Calculate the angle using a Kalman filter
+    y.angleKal2 = y.kalman2.getAngle(y.angle2, y.gyroRate, dt); // Calculate the angle using a Kalman filter
 
-  if (abs(yAngleKal2) > 90)
-    xGyroRate = -xGyroRate; // Invert rate, so it fits the restriced accelerometer reading
-  xAngleKal = kalmanX.getAngle(xAngle, xGyroRate, dt);
-  if ((xAngle2 < -90 && xAngleKal2 > 90) || (xAngle2 > 90 && xAngleKal2 < -90)) {
-    kalmanX2.setAngle(xAngle2);
-    xAngleKal2 = xAngle2;
+  if (abs(y.angleKal2) > 90)
+    x.gyroRate = -x.gyroRate; // Invert rate, so it fits the restriced accelerometer reading
+  x.angleKal = x.kalman.getAngle(x.angle, x.gyroRate, dt);
+  if ((x.angle2 < -90 && x.angleKal2 > 90) || (x.angle2 > 90 && x.angleKal2 < -90)) {
+    x.kalman2.setAngle(x.angle2);
+    x.angleKal2 = x.angle2;
   } else
-    xAngleKal2 = kalmanX2.getAngle(xAngle2, xGyroRate, dt); // Calculate the angle using a Kalman filter
+    x.angleKal2 = x.kalman2.getAngle(x.angle2, x.gyroRate, dt); // Calculate the angle using a Kalman filter
 
-  if (abs(xAngleKal2) > 90)
-    yGyroRate = -yGyroRate; // Invert rate, so it fits the restriced accelerometer reading
-  yAngleKal = kalmanY.getAngle(yAngle, yGyroRate, dt); // Calculate the angle using a Kalman filter
+  if (abs(x.angleKal2) > 90)
+    y.gyroRate = -y.gyroRate; // Invert rate, so it fits the restriced accelerometer reading
+  y.angleKal = y.kalman.getAngle(y.angle, y.gyroRate, dt); // Calculate the angle using a Kalman filter
 
-  Serial.print(yAngle); Serial.print("\t");
-  Serial.print(yAngleKal); Serial.print("\t");
-  Serial.print(xAngle); Serial.print("\t");
-  Serial.print(xAngleKal); Serial.print("\t");
+  Serial.print(y.angle); Serial.print("\t");
+  Serial.print(y.angleKal); Serial.print("\t");
+  Serial.print(x.angle); Serial.print("\t");
+  Serial.print(x.angleKal); Serial.print("\t");
 
 
   Serial.print("\r\n");
