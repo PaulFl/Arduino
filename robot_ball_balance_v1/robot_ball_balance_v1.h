@@ -9,7 +9,7 @@
 
 //Debug options
 #define DEBUGRADIO 0
-#define DEBUGCI 1
+#define DEBUGCI 0
 #define DEBUGMOTORSPEED 0
 #define DEBUG 0
 
@@ -36,8 +36,7 @@ float acLowPass = 0.09;
 #define MOTORNEUTRAL 95
 
 //CSTS
-const float Kc = -0.008;
-const float Kp = 1;
+const float Kp = 12;
 const float Ki = 0;
 const float Kd = 0;
 
@@ -83,6 +82,8 @@ struct COORD {
   double gyroRate;
   double angleCentered;
   double angleOffset;
+  double gyroRateCentered;
+  double gyroOffset;
 };
 
 struct MOTOR {

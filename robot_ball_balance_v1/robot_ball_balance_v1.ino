@@ -36,8 +36,11 @@ void setup() {
   motor2.servo.write(motor2.speed);
   motor3.servo.write(motor3.speed);
 
-  x.angleOffset = 0;
-  y.angleOffset = 0;
+  x.angleOffset = 3.6;
+  y.angleOffset = 0.5;
+
+  x.gyroOffset = 1;
+  y.gyroOffset = -1.3;
 
   //Radio Setup
   //  radio.begin();
@@ -58,13 +61,13 @@ void loop() {
   delay(2);
   readCI();
   if (DEBUGCI) {
-    Serial.print(x.angle);
+    //Serial.print(x.angle);
     Serial.print("\t");
-    Serial.print(x.angleKal);
+    Serial.print(x.gyroRateCentered);
     Serial.print("\t");
-    Serial.print(y.angle);
+    //Serial.print(y.angle);
     Serial.print("\t");
-    Serial.print(y.angleKal);
+    Serial.print(y.gyroRateCentered);
     Serial.println();
   }
 
@@ -82,16 +85,16 @@ void loop() {
 
     case 2: //Balance still
 
-      //      x.error = x.acLowPass - x.target;
-      //      y.error = y.acLowPass - y.target;
-      //
-      //      x.sumError += x.error;
-      //      y.sumError += y.error;
-      //
-      //      x.speed = Kc * (Kp * x.error + Ki * x.sumError + Kd * x.gy);
-      //      y.speed = Kc * (Kp * y.error + Ki * y.sumError + Kd * y.gy);
+      x.error = x.angleCentered;
+      y.error = y.angleCentered;
 
-      // calculateMotorSpeeds();
+      x.sumError += x.error * 2; //dt ~2
+      y.sumError += y.error * 2;
+
+      x.speed = Kp * x.error + Ki * x.sumError + Kd * x.gyroRateCentered;
+      y.speed = Kp * y.error + Ki * y.sumError + Kd * y.gyroRateCentered;
+
+      calculateMotorSpeeds();
 
       if (DEBUG) {
       }

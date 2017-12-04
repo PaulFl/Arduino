@@ -91,6 +91,11 @@ void readCI() {
   if (abs(x.angleKal2) > 90)
     y.gyroRate = -y.gyroRate; // Invert rate, so it fits the restriced accelerometer reading
   y.angleKal = y.kalman.getAngle(y.angle, y.gyroRate, dt); // Calculate the angle using a Kalman filter
+
+  x.angleCentered = x.angleKal + x.angleOffset;
+  y.angleCentered = y.angleKal + y.angleOffset;
+  x.gyroRateCentered = x.gyroRate + x.gyroOffset;
+  y.gyroRateCentered = y.gyroRate + y.gyroOffset;
 }
 
 void readCIRaw() {
