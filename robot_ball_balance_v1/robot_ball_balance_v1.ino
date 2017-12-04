@@ -6,19 +6,21 @@ void setup() {
   Serial.println("Intitialisaton");
 
   //CI Setup
-  Wire.begin();
-  Wire.beginTransmission(MPU_addr);
-  Wire.write(0x6B);  // PWR_MGMT_1 register
-  Wire.write(0);     // set to zero (wakes up the MPU-6050)
-  Wire.endTransmission(true);
-  x.speed = 0;
-  y.speed = 0;
-  x.target = 0;
-  y.target = 0;
-  x.acOffset = ACXOFFSET;
-  y.acOffset = ACYOFFSET;
-  x.gyOffset = GYXOFFSET;
-  y.gyOffset = GYYOFFSET;
+  //  Wire.begin();
+  //  Wire.beginTransmission(MPU_addr);
+  //  Wire.write(0x6B);  // PWR_MGMT_1 register
+  //  Wire.write(0);     // set to zero (wakes up the MPU-6050)
+  //  Wire.endTransmission(true);
+  //  x.speed = 0;
+  //  y.speed = 0;
+  //  x.target = 0;
+  //  y.target = 0;
+  //  x.acOffset = ACXOFFSET;
+  //  y.acOffset = ACYOFFSET;
+  //  x.gyOffset = GYXOFFSET;
+  //  y.gyOffset = GYYOFFSET;
+
+  initCI();
 
   //Motors setup
   motor1.pin = MOTOR1PIN;
@@ -35,21 +37,23 @@ void setup() {
   motor3.servo.write(motor3.speed);
 
   //Radio Setup
-  radio.begin();
-  if (WIRELESSDEBUG) {
-    radio.begin();
-    radio.openWritingPipe(pipe);
-  } else if (MODE == 1) {
-    radio.begin();
-    radio.openReadingPipe(1, pipe);
-    radio.startListening();
-  }
-
-  calibration();
+//  radio.begin();
+//  if (WIRELESSDEBUG) {
+//    radio.begin();
+//    radio.openWritingPipe(pipe);
+//  } else if (MODE == 1) {
+//    radio.begin();
+//    radio.openReadingPipe(1, pipe);
+//    radio.startListening();
+//  }
+//
+//  calibration();
 }
 
 void loop() {
-  readCIRaw();
+  //readCIRaw();
+  delay(2);
+  readCI();
 
   switch (MODE) {
     case 1: //Motor control with remote
@@ -64,18 +68,25 @@ void loop() {
 
     case 2: //Balance still
 
-      x.error = x.acLowPass - x.target;
-      y.error = y.acLowPass - y.target;
+//      x.error = x.acLowPass - x.target;
+//      y.error = y.acLowPass - y.target;
+//
+//      x.sumError += x.error;
+//      y.sumError += y.error;
+//
+//      x.speed = Kc * (Kp * x.error + Ki * x.sumError + Kd * x.gy);
+//      y.speed = Kc * (Kp * y.error + Ki * y.sumError + Kd * y.gy);
 
-      x.sumError += x.error;
-      y.sumError += y.error;
-
-      x.speed = Kc * (Kp * x.error + Ki * x.sumError + Kd * x.gy);
-      y.speed = Kc * (Kp * y.error + Ki * y.sumError + Kd * y.gy);
-
-      calculateMotorSpeeds();
+     // calculateMotorSpeeds();
+     Serial.print(x.ac);
+     Serial.print("\t");
+     Serial.print(y.ac);
+     Serial.print("\t");
+     Serial.print(x.kalman);
+     Serial.print("\t");
+     Serial.print(y.kalman);
+     Serial.println();
       if (DEBUG) {
-        printDebug();
       }
       break;
 

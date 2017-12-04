@@ -5,7 +5,7 @@
 #define MODE 2 //0 OFF, 1 Motor control with remote, 2 balance still, 3 playground, debug, tests
 #define WIRELESSDEBUG 0 //not compatible with remote control of the robot
 
-#define MOTORON 0  //Enable motors
+#define MOTORON 1  //Enable motors
 
 //Debug options
 #define DEBUGRADIO 0
@@ -57,30 +57,23 @@ void readCIRaw();
 void readRadio();
 void calculateMotorSpeeds();
 void calibration();
-void initCI();
-void readCI();
-
-const int MPU_addr = 0x68;
+void CIInit();
 
 const float sqrt32 = sqrt(3) / 2;
 
 struct COORD {
-  int acOffset;
-  int gyOffset;
-  int ac;
-  int gy;
-  double angle;
-  double angle2;
-  long int acLowPass = 0;
-  int target;
-  int speed;
-  int error = 0;
-  int sumError = 0;
   Kalman kalman;
   Kalman kalman2;
+  double ac;
+  double gy;
+  double angle;
+  double angle2;
   double angleKal;
   double angleKal2;
   double gyroRate;
+  int speed;
+  int error = 0;
+  int sumError = 0;
 };
 
 struct MOTOR {
@@ -98,11 +91,11 @@ MOTOR motor1;
 MOTOR motor2;
 MOTOR motor3;
 
-int Tmp;
-
-int msg[4];
+int tmp;
 long int timer;
 uint8_t i2cData[14];
+
+int msg[4];
 
 RF24 radio(7, 8);
 const uint64_t pipe = 0xE8E8F0F0E1LL;//White remote, ballance robot
