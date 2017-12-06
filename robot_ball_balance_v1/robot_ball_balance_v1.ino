@@ -36,8 +36,8 @@ void setup() {
   motor2.servo.write(motor2.speed);
   motor3.servo.write(motor3.speed);
 
-  x.angleOffset = 3.6;
-  y.angleOffset = 0.5;
+  x.angleOffset = 4.5;
+  y.angleOffset = 1.2;
 
   x.gyroOffset = 1;
   y.gyroOffset = -1.3;
@@ -61,13 +61,13 @@ void loop() {
   delay(2);
   readCI();
   if (DEBUGCI) {
-    //Serial.print(x.angle);
+   // Serial.print(x.angle);
     Serial.print("\t");
-    Serial.print(x.gyroRateCentered);
+    Serial.print(x.angleCentered);
     Serial.print("\t");
-    //Serial.print(y.angle);
+   // Serial.print(y.angle);
     Serial.print("\t");
-    Serial.print(y.gyroRateCentered);
+    Serial.print(y.angleCentered);
     Serial.println();
   }
 
@@ -88,11 +88,20 @@ void loop() {
       x.error = x.angleCentered;
       y.error = y.angleCentered;
 
+      if (abs(x.error) < 0.3){
+        x.sumError = 0;
+      }
+      if (abs(y.error) < 0.3){
+        y.sumError = 0;
+      }
+
+      
       x.sumError += x.error * 2; //dt ~2
       y.sumError += y.error * 2;
+      
 
-      x.speed = Kp * x.error + Ki * x.sumError + Kd * x.gyroRateCentered;
-      y.speed = Kp * y.error + Ki * y.sumError + Kd * y.gyroRateCentered;
+      x.speed = -(Kp * x.error + Ki * x.sumError + Kd * x.gyroRateCentered);
+      y.speed = -(Kp * y.error + Ki * y.sumError + Kd * y.gyroRateCentered);
 
       calculateMotorSpeeds();
 
