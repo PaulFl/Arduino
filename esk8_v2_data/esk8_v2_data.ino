@@ -133,7 +133,11 @@ int rollTime;
 float distance = 0;
 
 float mapBatteryPercentage[] = {3.26, 3.435, 3.525, 3.635, 3.715, 3.79, 3.86, 3.94, 4.02, 4.07, 4.2};
-int batteryPercentage = 0;
+float batteryPercentage = 0;
+
+float mapfloat(float in, float inmin, float inmax, float outmin, float outmax) {
+    return (in-inmin)*(outmax-outmin)/(inmax-inmin)+outmin;
+}
 
 void setup() {
   short schema;
@@ -187,7 +191,7 @@ void loop() {
     for (int i = 0; i <= 9; i++) {
       if (measuredValues.inpVoltage >= mapBatteryPercentage[i] * 10 && measuredValues.inpVoltage <= mapBatteryPercentage[i + 1] * 10) battRange = i;
     }
-    batteryPercentage = int(map(measuredValues.inpVoltage, mapBatteryPercentage[battRange] * 10.0, mapBatteryPercentage[battRange + 1] * 10.0, float(battRange) * 10.0, float(battRange + 1) * 10.0)); //Linear approximation beetween two values of mapBatteryPercentage
+    batteryPercentage = (mapfloat(measuredValues.inpVoltage, mapBatteryPercentage[battRange] * 10.0, mapBatteryPercentage[battRange + 1] * 10.0, (float)(battRange) * 10.0, (float)(battRange + 1) * 10.0)); //Linear approximation beetween two values of mapBatteryPercentage
     if (measuredValues.inpVoltage <= mapBatteryPercentage[0] * 10) batteryPercentage = 0;
     else if (measuredValues.inpVoltage >= mapBatteryPercentage[10] * 10) batteryPercentage = 100;
     checkDelay();
@@ -257,7 +261,7 @@ void checkDelay() {
     case 0:
       lcd.setCursor(0, 0);
       lcd.print("Battery: ");
-      lcd.print(batteryPercentage/9.0);
+      lcd.print(batteryPercentage);
       lcd.print("%          ");
       lcd.setCursor(0, 1);
       lcd.print("Voltage: ");
