@@ -9,10 +9,10 @@
 #include <EEPROM.h>
 
 #define SERIALIO Serial
-#define SCHEMA 0x0111
+#define SCHEMA 0x0110
 
 const float gearingRatio = 15.0 / 36.0;
-const float wheelDiameter = 0.000083;
+const float wheelDiameter = 0.000090;
 const int magnets = 44;
 
 template <class T> int EEPROM_writeAnything(int ee, const T& value)
@@ -139,7 +139,9 @@ void setup() {
   short schema;
   EEPROM_readAnything(sizeof(long) + sizeof(int) + 30, schema);
   if (schema != SCHEMA) {
-    EEPROM_writeAnything( sizeof(long) + 1, (float(1220)));
+    EEPROM_writeAnything( sizeof(long) + 1, (float(1300)));
+    EEPROM_writeAnything( sizeof(long) + 10, (float(1)));
+    EEPROM_writeAnything( sizeof(long) + 20, (float(1)));
     schema = SCHEMA;
     EEPROM_writeAnything(sizeof(long) + sizeof(int) + 30, schema);
   }
