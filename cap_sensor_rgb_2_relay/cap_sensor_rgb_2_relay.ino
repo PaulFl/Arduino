@@ -51,7 +51,7 @@ void setup() {
   Serial.begin(9600);
 
   pinMode(relay1, OUTPUT);
-  digitalWrite(relay1, LOW);
+  digitalWrite(relay1, !LOW);
 
   pinMode(relay2, OUTPUT);
   digitalWrite(relay2, LOW);
@@ -78,7 +78,7 @@ void loop() {
     relay1State = !relay1State;
     if (DEBUG) Serial.println("Switched");
     sendChangeSerial(1, relay1State);
-    digitalWrite(relay1, relay1State);
+    digitalWrite(relay1, !relay1State);
   } else if (sensorValue < LOWTHRESHOLD && touched) {
     touched = false;
     if (ledPower) {
@@ -173,7 +173,7 @@ void serialEvent() {
       switch (id) {
         case 1:
           relay1State = state;
-          digitalWrite(relay1, relay1State);
+          digitalWrite(relay1, !relay1State);
           break;
         case 2:
           relay2State = state;
