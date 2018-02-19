@@ -14,6 +14,7 @@ short receivePin = A0;
 
 short relay1 = 2;
 short relay2 = 4;
+short v12 = A5;
 short red = 9;
 short green = 10;
 short blue = 6;
@@ -40,6 +41,7 @@ int color;
 
 bool relay1State = LOW;
 bool relay2State = LOW;
+bool v12State = LOW;
 bool touched = false;
 bool playColor = true;
 bool ledPower = true;
@@ -55,6 +57,9 @@ void setup() {
 
   pinMode(relay2, OUTPUT);
   digitalWrite(relay2, LOW);
+
+  pinMode(v12, OUTPUT);
+  digitalWrite(v12, LOW);
 
   pinMode(red, OUTPUT);
   pinMode(blue, OUTPUT);
@@ -184,6 +189,11 @@ void serialEvent() {
         case 3:
           ledPower = state;
           sendChangeSerial(3, state);
+          break;
+        case 4:
+          v12State = state;
+          digitalWrite(v12, v12State);
+          sendChangeSerial(4, v12State);
           break;
         default:
           break;
