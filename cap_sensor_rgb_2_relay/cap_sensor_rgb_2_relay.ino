@@ -77,8 +77,9 @@ void loop() {
     digitalWrite(green, LOW);
     relay1State = !relay1State;
     if (DEBUG) Serial.println("Switched");
-    digitalWrite(relay1, !relay1State);
     sendChangeSerial(1, relay1State);
+    digitalWrite(relay1, !relay1State);
+    sendChangeSerial(1, !relay1State);
   } else if (sensorValue < LOWTHRESHOLD && touched) {
     touched = false;
     if (ledPower) {
@@ -174,7 +175,7 @@ void serialEvent() {
         case 1:
           relay1State = state;
           digitalWrite(relay1, !relay1State);
-          sendChangeSerial(1, relay1State);
+          sendChangeSerial(1, !relay1State);
           break;
         case 2:
           relay2State = state;
@@ -183,6 +184,7 @@ void serialEvent() {
           break;
         case 3:
           ledPower = state;
+          sendChangeSerial(3, state);
           break;
         default:
           break;
