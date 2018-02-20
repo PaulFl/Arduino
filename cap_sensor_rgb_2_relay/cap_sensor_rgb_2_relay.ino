@@ -72,6 +72,7 @@ void setup() {
 
 void loop() {
   sensorValue = capSensor.capacitiveSensorRaw(100);
+  sendChangeSerial(8, sensorValue);
 
   if (DEBUG) Serial.println(sensorValue);
 
@@ -80,6 +81,7 @@ void loop() {
     digitalWrite(red, LOW);
     digitalWrite(blue, LOW);
     digitalWrite(green, LOW);
+    sendChangeSerial(3, LOW);
     relay1State = !relay1State;
     if (DEBUG) Serial.println("Switched");
     digitalWrite(relay1, !relay1State);
@@ -87,6 +89,7 @@ void loop() {
   } else if (sensorValue < LOWTHRESHOLD && touched) {
     touched = false;
     if (ledPower) {
+      sendChangeSerial(3, HIGH);
       analogWrite(blue, blueValue);
       analogWrite(green, greenValue);
       analogWrite(red, redValue);
@@ -120,10 +123,16 @@ void loop() {
       analogWrite(blue, blueValue);
       analogWrite(green, greenValue);
       analogWrite(red, redValue);
+      sendChangeSerial(5, redValue);
+      sendChangeSerial(6, greenValue);
+      sendChangeSerial(7, blueValue);
     } else {
       analogWrite(blue, 0);
       analogWrite(red, 0);
       analogWrite(green, 0);
+      sendChangeSerial(5, 0);
+      sendChangeSerial(6, 0);
+      sendChangeSerial(7, 0);
     }
   }
 }
@@ -163,9 +172,9 @@ void setColor() {
   }
 }
 
-void sendChangeSerial(int id, bool newState) {
+void sendChangeSerial(int id, int newState) {
   Serial.print(id);
-  Serial.println(int(newState));
+  Serial.println(newState);
 }
 
 void serialEvent() {
