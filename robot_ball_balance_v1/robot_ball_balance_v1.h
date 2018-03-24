@@ -5,11 +5,11 @@
 #define MODE 2 //0 OFF, 1 Motor control with remote, 2 balance still, 3 playground, debug, tests
 #define WIRELESSDEBUG 0 //not compatible with remote control of the robot
 
-#define MOTORON 0  //Enable motors
+#define MOTORON 1  //Enable motors
 
 //Debug options
 #define DEBUGRADIO 0
-#define DEBUGCI 0
+#define DEBUGCI 1
 #define DEBUGMOTORSPEED 0
 #define DEBUG 0
 
@@ -36,8 +36,8 @@ float acLowPass = 0.09;
 #define MOTORNEUTRAL 95
 
 //CSTS
-const float Kp = 12;
-const float Ki = 0;
+const float Kp =15;
+const float Ki = 0.3;
 const float Kd = 0;
 
 //Libs

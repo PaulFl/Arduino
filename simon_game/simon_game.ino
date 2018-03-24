@@ -1,5 +1,5 @@
 // change this to any new value to re-init EEPROM state
-#define SCHEMA 0x0101
+#define SCHEMA 0x0111
 
 #include <EEPROM.h>
 
@@ -166,7 +166,7 @@ void setup() {
   short schema;
   EEPROM_readAnything(sizeof(long) + sizeof(int) + 2, schema);
   if (schema != SCHEMA) {
-    EEPROM_writeAnything(sizeof(long) + 1, int(21));
+    EEPROM_writeAnything(sizeof(long) + 1, int(1));
     schema = SCHEMA;
     EEPROM_writeAnything(sizeof(long) + sizeof(int) + 2, schema);
   }
@@ -378,4 +378,3 @@ void ecranFin(boolean perdu) {
     }
   }
 }
-

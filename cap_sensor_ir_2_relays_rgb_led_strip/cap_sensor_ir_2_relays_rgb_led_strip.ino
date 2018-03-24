@@ -23,6 +23,8 @@
 #include "irValues.h"
 #include <CapacitiveSensor.h>
 
+String serialIn = "";
+
 
 short sendPin = A3;
 short receivePin = A0;
@@ -71,7 +73,7 @@ IRrecv irrecv(iRReceiver);
 decode_results results;
 
 void setup() {
-  if (DEBUG) Serial.begin(9600);
+  Serial.begin(9600);
 
   pinMode(relay1, OUTPUT);
   digitalWrite(relay1, LOW);
@@ -120,11 +122,13 @@ void loop() {
       relay2State = !relay2State;
       if (DEBUG) Serial.println("Switched");
       digitalWrite(relay2, relay2State);
+      sendChangeSerial(2, relay2State);
       break;
     case RED:
       relay1State = !relay1State;
       if (DEBUG) Serial.println("Switched");
       digitalWrite(relay1, relay1State);
+      sendChangeSerial(1, relay1State);
       break;
     case POWER:
       ledPower = !ledPower;
@@ -137,6 +141,7 @@ void loop() {
         digitalWrite(red, LOW);
         digitalWrite(green, LOW);
       }
+      sendChangeSerial(3, ledPower);
       break;
     default:
       break;
@@ -153,6 +158,7 @@ void loop() {
     digitalWrite(green, LOW);
     relay1State = !relay1State;
     if (DEBUG) Serial.println("Switched");
+    sendChangeSerial(1, relay1State);
     digitalWrite(relay1, relay1State);
   } else if (sensorValue < LOWTHRESHOLD && touched) {
     touched = false;
@@ -275,3 +281,34 @@ void setColor() {
   }
 }
 
+void sendChangeSerial(int id, bool newState) {
+  Serial.print(id);
+  Serial.println(int(newState));
+}
+
+void serialEvent() {
+  while (Serial.available()) {
+    char inChar = (char)Serial.read();
+    serialIn += inChar;
+    if (inChar == '\n') {
+      int id = serialIn.substring(0, 1).toInt();
+      bool state = serialIn.substring(1).toInt();
+      switch (id) {
+        case 1:
+          relay1State = state;
+          digitalWrite(relay1, relay1State);
+          break;
+        case 2:
+          relay2State = state;
+          digitalWrite(relay2, relay2State);
+          break;
+        case 3:
+          ledPower = state;
+          break;
+        default:
+          break;
+      }
+      serialIn = "";
+    }
+  }
+}
