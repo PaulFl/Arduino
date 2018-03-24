@@ -34,7 +34,8 @@ short RF24csnPin = 8;
 
 int msg[4];
 RF24 radio(RF24cePin, RF24csnPin);
-const uint64_t pipe = 0xE8E8F0F0E1LL;
+//const uint64_t pipe = 0xE8E8F0F0E1LL; //Paul
+const uint64_t pipe = 0xE8E8F0F1E0LL;//Aymeric
 
 void setup() {
   radio.begin();

@@ -68,7 +68,9 @@ int msg[4];
 
 Servo motor;
 RF24 radio(RF24cePin, RF24csnPin);
-const uint64_t pipe = 0xE8E8F0F0E1LL;
+//const uint64_t pipe = 0xE8E8F0F0E1LL;
+const uint64_t pipe = 0xE8E8F0F1E0LL;//Aymeric
+
 
 void setColor() {
   switch (color) {
