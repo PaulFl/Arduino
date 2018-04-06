@@ -189,7 +189,7 @@ void getData() {
   if (radio.available()) {
     while (radio.available()) radio.read(msg, 7); //Get data
     if (msg[MOTOR] >= 89) brakeAllowed = true;
-    if (!msg[CBUTTON] && lastCButtonState) ledButtonPressed();
+    if (!msg[CBUTTON] && lastCButtonState && !msg[ZBUTTON]) ledButtonPressed();
     if (!msg[ZBUTTON] && lastZButtonState) Serial.write(2);
     if (msg[ZBUTTON] && !beginnerMode) sendMotor(msg[MOTOR]);
     else if (msg[ZBUTTON] && beginnerMode) {
