@@ -143,7 +143,7 @@ void setup() {
   short schema;
   EEPROM_readAnything(sizeof(long) + sizeof(int) + 30, schema);
   if (schema != SCHEMA) {
-    EEPROM_writeAnything( sizeof(long) + 1, (float(1300)));
+    EEPROM_writeAnything( sizeof(long) + 1, (float(1550*1.05))); //Distance the 6/5/2018 (multiplided by 1.05 in order to counteract the recently found bug (wrong number of magnets)
     EEPROM_writeAnything( sizeof(long) + 10, (float(1)));
     EEPROM_writeAnything( sizeof(long) + 20, (float(1)));
     schema = SCHEMA;
