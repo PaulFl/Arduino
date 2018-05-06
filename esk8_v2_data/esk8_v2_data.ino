@@ -13,7 +13,7 @@
 
 const float gearingRatio = 15.0 / 36.0;
 const float wheelDiameter = 0.000090;
-const int magnets = 44;
+const int magnets = 42; //14 magnets * 3
 
 template <class T> int EEPROM_writeAnything(int ee, const T& value)
 {
