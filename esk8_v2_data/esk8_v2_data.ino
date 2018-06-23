@@ -9,7 +9,7 @@
 #include <EEPROM.h>
 
 #define SERIALIO Serial
-#define SCHEMA 0x0110
+#define SCHEMA 0x0010
 
 const float gearingRatio = 15.0 / 36.0;
 const float wheelDiameter = 0.000090;
@@ -143,7 +143,7 @@ void setup() {
   short schema;
   EEPROM_readAnything(sizeof(long) + sizeof(int) + 30, schema);
   if (schema != SCHEMA) {
-    EEPROM_writeAnything( sizeof(long) + 1, (float(1550*1.05))); //Distance the 6/5/2018 (multiplided by 1.05 in order to counteract the recently found bug (wrong number of magnets)
+    EEPROM_writeAnything( sizeof(long) + 1, (float(1774))); //Distance the 23/06/18
     EEPROM_writeAnything( sizeof(long) + 10, (float(1)));
     EEPROM_writeAnything( sizeof(long) + 20, (float(1)));
     schema = SCHEMA;
