@@ -10,7 +10,7 @@ void setup() {
 void loop() {
   while(gpsReceiver.available() > 0){
     byte gpsData = gpsReceiver.read();
+    //Serial.println(gpsData);
     Serial.write(gpsData);
   }
 }
-
