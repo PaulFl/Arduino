@@ -16,6 +16,8 @@ void setup()
 {
   Serial.begin(9600);  // Start serial port
   Wire.begin();
+  pinMode(13, OUTPUT);
+  pinMode(6, OUTPUT);
 }
 
 void loop()
@@ -52,9 +54,30 @@ void loop()
   Serial.print(angle16 / 10, DEC);
   Serial.print(".");
   Serial.print(angle16 % 10, DEC);
+  if (angle16/10 < 4 || angle16/10 > 356){
+    digitalWrite(13,1);
+  } else {
+    digitalWrite(13,0);
+  }
   
   Serial.print("    angle 8: ");        // Display 8bit angle
   Serial.println(angle8, DEC);
+
+  Wire.beginTransmission(CMPS12_ADDRESS);  //starts communication with CMPS12
+  Wire.write(30);                     //Sends the register we wish to start reading from
+  Wire.endTransmission();
   
-  delay(100);                           // Short delay before next loop
+  Wire.requestFrom(CMPS12_ADDRESS, 1);       
+  
+  while(Wire.available() < 1);        // Wait for all bytes to come back
+
+  int calibration = Wire.read();
+  if (calibration == 255 || calibration == 191) {
+    digitalWrite(6, 1);
+  } else {
+    digitalWrite(6,0);
+  }
+  Serial.println(calibration,BIN);    
+  
+  
 }
