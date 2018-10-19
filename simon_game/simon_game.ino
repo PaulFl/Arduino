@@ -1,5 +1,5 @@
 // change this to any new value to re-init EEPROM state
-#define SCHEMA 0x0111
+#define SCHEMA 0x0011
 
 #include <EEPROM.h>
 
@@ -245,10 +245,10 @@ void flip() {
       onSegment = 0;
     }
     for (int i = 0; i < 7; i++) {
-      digitalWrite(anodeSegments[i], !segments[onSegment][i]);
+      digitalWrite(anodeSegments[i], segments[onSegment][i]);
     }
     digitalWrite(cathodeSegments[onSegment], HIGH);
-    flipmillis = millis();
+    flipmillis = mill is();
   }
 }
 
