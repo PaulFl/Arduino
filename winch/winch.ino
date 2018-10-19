@@ -4,6 +4,9 @@
 const float wheelDiameter = 0.085;
 const int magnets = 42; //14 magnets * 3
 
+int cellNumber = 4;
+
+int redLEDPin = 6;
 
 
 
@@ -88,6 +91,7 @@ byte fiveC[] = {
 
 void setup() {
   Serial.begin(9600);
+  pinMode(redLEDPin, OUTPUT);
   lcd.begin(16, 2);
   lcd.createChar(0, gamma);
   lcd.createChar(1, oneC);
@@ -111,10 +115,20 @@ void setup() {
 
 void loop() {
   if (UART.getVescValues()) {
+    if (UART.data.inpVoltage > 18){
+      cellNumber = 6;
+    }
+    if (UART.data.inpVoltage/cellNumber < 3.65){
+      digitalWrite(redLEDPin, 1);
+    } else {
+      digitalWrite(redLEDPin, 0);
+    }
     lcd.setCursor(0, 0);
     lcd.print("IN: ");
-    lcd.print(UART.data.inpVoltage/4);
-    lcd.print("V (4S)    ");
+    lcd.print(UART.data.inpVoltage/cellNumber);
+    lcd.print("V (");
+    lcd.print(cellNumber);
+    lcd.print("S)       ");
     lcd.setCursor(0, 1);
     lcd.print("Length: ");
     lcd.print(UART.data.tachometer/magnets*PI * wheelDiameter);
