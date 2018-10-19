@@ -1,6 +1,10 @@
 #include <VescUart.h>
 #include <LiquidCrystal.h>
 
+const float wheelDiameter = 0.085;
+const int magnets = 42; //14 magnets * 3
+
+
 
 
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
@@ -92,9 +96,7 @@ void setup() {
   lcd.createChar(4, fourC);
   lcd.createChar(5, fiveC);
   lcd.setCursor(0, 0);
-  lcd.print("   ");
-  lcd.write(byte(0));
-  lcd.print(" Vanguard   ");
+  lcd.print(" Winch Monitor  ");
   lcd.setCursor(0, 1);
   lcd.print("Paul Fleury ");
   for (int i = 1; i <= 4; i++) {
@@ -109,10 +111,14 @@ void setup() {
 
 void loop() {
   if (UART.getVescValues()) {
-      lcd.setCursor(0, 0);
-      lcd.print("Battery: ");
-      lcd.print(UART.data.inpVoltage);
-  
+    lcd.setCursor(0, 0);
+    lcd.print("IN: ");
+    lcd.print(UART.data.inpVoltage/4);
+    lcd.print("V (4S)    ");
+    lcd.setCursor(0, 1);
+    lcd.print("Length: ");
+    lcd.print(UART.data.tachometer/magnets*PI * wheelDiameter);
+    lcd.print("m       ");
   }
   delay(50);
 }

@@ -6,6 +6,8 @@
 //Librairies
 #include <Wire.h>
 #include <Servo.h>
+#include <SPI.h>
+#include "SdFat.h"
 
 #define ADRESSE_CMPS12 0x60
 
@@ -13,11 +15,17 @@
 #define ELEVONGAUCHEPIN 6
 #define ELEVONDROITPIN 9
 #define MOTEURPIN 10
+#define SDCARDCSPIN 4
 
 //Objets
 Servo elevon_gauche_servo;
 Servo elevon_droit_servo;
 Servo moteur_esc;
+
+SdFat SD;
+File fichierDonnees;
+
+String logStr;
 
 //Variables
 int roulis;
@@ -44,6 +52,7 @@ void lecture_centrale_inertielle();
 void mixage_elevons();
 void actionner_servos();
 void asservissement_position_angulaire(int consigne_roulis, int consigne_tangage);
+void logCarteSD();
 
 
 

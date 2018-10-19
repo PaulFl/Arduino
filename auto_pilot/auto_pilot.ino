@@ -15,6 +15,9 @@ void setup() {
   //Initialisation centerale inertielle
   Wire.begin();
 
+  //Initialisation carte SD
+  SD.begin(SDCARDCSPIN);
+
   //Initialisation servos
   elevon_gauche_servo.attach(ELEVONGAUCHEPIN);
   elevon_droit_servo.attach(ELEVONDROITPIN);
@@ -26,6 +29,7 @@ void loop() {
   asservissement_position_angulaire(0, 0);
   mixage_elevons();
   actionner_servos();
+  logCarteSD();
 }
 
 void lecture_centrale_inertielle() {
@@ -37,12 +41,12 @@ void lecture_centrale_inertielle() {
   cap = Wire.read(); //Cap 8 bits
   Wire.read(); Wire.read();
   tangage = Wire.read(); //(0,255)
-  if (tangage > 127){
-    tangage -=255;
+  if (tangage > 127) {
+    tangage -= 255;
   }
 
   roulis = Wire.read();
-  if (roulis > 127){
+  if (roulis > 127) {
     roulis -= 255;
   }
 }
@@ -73,4 +77,12 @@ void asservissement_position_angulaire(int consigne_roulis, int consigne_tangage
 
   consigne_servos_roulis = -Kppa * erreur_roulis;
   consigne_servos_tangage = -Kppa * erreur_tangage;
+}
+
+void logCarteSD() {
+  fichierDonnees = SD.open("log.txt", FILE_WRITE);
+  if (fichierDonnees) {
+    fichierDonnees.println(String(millis())+";"+String(roulis));
+    fichierDonnees.close();
+  }
 }
