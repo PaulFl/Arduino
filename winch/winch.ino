@@ -7,6 +7,9 @@ const int magnets = 42; //14 magnets * 3
 int cellNumber = 4;
 
 int redLEDPin = 6;
+int greenLEDPin = 7;
+int killSwitchPin = 8;
+int buttonPin = 9;
 
 
 
@@ -121,7 +124,7 @@ void loop() {
     if (UART.data.inpVoltage/cellNumber < 3.65){
       digitalWrite(redLEDPin, 1);
     } else {
-      digitalWrite(redLEDPin, 0);
+      digitalWrite(redLEDPin, 0); 
     }
     lcd.setCursor(0, 0);
     lcd.print("IN: ");
