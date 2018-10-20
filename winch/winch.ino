@@ -1,6 +1,8 @@
 #include <VescUart.h>
 #include <LiquidCrystal.h>
 
+#define BUTTONDEBOUNCE 50
+
 const float wheelDiameter = 0.085;
 const int magnets = 42; //14 magnets * 3
 
@@ -10,6 +12,17 @@ int redLEDPin = 6;
 int greenLEDPin = 7;
 int killSwitchPin = 8;
 int buttonPin = 9;
+int potPin = 10;
+
+int pageNumber = 0;
+int pageMax = 2;
+int launchCount = 0;
+
+bool warningSignal = false;
+bool killSwitchState = false;
+
+long lastButton;
+float potValue = 0;
 
 
 
@@ -95,6 +108,14 @@ byte fiveC[] = {
 void setup() {
   Serial.begin(9600);
   pinMode(redLEDPin, OUTPUT);
+  pinMode(greenLEDPin, OUTPUT);
+  pinMode(killSwitchPin, INPUT_PULLUP);
+  pinMode(buttonPin, INPUT_PULLUP);
+
+  digitalWrite(greenLEDPin, 1);
+  digitalWrite(redLEDPin, 1);
+
+
   lcd.begin(16, 2);
   lcd.createChar(0, gamma);
   lcd.createChar(1, oneC);
@@ -113,29 +134,91 @@ void setup() {
       lcd.write(byte(j));
     }
   }
+
+  digitalWrite(greenLEDPin, 0);
+  digitalWrite(redLEDPin, 0);
+
+
   UART.setSerialPort(&Serial);
+
+  lastButton = millis();
 }
 
 void loop() {
+  killSwitchState = !digitalRead(killSwitchPin);
+  checkButton();
+
   if (UART.getVescValues()) {
-    if (UART.data.inpVoltage > 18){
+    if (UART.data.inpVoltage > 18) {
       cellNumber = 6;
     }
-    if (UART.data.inpVoltage/cellNumber < 3.65){
-      digitalWrite(redLEDPin, 1);
-    } else {
-      digitalWrite(redLEDPin, 0); 
-    }
-    lcd.setCursor(0, 0);
-    lcd.print("IN: ");
-    lcd.print(UART.data.inpVoltage/cellNumber);
-    lcd.print("V (");
-    lcd.print(cellNumber);
-    lcd.print("S)       ");
-    lcd.setCursor(0, 1);
-    lcd.print("Length: ");
-    lcd.print(UART.data.tachometer/magnets*PI * wheelDiameter);
-    lcd.print("m       ");
+    warningSignal = (UART.data.inpVoltage / cellNumber < 3.65);
+
+    displayData();
+
   }
-  delay(50);
+
+  if (!killSwitchState) {
+    digitalWrite(greenLEDPin, 0);
+    UART.setCurrent(0);
+  } else {
+    digitalWrite(greenLEDPin, 1);
+    UART.setDuty(potValue);
+  }
+  digitalWrite(redLEDPin, warningSignal);
+}
+
+void displayData() {
+  switch (pageNumber) {
+    case 0:
+      lcd.setCursor(0, 0);
+      lcd.print("IN: ");
+      lcd.print(UART.data.inpVoltage / cellNumber);
+      lcd.print("V (");
+      lcd.print(cellNumber);
+      lcd.print("S)       ");
+      lcd.setCursor(0, 1);
+      lcd.print("Launches: ");
+      lcd.print(launchCount);
+      lcd.print("       ");
+      break;
+    case 1:
+      lcd.setCursor(0, 0);
+      lcd.print("Length: ");
+      lcd.print(UART.data.tachometer / magnets * PI * wheelDiameter);
+      lcd.print("m       ");
+      lcd.setCursor(0, 1);
+      lcd.print("                  ");
+      break;
+    case 2:
+      lcd.setCursor(0, 0);
+      lcd.print("Current M: ");
+      lcd.print(UART.data.avgMotorCurrent);
+      lcd.print("A     ");
+      lcd.setCursor(0, 1);
+      lcd.print("Current B: ");
+      lcd.print(UART.data.avgInputCurrent);
+      lcd.print("A      ");
+      break;
+
+    default:
+      break;
+  }
+}
+
+void checkButton() {
+  if (!digitalRead(buttonPin) && millis() - lastButton > BUTTONDEBOUNCE) {
+    buttonPressed();
+  }
+}
+
+void buttonPressed() {
+  pageNumber ++;
+  if (pageNumber > pageMax) {
+    pageNumber = 0;
+  }
+}
+
+void readPot(){
+  potValue = float(analogRead(potPin)) / float(1023);
 }
