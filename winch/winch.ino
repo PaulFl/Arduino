@@ -12,17 +12,21 @@ int redLEDPin = 6;
 int greenLEDPin = 7;
 int killSwitchPin = 8;
 int buttonPin = 9;
-int potPin = 10;
+int potPin = A0;
 
 int pageNumber = 0;
-int pageMax = 2;
+int pageMax = 3;
 int launchCount = 0;
 
 bool warningSignal = false;
 bool killSwitchState = false;
+bool lastButtonState = false;
 
 long lastButton;
 float potValue = 0;
+
+float maxMotorCurrent = 0;
+float maxBatteryCurrent = 0;
 
 
 
@@ -152,11 +156,19 @@ void loop() {
     if (UART.data.inpVoltage > 18) {
       cellNumber = 6;
     }
+    if (UART.data.avgMotorCurrent > maxMotorCurrent){
+      maxMotorCurrent = UART.data.avgMotorCurrent;
+    }
+    if (UART.data.avgInputCurrent > maxBatteryCurrent){
+      maxBatteryCurrent = UART.data.avgInputCurrent;
+    }
     warningSignal = (UART.data.inpVoltage / cellNumber < 3.65);
 
     displayData();
 
   }
+  readPot();
+
 
   if (!killSwitchState) {
     digitalWrite(greenLEDPin, 0);
@@ -188,7 +200,9 @@ void displayData() {
       lcd.print(UART.data.tachometer / magnets * PI * wheelDiameter);
       lcd.print("m       ");
       lcd.setCursor(0, 1);
-      lcd.print("                  ");
+      lcd.print("Input: ");
+      lcd.print(int(potValue*100));
+      lcd.print("%      ");
       break;
     case 2:
       lcd.setCursor(0, 0);
@@ -200,6 +214,15 @@ void displayData() {
       lcd.print(UART.data.avgInputCurrent);
       lcd.print("A      ");
       break;
+      case 3:
+      lcd.setCursor(0, 0);
+      lcd.print("Motor max: ");
+      lcd.print(maxMotorCurrent);
+      lcd.print("A     ");
+      lcd.setCursor(0, 1);
+      lcd.print("Batt max:  ");
+      lcd.print(maxBatteryCurrent);
+      lcd.print("A      ");
 
     default:
       break;
@@ -207,8 +230,11 @@ void displayData() {
 }
 
 void checkButton() {
-  if (!digitalRead(buttonPin) && millis() - lastButton > BUTTONDEBOUNCE) {
+  if (!digitalRead(buttonPin) && millis() - lastButton > BUTTONDEBOUNCE && !lastButtonState) {
+    lastButtonState = true;
     buttonPressed();
+  } else if (digitalRead(buttonPin)) {
+    lastButtonState = false;
   }
 }
 
@@ -219,6 +245,6 @@ void buttonPressed() {
   }
 }
 
-void readPot(){
-  potValue = float(analogRead(potPin)) / float(1023);
+void readPot() {
+  potValue = float(analogRead(potPin))/float(1023);
 }
