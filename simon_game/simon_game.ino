@@ -248,7 +248,7 @@ void flip() {
       digitalWrite(anodeSegments[i], segments[onSegment][i]);
     }
     digitalWrite(cathodeSegments[onSegment], HIGH);
-    flipmillis = mill is();
+    flipmillis = millis();
   }
 }
 
