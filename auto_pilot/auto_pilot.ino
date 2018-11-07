@@ -25,11 +25,12 @@ void setup() {
 }
 
 void loop() {
-  lecture_centrale_inertielle();
-  asservissement_position_angulaire(0, 0);
-  mixage_elevons();
-  actionner_servos();
-  logCarteSD();
+  lireTransmetteur();
+  //lecture_centrale_inertielle();
+  //asservissement_position_angulaire(0, 0);
+  //mixage_elevons();
+  //actionner_servos();
+  //logCarteSD();
 }
 
 void lecture_centrale_inertielle() {
@@ -85,4 +86,14 @@ void logCarteSD() {
     fichierDonnees.println(String(millis())+";"+String(roulis));
     fichierDonnees.close();
   }
+}
+
+void lireTransmetteur(){
+  for (int voie = 1; voie <= NBVOIESRADIO; voie++){
+    valeursRadio[voie - 1] = ppm.rawChannelValue(voie);
+    if (DEBUG){
+      Serial.print(String(valeursRadio[voie-1]) + " ");
+    }
+  }
+  Serial.println();
 }
