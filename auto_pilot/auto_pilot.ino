@@ -26,10 +26,11 @@ void setup() {
 
 void loop() {
   lireTransmetteur();
-  //lecture_centrale_inertielle();
-  //asservissement_position_angulaire(0, 0);
-  //mixage_elevons();
-  //actionner_servos();
+  if (valeursRadio[4] < 1500) {
+    recopieRadio();
+  } else {
+    piloteAuto();
+  }
   //logCarteSD();
 }
 
@@ -83,17 +84,31 @@ void asservissement_position_angulaire(int consigne_roulis, int consigne_tangage
 void logCarteSD() {
   fichierDonnees = SD.open("log.txt", FILE_WRITE);
   if (fichierDonnees) {
-    fichierDonnees.println(String(millis())+";"+String(roulis));
+    fichierDonnees.println(String(millis()) + ";" + String(roulis));
     fichierDonnees.close();
   }
 }
 
-void lireTransmetteur(){
-  for (int voie = 1; voie <= NBVOIESRADIO; voie++){
+void lireTransmetteur() {
+  for (int voie = 1; voie <= NBVOIESRADIO; voie++) {
     valeursRadio[voie - 1] = ppm.rawChannelValue(voie);
-    if (DEBUG){
-      Serial.print(String(valeursRadio[voie-1]) + " ");
+    if (DEBUG) {
+      Serial.print(String(valeursRadio[voie - 1]) + " ");
     }
   }
   Serial.println();
+}
+
+void recopieRadio() {
+  consigne_elevon_gauche = map(valeursRadio[0], 1000, 2000, 0, 90);
+  consigne_elevon_droit = map(valeursRadio[1], 1000, 2000, 0, 90);
+  actionner_servos();
+  moteur_esc.write(map(valeursRadio[2], 1000, 2000, 0, 90));
+}
+
+void piloteAuto() {
+  lecture_centrale_inertielle();
+  asservissement_position_angulaire(0, 0);
+  mixage_elevons();
+  actionner_servos();
 }

@@ -19,7 +19,7 @@
 #define SDCARDCSPIN 4
 #define PPMPIN 3
 
-#define NBVOIESRADIO 6
+#define NBVOIESRADIO 5
 
 
 //Variables
@@ -63,6 +63,9 @@ void mixage_elevons();
 void actionner_servos();
 void asservissement_position_angulaire(int consigne_roulis, int consigne_tangage);
 void logCarteSD();
+void lireTransmetteur();
+void recopieRadio();
+void piloteAuto();
 
 
 
