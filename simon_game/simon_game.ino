@@ -69,6 +69,9 @@ int score = 0;
 int bestScore;
 int pressed;
 
+long debutNote = 0;
+long resteTemps = 0;
+
 boolean chars[22][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
   {0, 1, 1, 0, 0, 0, 0}, //1
   {1, 1, 0, 1, 1, 0, 1}, //2
@@ -188,6 +191,16 @@ void setup() {
   digitalWrite(1, HIGH);
   pinMode(buzzer, OUTPUT);
   byte array[2];
+  array[0] = PCHAR;
+  array[1] = FCHAR;
+  display(array);
+  delayFlip(500);
+
+  array[0] = PCHAR;
+  array[1] = FCHAR;
+  display(array);
+  delayFlip(500);
+
   if (bestScore < 10) {
     array[0] = OFFSEG;
   }
@@ -196,7 +209,7 @@ void setup() {
   }
   array[1] = bestScore % 10;
   display(array);
-  delayFlip(3000);
+  delayFlip(2000);
 }
 
 void loop() {
@@ -316,20 +329,35 @@ int checkEtape(char etape) {
   long temps = millis();
   char objectif = sequence[etape];
 
-  while ((millis() - temps) < LIMITE_TEMPS) {
+  while ((millis() - temps) < (LIMITE_TEMPS + resteTemps)) {
     flip();
     lectureBoutons();
+    if (millis() - debutNote > 500) {
+      noTone(buzzer);
+      for (short i = 0; i < 4; i++) {
+        digitalWrite(leds[i],    LOW);
+      }
+    }
     for (int i = 0; i < 4; i++) {
       if (etats[i]) {
         if (i != objectif) {
           return i;
         }
         else if (i == objectif) {
+          noTone(buzzer);
+          for (short i = 0; i < 4; i++) {
+            digitalWrite(leds[i],    LOW);
+          }
+          resteTemps = LIMITE_TEMPS - millis() + temps;
           digitalWrite(leds[i], HIGH);
           tone(buzzer, frequences[i]);
-          delayFlip(500);
-          digitalWrite(leds[i], LOW);
-          noTone(buzzer);
+          debutNote = millis();
+          if (etape == cpt - 1) {
+            delayFlip(500);
+            digitalWrite(leds[i], LOW);
+            noTone(buzzer);
+            resteTemps = 0;
+          }
           return -1;
         }
       }

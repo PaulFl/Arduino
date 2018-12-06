@@ -1,4 +1,3 @@
-##############################################################
 
 atmega328bb.name=ATmega328 on a breadboard (8 MHz internal clock)
 

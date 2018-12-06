@@ -1,5 +1,6 @@
 //Auto Pilot
 //Paul Fleury
+#include "robot_ball_balance_v1.h"
 
 #include "auto_pilot.h"
 
@@ -22,6 +23,7 @@ void setup() {
   elevon_gauche_servo.attach(ELEVONGAUCHEPIN);
   elevon_droit_servo.attach(ELEVONDROITPIN);
   moteur_esc.attach(MOTEURPIN);
+  initCI();
 }
 
 void loop() {
@@ -70,6 +72,10 @@ void mixage_elevons() {
 }
 
 void actionner_servos() {
+  if (consigne_elevon_gauche > 130) consigne_elevon_gauche = 130;
+  if (consigne_elevon_gauche < 25) consigne_elevon_gauche = 25;
+  if (consigne_elevon_droit > 130) consigne_elevon_droit = 130;
+  if (consigne_elevon_droit < 24) consigne_elevon_droit = 25;
   elevon_gauche_servo.write(consigne_elevon_gauche);
   elevon_droit_servo.write(consigne_elevon_droit);
 }
@@ -113,7 +119,10 @@ void recopieMoteur() {
 }
 
 void piloteAuto() {
-  lecture_centrale_inertielle();
+  readCI();
+  roulis = x.angleCentered;
+  tangage = y.angleCentered;
+  //lecture_centrale_inertielle();
   asservissement_position_angulaire(0, 0);
   mixage_elevons();
   actionner_servos();
