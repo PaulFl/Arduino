@@ -352,6 +352,7 @@ int checkEtape(char etape) {
           digitalWrite(leds[i], HIGH);
           tone(buzzer, frequences[i]);
           debutNote = millis();
+          delayFlip(100);
           if (etape == cpt - 1) {
             delayFlip(500);
             digitalWrite(leds[i], LOW);
