@@ -27,6 +27,7 @@
 #define PCHAR 19
 #define SCHAR 5
 #define UCHAR 20
+#define DCHAR 22
 
 #define OFFSEG 21
 
@@ -72,7 +73,7 @@ int pressed;
 long debutNote = 0;
 long resteTemps = 0;
 
-boolean chars[22][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
+boolean chars[23][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
   {0, 1, 1, 0, 0, 0, 0}, //1
   {1, 1, 0, 1, 1, 0, 1}, //2
   {1, 1, 1, 1, 0, 0, 1}, //3
@@ -93,7 +94,8 @@ boolean chars[22][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
   {0, 0, 1, 0, 1, 0, 1}, //n
   {1, 1, 0, 0, 1, 1, 1}, //P
   {0, 1, 1, 1, 1, 1, 0}, //U
-  {0, 0, 0, 0, 0, 0, 0}
+  {0, 0, 0, 0, 0, 0, 0},
+  {0, 1, 1, 1, 1, 0, 1} //d
 }; //Off segment
 
 unsigned long flipmillis;
@@ -194,12 +196,7 @@ void setup() {
   array[0] = PCHAR;
   array[1] = FCHAR;
   display(array);
-  delayFlip(500);
-
-  array[0] = PCHAR;
-  array[1] = FCHAR;
-  display(array);
-  delayFlip(500);
+  delayFlip(1000);
 
   if (bestScore < 10) {
     array[0] = OFFSEG;
@@ -341,6 +338,10 @@ int checkEtape(char etape) {
     for (int i = 0; i < 4; i++) {
       if (etats[i]) {
         if (i != objectif) {
+          noTone(buzzer);
+          for (short i = 0; i < 4; i++) {
+            digitalWrite(leds[i],    LOW);
+          }
           return i;
         }
         else if (i == objectif) {
@@ -348,11 +349,12 @@ int checkEtape(char etape) {
           for (short i = 0; i < 4; i++) {
             digitalWrite(leds[i],    LOW);
           }
-          resteTemps = LIMITE_TEMPS - millis() + temps;
+          delayFlip(10);
+          //resteTemps = LIMITE_TEMPS - millis() + temps;
           digitalWrite(leds[i], HIGH);
           tone(buzzer, frequences[i]);
           debutNote = millis();
-          delayFlip(100);
+          delayFlip(200);
           if (etape == cpt - 1) {
             delayFlip(500);
             digitalWrite(leds[i], LOW);
