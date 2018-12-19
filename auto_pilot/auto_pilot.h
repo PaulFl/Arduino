@@ -26,7 +26,8 @@
 
 int roulis;
 int tangage;
-int cap;
+int cap; //codé sur 8 bits
+int cap16; // codé sur 16 bits
 
 int consigne_roulis;
 int consigne_tangage;
