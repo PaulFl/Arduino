@@ -42,7 +42,9 @@ void lecture_centrale_inertielle() {
 
   Wire.requestFrom(ADRESSE_CMPS12, 5); //Récupération des octets 1 à 8 (1- Cap (8bits), 2 et 3 Cap (16 bits), 4 Tangage, 5 Roulis
   cap = Wire.read(); //Cap 8 bits
-  Wire.read(); Wire.read();
+  cap16 = Wire.read();
+  cap16 <<= 8;
+  cap16 += Wire.read();
   tangage = Wire.read(); //(0,255)
   if (tangage > 127) {
     tangage -= 255;
