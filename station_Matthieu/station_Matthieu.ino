@@ -10,7 +10,7 @@
 
 
 //Variables
-int pression;
+long pression;
 int temperature;
 int humidite;
 int luminosite;
@@ -71,17 +71,18 @@ void setup() {
 
 void loop() {
   //mesurerSon();
-  mesurerHumidite();
-  Serial.println(humidite);
+  //mesurerHumidite();
+  //Serial.println(humidite);
   //mesurerLuminosite();
-  //mesurerPressionTemperature();
-
+  mesurerPressionTemperature();
+  Serial.println(pression);
+  Serial.println(temperature);
   //recupererDate();
 
   //ecrireCarteSD();
 
 
-  delay(10000); //~10 secondes entre les mesures
+  delay(1000); //~10 secondes entre les mesures
 }
 
 void mesurerSon() {
