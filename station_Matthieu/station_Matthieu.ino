@@ -2,7 +2,7 @@
 #include <Wire.h> //I2C
 #include <DS3231.h> // Horloge
 #include <Adafruit_Sensor.h> //Pour tous les autres capteurs
-#include <Adafruit_TSL2561_U.h> //CApteur luminosité
+#include <Digital_Light_TSL2561.h>//CApteur luminosité
 #include <DHT_U.h> // Capteur humidite 
 #include <Adafruit_BMP280.h> //Capteru pression & temperature
 #include <SPI.h> //SPI
@@ -27,11 +27,9 @@ int seconde;
 int pinSon = A0; //analogique
 int pinHumidite = 2;
 
-const int pinCSCarteSD = 4; //SPI
+const int pinCSCarteSD = 10; //SPI
 
 //Definition objets
-//Luminosité
-Adafruit_TSL2561_Unified capteurLuminosite = Adafruit_TSL2561_Unified(TSL2561_ADDR_FLOAT, 12345);
 //Humidité
 DHT_Unified capteurHumidite(pinHumidite, DHT11);
 //Pression & Temperature
@@ -54,9 +52,7 @@ void setup() {
   Wire.begin();
 
   //Initialisation capteur luminosité
-  capteurLuminosite.begin();
-  capteurLuminosite.setGain(TSL2561_GAIN_1X); //TSL2561_GAIN_16X
-  capteurLuminosite.setIntegrationTime(TSL2561_INTEGRATIONTIME_101MS); //Compromis vitesse / résolution
+  TSL2561.init();
 
   //Initialisation capteur humidté
   capteurHumidite.begin();
@@ -70,19 +66,30 @@ void setup() {
 }
 
 void loop() {
-  //mesurerSon();
+  mesurerSon();
+  Serial.print("Son: ");
+  Serial.println(son);
+  
   //mesurerHumidite();
   //Serial.println(humidite);
-  //mesurerLuminosite();
+  
+  mesurerLuminosite();
+  Serial.print("Luminosité: ");
+  Serial.println(luminosite);
+  
   mesurerPressionTemperature();
+  Serial.print("Pression: ");
   Serial.println(pression);
+  
+  Serial.print("Température: ");
   Serial.println(temperature);
-  //recupererDate();
+  
+  recupererDate();
 
-  //ecrireCarteSD();
+  ecrireCarteSD();
 
 
-  delay(1000); //~10 secondes entre les mesures
+  delay(10000); //~10 secondes entre les mesures
 }
 
 void mesurerSon() {
@@ -95,8 +102,7 @@ void mesurerHumidite() {
 }
 
 void mesurerLuminosite() {
-  capteurLuminosite.getEvent(&event);
-  luminosite = event.light;
+  luminosite = TSL2561.readVisibleLux();
 }
 
 void mesurerPressionTemperature() {
