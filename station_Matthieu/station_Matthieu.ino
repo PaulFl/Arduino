@@ -1,9 +1,12 @@
+#include <Arduino.h>
+#include "User_Setup.h"
+
 //Libraires
 #include <Wire.h> //I2C
 #include <DS3231.h> // Horloge
 #include <Adafruit_Sensor.h> //Pour tous les autres capteurs
 #include <Digital_Light_TSL2561.h>//CApteur luminosité
-#include <DHT_U.h> // Capteur humidite 
+#include <DHT_U.h> // Capteur humidite
 #include <Adafruit_BMP280.h> //Capteru pression & temperature
 #include <SPI.h> //SPI
 #include <SD.h> //module carte sd
@@ -45,108 +48,108 @@ sensors_event_t event; //Variable utiliseee par Adafruit_Unified pour gerer tous
 
 
 void setup() {
-  //Initalisation port sérire
-  Serial.begin(9600);
+    //Initalisation port sérire
+    Serial.begin(9600);
 
-  //Initialisation horloge
-  Wire.begin();
+    //Initialisation horloge
+    Wire.begin();
 
-  //Initialisation capteur luminosité
-  TSL2561.init();
+    //Initialisation capteur luminosité
+    TSL2561.init();
 
-  //Initialisation capteur humidté
-  capteurHumidite.begin();
+    //Initialisation capteur humidté
+    capteurHumidite.begin();
 
-  //Initialisation capteur pression & Temperature
-  capteurPressionTemperature.begin();
+    //Initialisation capteur pression & Temperature
+    capteurPressionTemperature.begin();
 
-  //Initialisation carteSD
-  SD.begin(pinCSCarteSD);
+    //Initialisation carteSD
+    SD.begin(pinCSCarteSD);
 
 }
 
 void loop() {
-  mesurerSon();
-  Serial.print("Son: ");
-  Serial.println(son);
-  
-  //mesurerHumidite();
-  //Serial.println(humidite);
-  
-  mesurerLuminosite();
-  Serial.print("Luminosité: ");
-  Serial.println(luminosite);
-  
-  mesurerPressionTemperature();
-  Serial.print("Pression: ");
-  Serial.println(pression);
-  
-  Serial.print("Température: ");
-  Serial.println(temperature);
-  
-  recupererDate();
+    mesurerSon();
+    Serial.print("Son: ");
+    Serial.println(son);
 
-  ecrireCarteSD();
+    //mesurerHumidite();
+    //Serial.println(humidite);
+
+    mesurerLuminosite();
+    Serial.print("Luminosité: ");
+    Serial.println(luminosite);
+
+    mesurerPressionTemperature();
+    Serial.print("Pression: ");
+    Serial.println(pression);
+
+    Serial.print("Température: ");
+    Serial.println(temperature);
+
+    recupererDate();
+
+    ecrireCarteSD();
 
 
-  delay(10000); //~10 secondes entre les mesures
+    delay(10000); //~10 secondes entre les mesures
 }
 
 void mesurerSon() {
-  son = analogRead(pinSon); //pour l'instant rencoie une valeur codee sur 10 bits cest a dire entre 0 et 1023
+    son = analogRead(pinSon); //pour l'instant rencoie une valeur codee sur 10 bits cest a dire entre 0 et 1023
 }
 
 void mesurerHumidite() {
-  capteurHumidite.humidity().getEvent(&event);
-  humidite = event.relative_humidity;
+    capteurHumidite.humidity().getEvent(&event);
+    humidite = event.relative_humidity;
 }
 
 void mesurerLuminosite() {
-  luminosite = TSL2561.readVisibleLux();
+    luminosite = TSL2561.readVisibleLux();
 }
 
 void mesurerPressionTemperature() {
-  temperature = capteurPressionTemperature.readTemperature();
-  pression = capteurPressionTemperature.readPressure();
+    temperature = capteurPressionTemperature.readTemperature();
+    pression = capteurPressionTemperature.readPressure();
 }
 
 void recupererDate() {
-  DateTime maintenant = horloge.now();
-  annee = maintenant.year();
-  mois = maintenant.month();
-  jour = maintenant.day();
-  heure = maintenant.hour();
-  minute = maintenant.minute();
-  seconde = maintenant.second();
+    DateTime maintenant = horloge.now();
+    annee = maintenant.year();
+    mois = maintenant.month();
+    jour = maintenant.day();
+    heure = maintenant.hour();
+    minute = maintenant.minute();
+    seconde = maintenant.second();
 }
 
 void ecrireCarteSD() {
-  String ligne = ""; //(+= rajoute a la fin de la ligen (equivalent a crire ligne = ligne +"blablea"), ";" pour separer les valeurs
-  ligne += String(annee); //Date
-  ligne += ";";
-  ligne += String(mois);
-  ligne += ";";
-  ligne += String(jour);
-  ligne += ";";
-  ligne += String(heure);
-  ligne += ";";
-  ligne += String(minute);
-  ligne += ";";
-  ligne += String(seconde);
-  ligne += ";";
+    String ligne = ""; //(+= rajoute a la fin de la ligen (equivalent a crire ligne = ligne +"blablea"), ";" pour separer les valeurs
+    ligne += String(annee); //Date
+    ligne += ";";
+    ligne += String(mois);
+    ligne += ";";
+    ligne += String(jour);
+    ligne += ";";
+    ligne += String(heure);
+    ligne += ";";
+    ligne += String(minute);
+    ligne += ";";
+    ligne += String(seconde);
+    ligne += ";";
 
-  ligne += String(temperature);
-  ligne += ";";
-  ligne += String(pression);
-  ligne += ";";
-  ligne += String(luminosite);
-  ligne += ";";
-  ligne += String(humidite);
-  ligne += ";";
-  ligne += String(son);
-  ligne += ";";
+    ligne += String(temperature);
+    ligne += ";";
+    ligne += String(pression);
+    ligne += ";";
+    ligne += String(luminosite);
+    ligne += ";";
+    ligne += String(humidite);
+    ligne += ";";
+    ligne += String(son);
+    ligne += ";";
 
-  File fichierDonnees = SD.open("donnees.txt", FILE_WRITE);
-  fichierDonnees.println(ligne);
-  fichierDonnees.close();
+    File fichierDonnees = SD.open("donnees.txt", FILE_WRITE);
+    fichierDonnees.println(ligne);
+    fichierDonnees.close();
 }

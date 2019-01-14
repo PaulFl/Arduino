@@ -35,6 +35,7 @@ void setup() {
   sim800l.write(26);
   delay(10000);
   sendAT("AT+CMGD=1,4"); //delete all messages
+
 }
 
 void loop() {
