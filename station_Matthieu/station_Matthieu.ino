@@ -1,6 +1,3 @@
-#include <Arduino.h>
-#include "User_Setup.h"
-
 //Libraires
 #include <Wire.h> //I2C
 #include <DS3231.h> // Horloge
@@ -30,6 +27,10 @@ int seconde;
 int pinSon = A0; //analogique
 int pinHumidite = 2;
 
+int ledVert = 5;
+int ledOrange = 6;
+int ledRouge = 7;
+
 const int pinCSCarteSD = 10; //SPI
 
 //Definition objets
@@ -50,49 +51,81 @@ sensors_event_t event; //Variable utiliseee par Adafruit_Unified pour gerer tous
 void setup() {
     //Initalisation port sérire
     Serial.begin(9600);
-
+    
     //Initialisation horloge
     Wire.begin();
-
+    
     //Initialisation capteur luminosité
     TSL2561.init();
-
+    
     //Initialisation capteur humidté
     capteurHumidite.begin();
-
+    
     //Initialisation capteur pression & Temperature
     capteurPressionTemperature.begin();
-
+    
     //Initialisation carteSD
     SD.begin(pinCSCarteSD);
-
+    
+    //Initialisation des leds
+    initialisationLeds();
+    
 }
 
 void loop() {
     mesurerSon();
-    Serial.print("Son: ");
-    Serial.println(son);
-
+    //Serial.print("Son: ");
+    //Serial.println(son);
+    
     //mesurerHumidite();
     //Serial.println(humidite);
-
+    
     mesurerLuminosite();
-    Serial.print("Luminosité: ");
-    Serial.println(luminosite);
-
+    //Serial.print("Luminosité: ");
+    //Serial.println(luminosite);
+    
     mesurerPressionTemperature();
-    Serial.print("Pression: ");
-    Serial.println(pression);
-
-    Serial.print("Température: ");
-    Serial.println(temperature);
-
+    //Serial.print("Pression: ");
+    //Serial.println(pression);
+    
+    //Serial.print("Température: ");
+    //Serial.println(temperature);
+    
     recupererDate();
-
+    
     ecrireCarteSD();
-
-
+    
+    recupererBluetooth();
+    
+    
     delay(10000); //~10 secondes entre les mesures
+}
+
+void recupererBluetooth() {
+    int valeur = 0;
+    while (Serial.available()) {
+        valeur = Serial.parseInt();
+    }
+    switch (valeur) {
+        case 1:
+            digitalWrite(ledVert, HIGH);
+            digitalWrite(ledOrange, LOW);
+            digitalWrite(ledRouge, LOW);
+            break;
+        case 2:
+            digitalWrite(ledVert, LOW);
+            digitalWrite(ledOrange, HIGH);
+            digitalWrite(ledRouge, LOW);
+            break;
+        case 3:
+            digitalWrite(ledVert, LOW);
+            digitalWrite(ledOrange, LOW);
+            digitalWrite(ledRouge, HIGH);
+            break;
+            
+        default:
+            break;
+    }
 }
 
 void mesurerSon() {
@@ -137,7 +170,7 @@ void ecrireCarteSD() {
     ligne += ";";
     ligne += String(seconde);
     ligne += ";";
-
+    
     ligne += String(temperature);
     ligne += ";";
     ligne += String(pression);
@@ -148,8 +181,19 @@ void ecrireCarteSD() {
     ligne += ";";
     ligne += String(son);
     ligne += ";";
-
+    
     File fichierDonnees = SD.open("donnees.txt", FILE_WRITE);
     fichierDonnees.println(ligne);
+    Serial.println(ligne);
     fichierDonnees.close();
+}
+
+void initialisationLeds() {
+    pinMode(ledVert, OUTPUT);
+    pinMode(ledRouge, OUTPUT);
+    pinMode(ledOrange, OUTPUT);
+    
+    digitalWrite(ledVert, HIGH);
+    digitalWrite(ledOrange, HIGH);
+    digitalWrite(ledRouge, HIGH);
 }
