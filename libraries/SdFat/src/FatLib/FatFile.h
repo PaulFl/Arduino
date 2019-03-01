@@ -141,9 +141,11 @@ class FatFile {
    * LS_SIZE - %Print file size.
    *
    * LS_R - Recursive list of subdirectories.
+   *
+   * \return true for success or false if an error occurred.
    */
-  void ls(uint8_t flags = 0) {
-    ls(&Serial, flags);
+  bool ls(uint8_t flags = 0) {
+    return ls(&Serial, flags);
   }
   /** %Print a directory date field.
    *
@@ -464,8 +466,10 @@ class FatFile {
    *
    * \param[in] indent Amount of space before file name. Used for recursive
    * list to indicate subdirectory level.
+   *
+   * \return true for success or false if an error occurred.
    */
-  void ls(print_t* pr, uint8_t flags = 0, uint8_t indent = 0);
+  bool ls(print_t* pr, uint8_t flags = 0, uint8_t indent = 0);
   /** Make a new directory.
    *
    * \param[in] dir An open FatFile instance for the directory that will
@@ -566,6 +570,11 @@ class FatFile {
   bool open(const char* path, oflag_t oflag = O_RDONLY) {
     return open(m_cwd, path, oflag);
   }
+  /** Open current working directory.
+   *
+   * \return true for success or false for failure.
+   */
+  bool openCwd();
   /** Open the next file or subdirectory in a directory.
    *
    * \param[in] dirFile An open FatFile instance for the directory
@@ -741,6 +750,18 @@ class FatFile {
   /** Set the file's current position to zero. */
   void rewind() {
     seekSet(0);
+  }
+  /** Rename a file or subdirectory.
+   *
+   * \note the file will be moved to the current working directory.
+   *
+   * \param[in] newPath New path name for the file/directory.
+   *
+   * \return The value true is returned for success and
+   * the value false is returned for failure.
+   */
+  bool rename(const char* newPath) {
+    return rename(cwd(), newPath);
   }
   /** Rename a file or subdirectory.
    *
