@@ -1,6 +1,6 @@
 /*****************************************
-*     CMPS12 I2C example for Arduino     *
-*        By James Henderson, 2014        * 
+      CMPS12 I2C example for Arduino
+         By James Henderson, 2014
 *****************************************/
 
 #include <Wire.h>
@@ -23,61 +23,63 @@ void setup()
 void loop()
 {
 
-  Wire.beginTransmission(CMPS12_ADDRESS);  //starts communication with CMPS12
-  Wire.write(ANGLE_8);                     //Sends the register we wish to start reading from
+  Wire.beginTransmission(CMPS12_ADDRESS);
+  Wire.write(1); //Skip version
   Wire.endTransmission();
- 
-  // Request 5 bytes from the CMPS12
-  // this will give us the 8 bit bearing, 
-  // both bytes of the 16 bit bearing, pitch and roll
-  Wire.requestFrom(CMPS12_ADDRESS, 5);       
-  
-  while(Wire.available() < 5);        // Wait for all bytes to come back
-  
-  angle8 = Wire.read();               // Read back the 5 bytes
-  high_byte = Wire.read();
-  low_byte = Wire.read();
-  pitch = Wire.read();
-  roll = Wire.read();
-  
-  angle16 = high_byte;                 // Calculate 16 bit angle
-  angle16 <<= 8;
-  angle16 += low_byte;
-    
-  Serial.print("roll: ");               // Display roll data
-  Serial.print(roll, DEC);
-  
-  Serial.print("    pitch: ");          // Display pitch data
-  Serial.print(pitch, DEC);
-  
-  Serial.print("    angle full: ");     // Display 16 bit angle with decimal place
-  Serial.print(angle16 / 10, DEC);
-  Serial.print(".");
-  Serial.print(angle16 % 10, DEC);
-  if (angle16/10 < 4 || angle16/10 > 356){
-    digitalWrite(13,1);
-  } else {
-    digitalWrite(13,0);
-  }
-  
-  Serial.print("    angle 8: ");        // Display 8bit angle
-  Serial.println(angle8, DEC);
 
-  Wire.beginTransmission(CMPS12_ADDRESS);  //starts communication with CMPS12
-  Wire.write(30);                     //Sends the register we wish to start reading from
-  Wire.endTransmission();
-  
-  Wire.requestFrom(CMPS12_ADDRESS, 1);       
-  
-  while(Wire.available() < 1);        // Wait for all bytes to come back
+  Wire.requestFrom(CMPS12_ADDRESS, 30);
+  Wire.read(); //Skip 8bit heading
+
+  int heading = Wire.read();
+  heading <<= 8;
+  heading += Wire.read();
+
+  int roll = Wire.read();
+  int pitch = Wire.read();
+
+  for (int i = 0; i < 6; i++) { //Skip raw magnetometer
+    Wire.read();
+  }
+
+  int raw_x_acc = Wire.read();
+  raw_x_acc <<= 8;
+  raw_x_acc += Wire.read();
+
+  int raw_y_acc = Wire.read();
+  raw_y_acc <<= 8;
+  raw_y_acc += Wire.read();
+
+  int raw_z_acc = Wire.read();
+  raw_z_acc <<= 8;
+  raw_z_acc += Wire.read();
+
+  int raw_x_gyro = Wire.read();
+  raw_x_gyro <<= 8;
+  raw_x_gyro += Wire.read();
+
+  int raw_y_gyro = Wire.read();
+  raw_y_gyro <<= 8;
+  raw_y_gyro += Wire.read();
+
+  int raw_z_gyro = Wire.read();
+  raw_z_gyro <<= 8;
+  raw_z_gyro += Wire.read();
+
+  for (int i = 0; i < 6; i++) { //Skip temp and pitch
+    Wire.read();
+  }
 
   int calibration = Wire.read();
-  if (calibration == 255 || calibration == 191) {
-    digitalWrite(6, 1);
-  } else {
-    digitalWrite(6,0);
+
+  if (pitch > 100) {
+    pitch = pitch - 255;
   }
-  Serial.println(calibration,BIN);    
-  
-  
+  if (roll > 125) {
+    roll = 77 + roll - 179;
+  }
+  Serial.print("roll");
+  Serial.println(roll);
+
+
+
 }

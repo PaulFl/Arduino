@@ -7,12 +7,12 @@
 
 void setup() 
 {
-  Serial.begin(115200);
-  IBus.begin(Serial1);
+  IBus.begin(Serial);
+  pinMode(13, OUTPUT);
 }
 
 void loop() 
 {
   IBus.loop();
-  Serial.println(IBus.readChannel(0), HEX);
+  digitalWrite(13, IBus.readChannel(0) > 1500);
 }

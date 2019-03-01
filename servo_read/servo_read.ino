@@ -1,4 +1,4 @@
-short receivePin = 6;
+short receivePin = 2;
 short ledPin = 13;
 unsigned int value;
 bool led = true;
@@ -15,13 +15,6 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   value = pulseIn(receivePin, HIGH);
-  if (value < 1000 && !switched) {
-    switched = true;
-    led = !led;
-    digitalWrite(ledPin, led);
-  }
-  else if (value > 1000 && switched) {
-    switched = false;
-  }
+  
   Serial.println(value);
 }
