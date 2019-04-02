@@ -39,7 +39,7 @@
 #define WCHAR 31
 #define XCHAR 32
 #define YCHAR 33
-#define ZCHAR 5
+#define ZCHAR 34
 
 
 #define OFFSEG 21
@@ -88,7 +88,7 @@ int pressed;
 long debutNote = 0;
 long resteTemps = 0;
 
-boolean chars[34][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
+boolean chars[35][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
   {0, 1, 1, 0, 0, 0, 0}, //1
   {1, 1, 0, 1, 1, 0, 1}, //2
   {1, 1, 1, 1, 0, 0, 1}, //3
@@ -102,7 +102,7 @@ boolean chars[34][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
   {1, 0, 0, 1, 1, 1, 0}, //C
   {1, 0, 0, 1, 1, 1, 1}, //E
   {1, 0, 0, 0, 1, 1, 1}, //F
-  {0, 1, 1, 0, 1, 1, 0}, //H
+  {0, 1, 1, 0, 1, 1, 1}, //H
   {0, 0, 0, 0, 1, 1, 0}, //I
   {0, 1, 1, 1, 1, 0, 0}, //J
   {0, 0, 0, 1, 1, 1, 0}, //L
@@ -121,7 +121,8 @@ boolean chars[34][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
   {0, 1, 0, 1, 0, 1, 0},//V
   {0, 1, 1, 1, 1, 1, 1}, //W
   {1, 0, 0, 1, 0, 0, 1}, //X
-  {0, 1, 1, 1, 0, 1, 1} //y
+  {0, 1, 1, 1, 0, 1, 1}, //y
+  {1, 1, 0, 1, 1, 0, 1}
 };
 
 int alphabet[26] = {ACHAR, BCHAR, CCHAR, DCHAR, ECHAR, FCHAR, GCHAR, HCHAR, ICHAR, JCHAR, KCHAR, LCHAR, MCHAR, NCHAR, OCHAR, PCHAR, QCHAR, RCHAR, SCHAR, TCHAR, UCHAR, VCHAR, WCHAR, XCHAR, YCHAR, ZCHAR};
