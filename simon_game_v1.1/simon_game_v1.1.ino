@@ -8,7 +8,8 @@
 
 #define SIZE_MAX     99   //taille maximale de la séquence aléatoire
 #define LIMITE_TEMPS 2500 //la limite de temps pour répondre
-#define SPEED_MAX      200  //pause entre chaque note jouée
+#define SPEED_MAX      200 
+#define DELAY_BEETWEEN_PRESSES 300
 #define SPEED_MIN 500
 #define ACCELERATION 30
 #define REFRESHSPEED 3
@@ -390,7 +391,7 @@ int checkEtape(char etape) {
           digitalWrite(leds[i], HIGH);
           tone(buzzer, frequences[i]);
           debutNote = millis();
-          delayFlip(200);
+          delayFlip(DELAY_BEETWEEN_PRESSES);
           if (etape == cpt - 1) {
             delayFlip(500);
             digitalWrite(leds[i], LOW);
