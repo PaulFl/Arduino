@@ -9,8 +9,8 @@
 #define SIZE_MAX     99   //taille maximale de la séquence aléatoire
 #define LIMITE_TEMPS 2500 //la limite de temps pour répondre
 #define SPEED_MAX      200
-#define DELAY_BEETWEEN_PRESSES 300
-#define DELAY_DEBOUNCE 10
+#define DELAY_BEETWEEN_PRESSES 200
+#define DELAY_DEBOUNCE 20
 #define SPEED_MIN 500
 #define ACCELERATION 30
 #define REFRESHSPEED 3
@@ -463,7 +463,7 @@ void ecranFin(boolean perdu) {
         } else if (etats[3]) {
           nameValid = true;
         }
-        delayFlip(10);
+        delayFlip(30);
       }
       bestScoreName_1 = alphabet[nameCharIndex[0]];
       bestScoreName_2 = alphabet[nameCharIndex[1]];
