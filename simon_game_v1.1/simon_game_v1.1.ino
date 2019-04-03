@@ -370,7 +370,7 @@ int checkEtape(char etape) {
           for (short i = 0; i < 4; i++) {
             digitalWrite(leds[i],    LOW);
           }
-          return i;
+          return -2;
         }
         else if (i == objectif) {
           noTone(buzzer);
@@ -418,10 +418,20 @@ void lectureBoutons() {
 }
 
 void animationReponseFausse(int lastPressed) {
+  if (lastPressed != -2){
   digitalWrite(leds[lastPressed], HIGH);
   tone(buzzer, NOTE_A1);
+  delayFlip(500);
+  }
+  for (short i = 0; i < 4; i++) {
+    digitalWrite(leds[i],    HIGH);
+  }
+  tone(buzzer, NOTE_A1);
   delayFlip(750);
-  digitalWrite(leds[lastPressed], LOW);
+  //digitalWrite(leds[lastPressed], LOW);
+  for (short i = 0; i < 4; i++) {
+    digitalWrite(leds[i],    LOW);
+  }
   noTone(buzzer);
   delayFlip(500);
 }
