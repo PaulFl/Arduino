@@ -8,8 +8,9 @@
 
 #define SIZE_MAX     99   //taille maximale de la séquence aléatoire
 #define LIMITE_TEMPS 2500 //la limite de temps pour répondre
-#define SPEED_MAX      200 
+#define SPEED_MAX      200
 #define DELAY_BEETWEEN_PRESSES 300
+#define DELAY_DEBOUNCE 10
 #define SPEED_MIN 500
 #define ACCELERATION 30
 #define REFRESHSPEED 3
@@ -129,13 +130,13 @@ boolean chars[35][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
 int alphabet[26] = {ACHAR, BCHAR, CCHAR, DCHAR, ECHAR, FCHAR, GCHAR, HCHAR, ICHAR, JCHAR, KCHAR, LCHAR, MCHAR, NCHAR, OCHAR, PCHAR, QCHAR, RCHAR, SCHAR, TCHAR, UCHAR, VCHAR, WCHAR, XCHAR, YCHAR, ZCHAR};
 
 unsigned long flipmillis;
+unsigned long buttonMillis[4] = {0, 0, 0, 0};
 
 boolean segments[2][7] = {false};
 byte onSegment = 0;
 
 
-template <class T> int EEPROM_writeAnything(int ee, const T& value)
-{
+template <class T> int EEPROM_writeAnything(int ee, const T& value) {
   const byte* p = (const byte*)(const void*)&value;
   int i;
   for (i = 0; i < sizeof(value); i++)
@@ -144,8 +145,7 @@ template <class T> int EEPROM_writeAnything(int ee, const T& value)
 }
 
 
-template <class T> int EEPROM_readAnything(int ee, T& value)
-{
+template <class T> int EEPROM_readAnything(int ee, T& value) {
   byte* p = (byte*)(void*)&value;
   int i;
   for (i = 0; i < sizeof(value); i++)
@@ -154,46 +154,36 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
 }
 
 
-void BetterRandomSeed( void )
-{
+void BetterRandomSeed(void) {
   unsigned long __seed;
-
-  EEPROM_readAnything( 0, __seed );
-
-  srandom( __seed );
+  EEPROM_readAnything(0, __seed);
+  srandom(__seed);
 }
 
 
-long BetterRandom( void )
-{
+long BetterRandom(void) {
   long __seed;
-
   __seed = random();
-
-  EEPROM_writeAnything( 0, __seed );
-
-  return ( __seed );
+  EEPROM_writeAnything(0, __seed);
+  return (__seed);
 }
 
 
-long BetterRandom( long howbig )
-{
-  if ( howbig == 0 )
-  {
+long BetterRandom(long howbig) {
+  if (howbig == 0) {
     return 0;
   }
-  return ( BetterRandom() % howbig );
+  return (BetterRandom() % howbig);
 }
 
 
-long BetterRandom( long howsmall, long howbig) {
-  if ( howsmall >= howbig )
-  {
+long BetterRandom(long howsmall, long howbig) {
+  if (howsmall >= howbig) {
     return howsmall;
   }
   long diff = howbig - howsmall;
 
-  return ( BetterRandom(diff) + howsmall );
+  return (BetterRandom(diff) + howsmall);
 }
 
 
@@ -208,14 +198,15 @@ void setup() {
     EEPROM_writeAnything(sizeof(long) + 4 * (sizeof(int) + 1), FCHAR);
   }
   BetterRandomSeed();
-  EEPROM_readAnything( sizeof(long) + 1, bestScore);
+  EEPROM_readAnything(sizeof(long) + 1, bestScore);
   EEPROM_readAnything(sizeof(long) + 3 * (sizeof(int) + 1), bestScoreName_1);
-  EEPROM_readAnything( sizeof(long) + 4 * (sizeof(int) + 1), bestScoreName_2);
+  EEPROM_readAnything(sizeof(long) + 4 * (sizeof(int) + 1), bestScoreName_2);
   for (short i = 0; i < 4; i++) {
     pinMode(leds[i],    OUTPUT);
     pinMode(boutons[i], INPUT);
     digitalWrite(leds[i],    LOW);
     digitalWrite(boutons[i], HIGH);
+    buttonMillis[i] = millis();
   }
   for (short i = 0; i < 2; i++) {
     pinMode(cathodeSegments[i], OUTPUT);
@@ -409,16 +400,19 @@ int checkEtape(char etape) {
 void lectureBoutons() {
   for (short i = 0; i < 4; i++) {
     char etat = digitalRead(boutons[i]);
-    if (etat != mem[i] ) {
-      if (etat == LOW) {
-        etats[i] = true;
-        mem[i] = LOW;
+    if (millis() - buttonMillis[i] > DELAY_DEBOUNCE) {
+      buttonMillis[i] = millis();
+      if (etat != mem[i]) {
+        if (etat == LOW) {
+          etats[i] = true;
+          mem[i] = LOW;
+        } else {
+          mem[i] = HIGH;
+          etats[i] = false;
+        }
       } else {
-        mem[i] = HIGH;
         etats[i] = false;
       }
-    } else {
-      etats[i] = false;
     }
   }
 }
@@ -435,7 +429,7 @@ void animationReponseFausse(int lastPressed) {
 void ecranFin(boolean perdu) {
   if (perdu) {
     if (score > bestScore) {
-      EEPROM_writeAnything( sizeof(long) + 1, score);
+      EEPROM_writeAnything(sizeof(long) + 1, score);
       bestScore = score;
       byte array[2];
       array[0] = ACHAR;
@@ -443,7 +437,7 @@ void ecranFin(boolean perdu) {
       display(array);
       bool nameValid = false;
       bool currentSeg = 0;
-      int nameCharIndex[2] = {0,0};
+      int nameCharIndex[2] = {0, 0};
       while (!nameValid) {
         flip();
         lectureBoutons();
@@ -475,7 +469,7 @@ void ecranFin(boolean perdu) {
       bestScoreName_2 = alphabet[nameCharIndex[1]];
       EEPROM_writeAnything(sizeof(long) + 3 * (sizeof(int) + 1), bestScoreName_1);
       EEPROM_writeAnything(sizeof(long) + 4 * (sizeof(int) + 1), bestScoreName_2);
-      
+
       if (bestScore < 10) {
         array[0] = OFFSEG;
       }
@@ -498,7 +492,7 @@ void ecranFin(boolean perdu) {
 void resetScore() {
   if (!digitalRead(boutons[0]) && !digitalRead(boutons[3])) {
     bestScore = 0;
-    EEPROM_writeAnything( sizeof(long) + 1, bestScore);
+    EEPROM_writeAnything(sizeof(long) + 1, bestScore);
     EEPROM_writeAnything(sizeof(long) + 3 * (sizeof(int) + 1), PCHAR);
     EEPROM_writeAnything(sizeof(long) + 4 * (sizeof(int) + 1), FCHAR);
   }
