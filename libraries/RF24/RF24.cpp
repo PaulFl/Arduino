@@ -41,7 +41,24 @@ void RF24::csn(bool mode)
       #if !defined (SOFTSPI)	
 		_SPI.setBitOrder(MSBFIRST);
 		_SPI.setDataMode(SPI_MODE0);
-		_SPI.setClockDivider(SPI_CLOCK_DIV2);
+		#if !defined(F_CPU) || F_CPU < 20000000
+			_SPI.setClockDivider(SPI_CLOCK_DIV2);
+		#elif F_CPU < 40000000
+			_SPI.setClockDivider(SPI_CLOCK_DIV4);
+		#elif F_CPU < 80000000
+			_SPI.setClockDivider(SPI_CLOCK_DIV8);
+		#elif F_CPU < 160000000
+			_SPI.setClockDivider(SPI_CLOCK_DIV16);
+		#elif F_CPU < 320000000
+			_SPI.setClockDivider(SPI_CLOCK_DIV32);
+		#elif F_CPU < 640000000
+			_SPI.setClockDivider(SPI_CLOCK_DIV64);
+		#elif F_CPU < 1280000000
+			_SPI.setClockDivider(SPI_CLOCK_DIV128);
+		#else
+			#error "Unsupported CPU frequency. Please set correct SPI divider."
+		#endif
+
       #endif
 #elif defined (RF24_RPi)
       if(!mode)
@@ -68,7 +85,7 @@ void RF24::ce(bool level)
   inline void RF24::beginTransaction() {
     #if defined (RF24_SPI_TRANSACTIONS)
     _SPI.beginTransaction(SPISettings(RF24_SPI_SPEED, MSBFIRST, SPI_MODE0));
-	#endif
+    #endif
     csn(LOW);
   }
 
@@ -958,7 +975,7 @@ void RF24::startWrite( const void* buf, uint8_t len, const bool multicast ){
   //write_payload( buf, len );
   write_payload( buf, len,multicast? W_TX_PAYLOAD_NO_ACK : W_TX_PAYLOAD ) ;
   ce(HIGH);
-  #if defined(CORE_TEENSY) || !defined(ARDUINO) || defined (RF24_SPIDEV) || defined (RF24_DUE)
+  #if !defined(F_CPU) || F_CPU > 20000000
 	delayMicroseconds(10);
   #endif
   ce(LOW);
@@ -1447,7 +1464,7 @@ bool RF24::setDataRate(rf24_datarate_e speed)
   // HIGH and LOW '00' is 1Mbs - our default
   setup &= ~(_BV(RF_DR_LOW) | _BV(RF_DR_HIGH)) ;
   
-  #if defined(__arm__) || defined (RF24_LINUX) || defined (__ARDUINO_X86__)
+  #if !defined(F_CPU) || F_CPU > 20000000
     txDelay=250;
   #else //16Mhz Arduino
     txDelay=85;
@@ -1457,7 +1474,7 @@ bool RF24::setDataRate(rf24_datarate_e speed)
     // Must set the RF_DR_LOW to 1; RF_DR_HIGH (used to be RF_DR) is already 0
     // Making it '10'.
     setup |= _BV( RF_DR_LOW ) ;
-  #if defined(__arm__) || defined (RF24_LINUX) || defined (__ARDUINO_X86__)
+  #if !defined(F_CPU) || F_CPU > 20000000
     txDelay=450;
   #else //16Mhz Arduino
 	txDelay=155;
@@ -1470,7 +1487,7 @@ bool RF24::setDataRate(rf24_datarate_e speed)
     if ( speed == RF24_2MBPS )
     {
       setup |= _BV(RF_DR_HIGH);
-      #if defined(__arm__) || defined (RF24_LINUX) || defined (__ARDUINO_X86__)
+      #if !defined(F_CPU) || F_CPU > 20000000
       txDelay=190;
       #else //16Mhz Arduino	  
 	  txDelay=65;
