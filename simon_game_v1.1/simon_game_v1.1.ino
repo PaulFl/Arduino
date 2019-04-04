@@ -1,5 +1,6 @@
 // change this to any new value to re-init EEPROM state
 #define SCHEMA 0x0010
+#define SOFT_VERSION "2.2"
 
 #include <EEPROM.h>
 
@@ -511,5 +512,30 @@ void resetScore() {
         EEPROM_writeAnything(sizeof(long) + 1, bestScore);
         EEPROM_writeAnything(sizeof(long) + 3 * (sizeof(int) + 1), PCHAR);
         EEPROM_writeAnything(sizeof(long) + 4 * (sizeof(int) + 1), FCHAR);
+    }
+}
+
+void displaySoftVersion() {
+    if (!digitalRead(boutons[1])) {
+        short software_version[2] = {0,0};
+        software_version[0] = SOFT_VERSION[0] - '0';
+        software_version[1] = SOFT_VERSION[2] - '0';
+        
+        byte array[2];
+        
+        array[0] = SCHAR;
+        array[1] = OCHAR;
+        display(array);
+        delayFlip(300);
+        
+        array[0] = FCHAR;
+        array[1] = TCHAR;
+        display(array);
+        delayFlip(300);
+        
+        array[0] = software_version[0];
+        array[1] = software_version[1];
+        display(array);
+        delayFlip(1000);
     }
 }
