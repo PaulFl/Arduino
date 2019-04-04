@@ -220,6 +220,7 @@ void setup() {
     pinMode(buzzer, OUTPUT);
     
     resetScore();
+    displaySoftVersion();
     
     byte array[2];
     array[0] = bestScoreName_1;
