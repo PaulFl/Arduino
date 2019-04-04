@@ -1,6 +1,6 @@
 // change this to any new value to re-init EEPROM state
 #define SCHEMA 0x0010
-#define SOFT_VERSION "2.2"
+#define SOFT_VERSION "2.3"
 
 #include <EEPROM.h>
 
@@ -527,16 +527,16 @@ void displaySoftVersion() {
         array[0] = SCHAR;
         array[1] = OCHAR;
         display(array);
-        delayFlip(300);
+        delayFlip(500);
         
         array[0] = FCHAR;
         array[1] = TCHAR;
         display(array);
-        delayFlip(300);
+        delayFlip(500);
         
         array[0] = software_version[0];
         array[1] = software_version[1];
         display(array);
-        delayFlip(1000);
+        delayFlip(1500);
     }
 }
