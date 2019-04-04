@@ -1,0 +1,11 @@
+*.c
+*.cpp
+*.h
+*.o
+*.eep
+*.d
+*.elf
+*.json
+*.swp
+*.a
+*.cache
