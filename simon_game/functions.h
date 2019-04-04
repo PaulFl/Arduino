@@ -10,5 +10,6 @@ void ecranFin(boolean perdu);
 void flip();
 void delayFlip(unsigned int delay);
 void display(byte text[2]);
+void resetScore();
 
 #endif
