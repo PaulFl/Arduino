@@ -1,6 +1,6 @@
 // change this to any new value to re-init EEPROM state
 #define SCHEMA 0x0010
-#define SOFT_VERSION "2.3"
+#define SOFT_VERSION "2.4"
 
 #include <EEPROM.h>
 
@@ -63,20 +63,20 @@ short anodeSegments[7] = {5, //SEG A
 const short leds[]    = {
     9, 11, A0, A2
 };
-const short boutons[] = {
+const short buttons[] = {
     10, 12, A1, A3
 };
 const char buzzer  = 13;
-const int frequences[] = {
+const int frequencies[] = {
     NOTE_E4, NOTE_CS4, NOTE_A4, NOTE_E3
 };
 
 
 
-boolean etats[] = {
+bool states[] = {
     LOW, LOW, LOW, LOW
 };
-boolean mem[]  = {
+bool mem[]  = {
     HIGH, HIGH, HIGH, HIGH
 };
 
@@ -88,10 +88,10 @@ int bestScoreName_1;
 int bestScoreName_2;
 int pressed;
 
-long debutNote = 0;
-long resteTemps = 0;
+long noteStart = 0;
+long timeRemaining = 0;
 
-boolean chars[35][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
+bool chars[35][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
     {0, 1, 1, 0, 0, 0, 0}, //1
     {1, 1, 0, 1, 1, 0, 1}, //2
     {1, 1, 1, 1, 0, 0, 1}, //3
@@ -133,7 +133,7 @@ int alphabet[26] = {ACHAR, BCHAR, CCHAR, DCHAR, ECHAR, FCHAR, GCHAR, HCHAR, ICHA
 unsigned long flipmillis;
 unsigned long buttonMillis[4] = {0, 0, 0, 0};
 
-boolean segments[2][7] = {false};
+bool segments[2][7] = {false};
 byte onSegment = 0;
 
 
@@ -204,9 +204,9 @@ void setup() {
     EEPROM_readAnything(sizeof(long) + 4 * (sizeof(int) + 1), bestScoreName_2);
     for (short i = 0; i < 4; i++) {
         pinMode(leds[i],    OUTPUT);
-        pinMode(boutons[i], INPUT);
+        pinMode(buttons[i], INPUT);
         digitalWrite(leds[i],    LOW);
-        digitalWrite(boutons[i], HIGH);
+        digitalWrite(buttons[i], HIGH);
         buttonMillis[i] = millis();
     }
     for (short i = 0; i < 2; i++) {
@@ -240,28 +240,28 @@ void setup() {
 }
 
 void loop() {
-    boolean perdu = false;
-    char nbEssai = 0;
-    char mancheOK = false;
+    bool lost = false;
+    char tryNumber = 0;
+    char roundOk = false;
     
-    while (!perdu && ajouterEtape()) {
-        nbEssai = 0;
-        mancheOK = false;
-        while (nbEssai < 1 && !mancheOK) {
+    while (!lost && addStep()) {
+        tryNumber = 0;
+        roundOk = false;
+        while (tryNumber < 1 && !roundOk) {
             delayFlip(1000);
             playSequence(false);
             
-            mancheOK = true;
+            roundOk = true;
             for (short i = 0; i < cpt; i++) {
                 pressed = checkEtape(i);
                 if (pressed != -1) {
-                    mancheOK = false;
+                    roundOk = false;
                     break;
                 }
             }
-            if (!mancheOK) {
-                nbEssai++;
-                animationReponseFausse(pressed);
+            if (!roundOk) {
+                tryNumber++;
+                mistakeAnimation(pressed);
             }
             else {
                 delayFlip(175);
@@ -269,12 +269,12 @@ void loop() {
             delayFlip(500);
         }
         
-        if (nbEssai == 1) {
-            perdu = true;
+        if (tryNumber == 1) {
+            lost = true;
         }
     }
     
-    ecranFin(perdu);
+    ecranFin(lost);
 }
 
 void flip() {
@@ -307,7 +307,7 @@ void display(byte text[2]) {
     }
 }
 
-boolean ajouterEtape() {
+bool addStep() {
     sequence[cpt] = BetterRandom(4);
     cpt++;
     score = (int)cpt - 1;
@@ -326,13 +326,13 @@ boolean ajouterEtape() {
         return true;
 }
 
-void playSequence(boolean finished) {
+void playSequence(bool finished) {
     short lenght;
     if (finished) lenght = cpt - 1;
     else lenght = cpt;
     for (short i = 0; i < lenght; i++) {
         digitalWrite(leds[sequence[i]], HIGH);
-        tone(buzzer, frequences[sequence[i]]);
+        tone(buzzer, frequencies[sequence[i]]);
         delayFlip(SPEED_MAX);
         if (score < ((SPEED_MIN - SPEED_MAX) / ACCELERATION) && !finished) {
             delayFlip(SPEED_MIN - SPEED_MAX - (ACCELERATION * score));
@@ -354,72 +354,72 @@ void playSequence(boolean finished) {
 
 int checkEtape(char etape) {
     long temps = millis();
-    char objectif = sequence[etape];
+    char goal = sequence[etape];
     
-    while ((millis() - temps) < (LIMITE_TEMPS + resteTemps)) {
+    while ((millis() - temps) < (LIMITE_TEMPS + timeRemaining)) {
         flip();
-        lectureBoutons();
-        if (millis() - debutNote > 500) {
+        readButtons();
+        if (millis() - noteStart > 500) {
             noTone(buzzer);
             for (short i = 0; i < 4; i++) {
                 digitalWrite(leds[i],    LOW);
             }
         }
         for (int i = 0; i < 4; i++) {
-            if (etats[i]) {
-                if (i != objectif) {
+            if (states[i]) {
+                if (i != goal) {
                     noTone(buzzer);
                     for (short i = 0; i < 4; i++) {
                         digitalWrite(leds[i],    LOW);
                     }
                     return -2;
                 }
-                else if (i == objectif) {
+                else if (i == goal) {
                     noTone(buzzer);
                     for (short i = 0; i < 4; i++) {
                         digitalWrite(leds[i],    LOW);
                     }
                     delayFlip(10);
-                    //resteTemps = LIMITE_TEMPS - millis() + temps;
+                    //timeRemaining = LIMITE_TEMPS - millis() + temps;
                     digitalWrite(leds[i], HIGH);
-                    tone(buzzer, frequences[i]);
-                    debutNote = millis();
+                    tone(buzzer, frequencies[i]);
+                    noteStart = millis();
                     delayFlip(DELAY_BEETWEEN_PRESSES);
                     if (etape == cpt - 1) {
                         delayFlip(500);
                         digitalWrite(leds[i], LOW);
                         noTone(buzzer);
-                        resteTemps = 0;
+                        timeRemaining = 0;
                     }
                     return -1;
                 }
             }
         }
     }
-    return objectif;
+    return goal;
 }
 
-void lectureBoutons() {
+void readButtons() {
     for (short i = 0; i < 4; i++) {
-        char etat = digitalRead(boutons[i]);
+        char etat = digitalRead(buttons[i]);
         if (millis() - buttonMillis[i] > DELAY_DEBOUNCE) {
             buttonMillis[i] = millis();
             if (etat != mem[i]) {
                 if (etat == LOW) {
-                    etats[i] = true;
+                    states[i] = true;
                     mem[i] = LOW;
                 } else {
                     mem[i] = HIGH;
-                    etats[i] = false;
+                    states[i] = false;
                 }
             } else {
-                etats[i] = false;
+                states[i] = false;
             }
         }
     }
 }
 
-void animationReponseFausse(int lastPressed) {
+void mistakeAnimation(int lastPressed) {
     if (lastPressed != -2){
         digitalWrite(leds[lastPressed], HIGH);
         tone(buzzer, NOTE_A1);
@@ -444,8 +444,8 @@ void animationReponseFausse(int lastPressed) {
     delayFlip(500);
 }
 
-void ecranFin(boolean perdu) {
-    if (perdu) {
+void ecranFin(bool lost) {
+    if (lost) {
         if (score > bestScore) {
             EEPROM_writeAnything(sizeof(long) + 1, score);
             bestScore = score;
@@ -454,31 +454,33 @@ void ecranFin(boolean perdu) {
             array[1] = OFFSEG;
             display(array);
             bool nameValid = false;
+            bool canValidate = false;
             bool currentSeg = 0;
             int nameCharIndex[2] = {0, 0};
             while (!nameValid) {
                 flip();
-                lectureBoutons();
-                if (etats[0]) {
+                readButtons();
+                if (states[0]) {
                     nameCharIndex[currentSeg]--;
                     if (nameCharIndex[currentSeg] < 0) {
                         nameCharIndex[currentSeg] = 25;
                     }
                     array[currentSeg] = alphabet[nameCharIndex[currentSeg]];
                     display(array);
-                } else if (etats[1]) {
+                } else if (states[1]) {
                     nameCharIndex[currentSeg]++;
                     if (nameCharIndex[currentSeg] > 25) {
                         nameCharIndex[currentSeg] = 0;
                     }
                     array[currentSeg] = alphabet[nameCharIndex[currentSeg]];
                     display(array);
-                } else if (etats[2]) {
+                } else if (states[2]) {
+                    canValidate = true;
                     array[currentSeg] = OFFSEG;
                     currentSeg = (currentSeg == 0) ? 1 : 0;
                     array[currentSeg] = alphabet[nameCharIndex[currentSeg]];
                     display(array);
-                } else if (etats[3]) {
+                } else if (states[3] && canValidate) {
                     nameValid = true;
                 }
                 delayFlip(30);
@@ -500,7 +502,7 @@ void ecranFin(boolean perdu) {
         while (1) {
             flip();
             //joue la séquence si on lit un état bas
-            if (!digitalRead(boutons[0]) || !digitalRead(boutons[1]) || !digitalRead(boutons[2]) || !digitalRead(boutons[3])) {
+            if (!digitalRead(buttons[0]) || !digitalRead(buttons[1]) || !digitalRead(buttons[2]) || !digitalRead(buttons[3])) {
                 playSequence(true);
             }
         }
@@ -508,7 +510,7 @@ void ecranFin(boolean perdu) {
 }
 
 void resetScore() {
-    if (!digitalRead(boutons[0]) && !digitalRead(boutons[3])) {
+    if (!digitalRead(buttons[0]) && !digitalRead(buttons[3])) {
         bestScore = 0;
         EEPROM_writeAnything(sizeof(long) + 1, bestScore);
         EEPROM_writeAnything(sizeof(long) + 3 * (sizeof(int) + 1), PCHAR);
@@ -517,7 +519,7 @@ void resetScore() {
 }
 
 void displaySoftVersion() {
-    if (!digitalRead(boutons[1])) {
+    if (!digitalRead(buttons[1])) {
         short software_version[2] = {0,0};
         software_version[0] = SOFT_VERSION[0] - '0';
         software_version[1] = SOFT_VERSION[2] - '0';
