@@ -15,7 +15,9 @@ int Kd = 0;
 
 
 //Pins
-short pin_telecommande = 3;
+short pin_switch = 3;
+short pin_vitesse = 2;
+short pin_cap = 4;
 short pin_in1 = 10;
 short pin_in2 = 9;
 short pin_in3 = 6;
@@ -25,7 +27,7 @@ short pin_fnb = 5;
 
 
 int nb_voies_telecommande = 6;
-PPMReader ppm(pin_telecommande, nb_voies_telecommande);
+PPMReader ppm(pin_switch, nb_voies_telecommande);
 
 
 int erreur_cap;
@@ -66,6 +68,10 @@ void loop()
     
     if (telecommande_switch > 1500) {
         asservir = true;
+        
+    }
+    else{
+        asservir=false;
     }
     
     Wire.beginTransmission(CMPS12_ADDRESS);
@@ -95,8 +101,8 @@ void loop()
         vitesse_moteur_1 = CONSIGNE_VITESSE + u_k;
         vitesse_moteur_2 = CONSIGNE_VITESSE - u_k;
     } else {
-        int vitesse = (telecommande_vitesse - 1500) / 5;
-        int difference_vitesse = (telecommande_cap - 1500) / 5;
+        int vitesse =0;
+        int difference_vitesse = 0;
         
         vitesse_moteur_1 = vitesse + difference_vitesse;
         vitesse_moteur_2 = vitesse - difference_vitesse;
@@ -107,22 +113,22 @@ void loop()
 }
 
 void lire_telecommande() {
-    telecommande_vitesse = ppm.rawChannelValue(1);
-    telecommande_cap = ppm.rawChannelValue(4);
-    telecommande_switch = ppm.rawChannelValue(5);
+    
+    telecommande_switch = pulseIn(pin_switch,1);
+    Serial.println(telecommande_switch);
 }
 
 
 
 void activer_moteurs(int vitesse_m1, int vitesse_m2) {
-    if (vitesse_moteur_1 > 0) {
+    if (vitesse_m1 > 0) {
         digitalWrite(pin_in1, HIGH);
         digitalWrite(pin_in2, LOW);
     } else {
         digitalWrite(pin_in1, LOW);
         digitalWrite(pin_in2, HIGH);
     }
-    if (vitesse_moteur_2 > 0) {
+    if (vitesse_m2 > 0) {
         digitalWrite(pin_in3, HIGH);
         digitalWrite(pin_in4, LOW);
     } else {
@@ -130,8 +136,8 @@ void activer_moteurs(int vitesse_m1, int vitesse_m2) {
         digitalWrite(pin_in4, HIGH);
     }
     
-    int vitesse_m1_abs = map(abs(vitesse_moteur_1), 0, 100, 0, 255 );
-    int vitesse_m2_abs = map(abs(vitesse_moteur_2), 0, 100, 0, 255 );
+    int vitesse_m1_abs = map(abs(vitesse_m1), 0, 100, 0, 255 );
+    int vitesse_m2_abs = map(abs(vitesse_m2), 0, 100, 0, 255 );
     
     analogWrite(pin_fna, vitesse_m1_abs);
     analogWrite(pin_fnb, vitesse_m2_abs);
