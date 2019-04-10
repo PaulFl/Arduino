@@ -102,8 +102,8 @@ void setup() {
         EEPROM_writeAnything(EEPROM_ADDR_SCORE, int(0)); //Best score
         schema = SCHEMA;
         EEPROM_writeAnything(EEPROM_ADDR_SCHEMA, schema);
-        EEPROM_writeAnything(EEPROM_ADDR_SCORE_NAME_1, PCHAR);
-        EEPROM_writeAnything(EEPROM_ADDR_SCORE_NAME_2, FCHAR);
+        EEPROM_writeAnything(EEPROM_ADDR_SCORE_NAME_1, int(PCHAR));
+        EEPROM_writeAnything(EEPROM_ADDR_SCORE_NAME_2, int(FCHAR));
     }
     BetterRandomSeed();
     EEPROM_readAnything(EEPROM_ADDR_SCORE, bestScore);
@@ -352,7 +352,7 @@ void mistakeAnimation(int lastPressed) {
 void ecranFin(bool lost) {
     if (lost) {
         if (score > bestScore) {
-            EEPROM_writeAnything(sizeof(long) + 1, score);
+            EEPROM_writeAnything(EEPROM_ADDR_SCORE, score);
             bestScore = score;
             byte array[2];
             array[0] = ACHAR;
@@ -392,8 +392,8 @@ void ecranFin(bool lost) {
             }
             bestScoreName_1 = alphabet[nameCharIndex[0]];
             bestScoreName_2 = alphabet[nameCharIndex[1]];
-            EEPROM_writeAnything(sizeof(long) + 3 * (sizeof(int) + 1), bestScoreName_1);
-            EEPROM_writeAnything(sizeof(long) + 4 * (sizeof(int) + 1), bestScoreName_2);
+            EEPROM_writeAnything(EEPROM_ADDR_SCORE_NAME_1, bestScoreName_1);
+            EEPROM_writeAnything(EEPROM_ADDR_SCORE_NAME_2, bestScoreName_2);
             
             if (bestScore < 10) {
                 array[0] = OFFSEG;
@@ -416,9 +416,9 @@ void ecranFin(bool lost) {
 void resetScore() {
     if (!digitalRead(buttons[0]) && !digitalRead(buttons[3])) {
         bestScore = 0;
-        EEPROM_writeAnything(sizeof(long) + 1, bestScore);
-        EEPROM_writeAnything(sizeof(long) + 3 * (sizeof(int) + 1), PCHAR);
-        EEPROM_writeAnything(sizeof(long) + 4 * (sizeof(int) + 1), FCHAR);
+        EEPROM_writeAnything(EEPROM_ADDR_SCORE, bestScore);
+        EEPROM_writeAnything(EEPROM_ADDR_SCORE_NAME_1, int(PCHAR));
+        EEPROM_writeAnything(EEPROM_ADDR_SCORE_NAME_2, int(FCHAR));
     }
 }
 
