@@ -5,18 +5,22 @@
 
 /*
  EEPROM map: (adress: byte) (1 byte = 8 bits)
- 0: seed for random (long) (4 bytes)
- 4: best score (int) (2 bytes)
- 6: schema (short) (2 bytes)
- 8: best score name 1 (int) (2 bytes)
- 10: best score name 2 (int) (2 bytes)
+ 0: software main version (int) (2 bytes)
+ 2: software sub version (int) (2 bytes)
+ 4: schema (short) (2 bytes)
+ 6: seed for random (long) (4 bytes)
+ 10: best score (int) (2 bytes)
+ 12: best score name 1 (int) (2 bytes)
+ 14: best score name 2 (int) (2 bytes)
  */
 
-#define EEPROM_ADDR_SEED 0
-#define EEPROM_ADDR_SCORE 4
-#define EEPROM_ADDR_SCHEMA 6
-#define EEPROM_ADDR_SCORE_NAME_1 8
-#define EEPROM_ADDR_SCORE_NAME_2 10
+#define EEPROM_ADDR_SW_1 0
+#define EEPROM_ADDR_SW_2 2
+#define EEPROM_ADDR_SCHEMA 4
+#define EEPROM_ADDR_SEED 6
+#define EEPROM_ADDR_SCORE 10
+#define EEPROM_ADDR_SCORE_NAME_1 12
+#define EEPROM_ADDR_SCORE_NAME_2 14
 
 #include "EEPROM_rw.h"
 #include "segments_display.h"
@@ -90,6 +94,8 @@ byte onSegment = 0;
 
 
 void setup() {
+    EEPROM_writeAnything(EEPROM_ADDR_SW_1, SOFT_VERSION[0] - '0');
+    EEPROM_writeAnything(EEPROM_ADDR_SW_2, SOFT_VERSION[2] - '0');
     short schema;
     EEPROM_readAnything(EEPROM_ADDR_SCHEMA, schema);
     if (schema != SCHEMA) {
