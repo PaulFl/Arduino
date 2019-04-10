@@ -1,52 +1,42 @@
 // change this to any new value to re-init EEPROM state
 #define SCHEMA 0x0010
-#define SOFT_VERSION "2.4"
 
-#include <EEPROM.h>
+#define SOFT_VERSION "2.5"
 
+/*
+ EEPROM map: (adress: byte) (1 byte = 8 bits)
+ 0: seed for random (long) (4 bytes)
+ 4: best score (int) (2 bytes)
+ 6: schema (short) (2 bytes)
+ 8: best score name 1 (int) (2 bytes)
+ 10: best score name 2 (int) (2 bytes)
+ */
+
+#define EEPROM_ADDR_SEED 0
+#define EEPROM_ADDR_SCORE 4
+#define EEPROM_ADDR_SCHEMA 6
+#define EEPROM_ADDR_SCORE_NAME_1 8
+#define EEPROM_ADDR_SCORE_NAME_2 10
+
+#include "EEPROM_rw.h"
+#include "segments_display.h"
 #include "functions.h"
 #include "pitches.h"
+#include "random_eeprom.h"
 
-#define SIZE_MAX     99   //taille maximale de la séquence aléatoire
-#define LIMITE_TEMPS 2500 //la limite de temps pour répondre
-#define SPEED_MAX      200
+
+
+#define SIZE_MAX     99   //max game length
+#define MAX_RESPONSE_DELAY 2500
+#define MIN_SPEED_DELAY 500
+#define MAX_SPEED_DELAY      200
 #define DELAY_BEETWEEN_PRESSES 200
 #define DELAY_DEBOUNCE 20
-#define SPEED_MIN 500
-#define ACCELERATION 30
-#define REFRESHSPEED 3
+#define ACCELERATION_RATE 30
+#define SEGMENTS_REFRESH_DELAY 3
 
 
-#define ACHAR 10
-#define BCHAR 23
-#define CCHAR 11
-#define DCHAR 22
-#define ECHAR 12
-#define FCHAR 13
-#define GCHAR 24
-#define HCHAR 14
-#define ICHAR 15
-#define JCHAR 16
-#define KCHAR 25
-#define LCHAR 17
-#define MCHAR 26
-#define NCHAR 18
-#define OCHAR 0
-#define PCHAR 19
-#define QCHAR 27
-#define RCHAR 28
-#define SCHAR 5
-#define TCHAR 29
-#define UCHAR 20
-#define VCHAR 30
-#define WCHAR 31
-#define XCHAR 32
-#define YCHAR 33
-#define ZCHAR 34
-
-
-#define OFFSEG 21
-
+//Pins
 short cathodeSegments[2] = {0, //SEG 1
     1
 }; //SEG 2
@@ -66,16 +56,17 @@ const short leds[]    = {
 const short buttons[] = {
     10, 12, A1, A3
 };
-const char buzzer  = 13;
+const short buzzer  = 13;
+
+
 const int frequencies[] = {
     NOTE_E4, NOTE_CS4, NOTE_A4, NOTE_E3
 };
 
-
-
 bool states[] = {
     LOW, LOW, LOW, LOW
 };
+
 bool mem[]  = {
     HIGH, HIGH, HIGH, HIGH
 };
@@ -91,45 +82,6 @@ int pressed;
 long noteStart = 0;
 long timeRemaining = 0;
 
-bool chars[35][7] = {{1, 1, 1, 1, 1, 1, 0}, // 0
-    {0, 1, 1, 0, 0, 0, 0}, //1
-    {1, 1, 0, 1, 1, 0, 1}, //2
-    {1, 1, 1, 1, 0, 0, 1}, //3
-    {0, 1, 1, 0, 0, 1, 1}, //4
-    {1, 0, 1, 1, 0, 1, 1}, //5
-    {1, 0, 1, 1, 1, 1, 1}, //6
-    {1, 1, 1, 0, 0, 0, 0}, //7
-    {1, 1, 1, 1, 1, 1, 1}, //8
-    {1, 1, 1, 1, 0, 1, 1}, //9
-    {1, 1, 1, 0, 1, 1, 1}, //A
-    {1, 0, 0, 1, 1, 1, 0}, //C
-    {1, 0, 0, 1, 1, 1, 1}, //E
-    {1, 0, 0, 0, 1, 1, 1}, //F
-    {0, 1, 1, 0, 1, 1, 1}, //H
-    {0, 0, 0, 0, 1, 1, 0}, //I
-    {0, 1, 1, 1, 1, 0, 0}, //J
-    {0, 0, 0, 1, 1, 1, 0}, //L
-    {0, 0, 1, 0, 1, 0, 1}, //n
-    {1, 1, 0, 0, 1, 1, 1}, //P
-    {0, 1, 1, 1, 1, 1, 0}, //U
-    {0, 0, 0, 0, 0, 0, 0},//Off segment
-    {0, 1, 1, 1, 1, 0, 1}, //d
-    {0, 0, 1, 1, 1, 1, 1},//b
-    {1, 0, 1, 1, 1, 1, 0},//G
-    {1, 0, 1, 0, 1, 1, 1},//K
-    {1, 1, 0, 1, 0, 1, 0},//M
-    {1, 1, 1, 0, 0, 1, 1},//q
-    {0, 0, 0, 0, 1, 0, 1},//r
-    {0, 0, 0, 1, 1, 1, 1},//t
-    {0, 1, 0, 1, 0, 1, 0},//V
-    {0, 1, 1, 1, 1, 1, 1}, //W
-    {1, 0, 0, 1, 0, 0, 1}, //X
-    {0, 1, 1, 1, 0, 1, 1}, //y
-    {1, 1, 0, 1, 1, 0, 1}
-};
-
-int alphabet[26] = {ACHAR, BCHAR, CCHAR, DCHAR, ECHAR, FCHAR, GCHAR, HCHAR, ICHAR, JCHAR, KCHAR, LCHAR, MCHAR, NCHAR, OCHAR, PCHAR, QCHAR, RCHAR, SCHAR, TCHAR, UCHAR, VCHAR, WCHAR, XCHAR, YCHAR, ZCHAR};
-
 unsigned long flipmillis;
 unsigned long buttonMillis[4] = {0, 0, 0, 0};
 
@@ -137,71 +89,20 @@ bool segments[2][7] = {false};
 byte onSegment = 0;
 
 
-template <class T> int EEPROM_writeAnything(int ee, const T& value) {
-    const byte* p = (const byte*)(const void*)&value;
-    int i;
-    for (i = 0; i < sizeof(value); i++)
-        EEPROM.write(ee++, *p++);
-    return i;
-}
-
-
-template <class T> int EEPROM_readAnything(int ee, T& value) {
-    byte* p = (byte*)(void*)&value;
-    int i;
-    for (i = 0; i < sizeof(value); i++)
-        *p++ = EEPROM.read(ee++);
-    return i;
-}
-
-
-void BetterRandomSeed(void) {
-    unsigned long __seed;
-    EEPROM_readAnything(0, __seed);
-    srandom(__seed);
-}
-
-
-long BetterRandom(void) {
-    long __seed;
-    __seed = random();
-    EEPROM_writeAnything(0, __seed);
-    return (__seed);
-}
-
-
-long BetterRandom(long howbig) {
-    if (howbig == 0) {
-        return 0;
-    }
-    return (BetterRandom() % howbig);
-}
-
-
-long BetterRandom(long howsmall, long howbig) {
-    if (howsmall >= howbig) {
-        return howsmall;
-    }
-    long diff = howbig - howsmall;
-    
-    return (BetterRandom(diff) + howsmall);
-}
-
-
 void setup() {
     short schema;
-    EEPROM_readAnything(sizeof(long) + sizeof(int) + 2, schema);
+    EEPROM_readAnything(EEPROM_ADDR_SCHEMA, schema);
     if (schema != SCHEMA) {
-        EEPROM_writeAnything(sizeof(long) + 1, int(0));
+        EEPROM_writeAnything(EEPROM_ADDR_SCORE, int(0)); //Best score
         schema = SCHEMA;
-        EEPROM_writeAnything(sizeof(long) + sizeof(int) + 2, schema);
-        EEPROM_writeAnything(sizeof(long) + 3 * (sizeof(int) + 1), PCHAR);
-        EEPROM_writeAnything(sizeof(long) + 4 * (sizeof(int) + 1), FCHAR);
+        EEPROM_writeAnything(EEPROM_ADDR_SCHEMA, schema);
+        EEPROM_writeAnything(EEPROM_ADDR_SCORE_NAME_1, PCHAR);
+        EEPROM_writeAnything(EEPROM_ADDR_SCORE_NAME_2, FCHAR);
     }
     BetterRandomSeed();
-    EEPROM_readAnything(sizeof(long) + 1, bestScore);
-    EEPROM_readAnything(sizeof(long) + 3 * (sizeof(int) + 1), bestScoreName_1);
-    EEPROM_readAnything(sizeof(long) + 4 * (sizeof(int) + 1), bestScoreName_2);
+    EEPROM_readAnything(EEPROM_ADDR_SCORE, bestScore);
+    EEPROM_readAnything(EEPROM_ADDR_SCORE_NAME_1, bestScoreName_1);
+    EEPROM_readAnything(EEPROM_ADDR_SCORE_NAME_2, bestScoreName_2);
     for (short i = 0; i < 4; i++) {
         pinMode(leds[i],    OUTPUT);
         pinMode(buttons[i], INPUT);
@@ -278,7 +179,7 @@ void loop() {
 }
 
 void flip() {
-    if (millis() - flipmillis > REFRESHSPEED) {
+    if (millis() - flipmillis > SEGMENTS_REFRESH_DELAY) {
         digitalWrite(cathodeSegments[onSegment], LOW);
         onSegment++;
         if (onSegment == 2) {
@@ -327,27 +228,27 @@ bool addStep() {
 }
 
 void playSequence(bool finished) {
-    short lenght;
-    if (finished) lenght = cpt - 1;
-    else lenght = cpt;
-    for (short i = 0; i < lenght; i++) {
+    short length;
+    if (finished) length = cpt - 1;
+    else length = cpt;
+    for (short i = 0; i < length; i++) {
         digitalWrite(leds[sequence[i]], HIGH);
         tone(buzzer, frequencies[sequence[i]]);
-        delayFlip(SPEED_MAX);
-        if (score < ((SPEED_MIN - SPEED_MAX) / ACCELERATION) && !finished) {
-            delayFlip(SPEED_MIN - SPEED_MAX - (ACCELERATION * score));
+        delayFlip(MAX_SPEED_DELAY);
+        if (score < ((MIN_SPEED_DELAY - MAX_SPEED_DELAY) / ACCELERATION_RATE) && !finished) {
+            delayFlip(MIN_SPEED_DELAY - MAX_SPEED_DELAY - (ACCELERATION_RATE * score));
         }
         else if (finished) {
-            delayFlip(400 - SPEED_MAX);
+            delayFlip(400 - MAX_SPEED_DELAY);
         }
         digitalWrite(leds[sequence[i]], LOW);
         noTone(buzzer);
-        delayFlip(SPEED_MAX / 3);
-        if (score < ((SPEED_MIN - SPEED_MAX) / ACCELERATION) && !finished) {
-            delayFlip((SPEED_MIN - SPEED_MAX - (ACCELERATION * score)) / 3);
+        delayFlip(MAX_SPEED_DELAY / 3);
+        if (score < ((MIN_SPEED_DELAY - MAX_SPEED_DELAY) / ACCELERATION_RATE) && !finished) {
+            delayFlip((MIN_SPEED_DELAY - MAX_SPEED_DELAY - (ACCELERATION_RATE * score)) / 3);
         }
         else if (finished) {
-            delayFlip((400 - SPEED_MAX) / 2);
+            delayFlip((400 - MAX_SPEED_DELAY) / 2);
         }
     }
 }
@@ -356,7 +257,7 @@ int checkEtape(char etape) {
     long temps = millis();
     char goal = sequence[etape];
     
-    while ((millis() - temps) < (LIMITE_TEMPS + timeRemaining)) {
+    while ((millis() - temps) < (MAX_RESPONSE_DELAY + timeRemaining)) {
         flip();
         readButtons();
         if (millis() - noteStart > 500) {
@@ -380,7 +281,6 @@ int checkEtape(char etape) {
                         digitalWrite(leds[i],    LOW);
                     }
                     delayFlip(10);
-                    //timeRemaining = LIMITE_TEMPS - millis() + temps;
                     digitalWrite(leds[i], HIGH);
                     tone(buzzer, frequencies[i]);
                     noteStart = millis();
@@ -437,7 +337,6 @@ void mistakeAnimation(int lastPressed) {
         delayFlip(750);
         noTone(buzzer);
     }
-    //digitalWrite(leds[lastPressed], LOW);
     for (short i = 0; i < 4; i++) {
         digitalWrite(leds[i],    LOW);
     }
@@ -501,8 +400,7 @@ void ecranFin(bool lost) {
         }
         while (1) {
             flip();
-            //joue la séquence si on lit un état bas
-            if (!digitalRead(buttons[0]) || !digitalRead(buttons[1]) || !digitalRead(buttons[2]) || !digitalRead(buttons[3])) {
+            if (!digitalRead(buttons[0]) || !digitalRead(buttons[1]) || !digitalRead(buttons[2]) || !digitalRead(buttons[3])) { //replay sequence if any button pressed
                 playSequence(true);
             }
         }
