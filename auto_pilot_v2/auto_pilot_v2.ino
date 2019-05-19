@@ -42,15 +42,21 @@ void lecture_centrale_inertielle() {
   cap16 = Wire.read();
   cap16 <<= 8;
   cap16 += Wire.read();
-  tangage = Wire.read(); //(0,255)
+  roulis = Wire.read(); //(0,255)
+if (roulis >= 125 && roulis <=179){
+	roulis = roulis - 102;
+}
+roulis = roulis - 76;
+
+  tangage = Wire.read();
   if (tangage > 127) {
     tangage -= 255;
   }
+tangage = tangage - 15;
 
-  roulis = Wire.read();
-  if (roulis > 127) {
-    roulis -= 255;
-  }
+Serial.print(roulis);
+Serial.print(";");
+Serial.println(tangage);
 }
 
 void mixage_elevons() {
@@ -60,9 +66,6 @@ void mixage_elevons() {
 
   consigne_elevon_gauche *= 0.9;
   consigne_elevon_gauche += 90;
-  if (DEBUG) {
-    Serial.println(consigne_elevon_gauche);
-  }
 
   consigne_elevon_droit *= 0.9;
   consigne_elevon_droit += 90;
@@ -98,8 +101,5 @@ void piloteAuto() {
 
 void etat_AP() {
   int lecture = pulseIn(SWITCHAPPIN, HIGH);
-  if (DEBUG) {
-    Serial.println(lecture);
-  }
   AP_engage = (lecture > 1500);
 }
