@@ -3,7 +3,7 @@
 short servo_1_select = A0;
 short servo_2_select = A1;
 
-short servo_1_ap = 5;
+short servo_1_ap = 6;
 short servo_2_ap = 9;
 
 Servo servo_1;
@@ -19,14 +19,14 @@ void setup() {
 	servo_1.attach(servo_1_ap);
 	servo_2.attach(servo_2_ap);
 
+
 }
 
 void loop() {
-	servo_1.write(40);
 	servo_2.write(40);
+	servo_1.write(90);
 	delay(2000);
-	servo_1.write(120);
-	servo_1.write(120);
+	servo_2.write(120);
+	servo_1.write(100);
 	delay(2000);
-
 }
