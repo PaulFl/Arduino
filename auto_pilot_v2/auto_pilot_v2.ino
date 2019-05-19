@@ -98,5 +98,8 @@ void piloteAuto() {
 
 void etat_AP() {
   int lecture = pulseIn(SWITCHAPPIN, HIGH);
+  if (DEBUG) {
+    Serial.println(lecture);
+  }
   AP_engage = (lecture > 1500);
 }
