@@ -112,5 +112,10 @@ void piloteAuto() {
 
 void etat_AP() {
   int lecture = pulseIn(SWITCHAPPIN, HIGH);
-  AP_engage = (lecture > 1500);
+  if (lecture > 1700){
+    Kdpa = 1;
+  } else {
+    Kdpa = 0;
+  }
+  AP_engage = (lecture > 1300);
 }

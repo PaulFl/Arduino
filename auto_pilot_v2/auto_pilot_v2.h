@@ -58,10 +58,10 @@ String logStr;
 
 //PID
 //erreurs
-float err_roulis_k;
-float err_roulis_k_1;
-float err_tang_k;
-float err_tang_k_1;
+float err_roulis_k = 0;
+float err_roulis_k_1 = 0;
+float err_tang_k = 0;
+float err_tang_k_1 = 0;
 
 
 
