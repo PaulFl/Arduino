@@ -43,9 +43,9 @@ int consigne_elevon_droit;
 int consigne_servos_roulis;
 int consigne_servos_tangage;
 
-int Kppa = 5; // Gain correcteur proportionnel asservissement position angulaire
-int Kdpa = 1;
-float delta_t = 0.010;
+float Kppa = 3; // Gain correcteur proportionnel asservissement position angulaire
+float Kdpa = 0;
+float delta_t = 0.1;
 
 //Objets
 Servo elevon_gauche_servo;

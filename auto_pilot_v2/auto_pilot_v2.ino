@@ -54,10 +54,6 @@ void lecture_centrale_inertielle() {
     tangage -= 255;
   }
   tangage = tangage - 15;
-
-  Serial.print(roulis);
-  Serial.print(";");
-  Serial.println(tangage);
 }
 
 void mixage_elevons() {
@@ -112,6 +108,9 @@ void piloteAuto() {
 
 void etat_AP() {
   int lecture = pulseIn(SWITCHAPPIN, HIGH);
+  if (DEBUG) {
+	Serial.println(lecture);
+  }
   if (lecture > 1700){
     Kdpa = 1;
   } else {
