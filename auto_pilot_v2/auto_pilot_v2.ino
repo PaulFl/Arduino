@@ -8,7 +8,7 @@ void setup() {
   Wire.begin();
 
   //Initialisation carte SD
-  //SD.begin(SDCARDCSPIN);
+  SD.begin(SDCARDCSPIN);
 
   //Initialisation portes logiques
   pinMode(AUTOPILOTGAUCHEPIN, OUTPUT);
@@ -30,6 +30,7 @@ void loop() {
   digitalWrite(AUTOPILOTGAUCHEPIN, AP_engage);
   digitalWrite(AUTOPILOTDROITPIN, AP_engage);
   piloteAuto();
+  logCarteSD();
 }
 
 void lecture_centrale_inertielle() {
@@ -97,7 +98,7 @@ void position_angulaire_PID(int erreur_roulis, int erreur_tangage) {
 void logCarteSD() {
   fichierDonnees = SD.open("log.txt", FILE_WRITE);
   if (fichierDonnees) {
-    fichierDonnees.println(String(millis()) + ";" + String(roulis));
+    fichierDonnees.println(String(millis()) + ";" + String(roulis) + ";" + String(cap16));
     fichierDonnees.close();
   }
 }
