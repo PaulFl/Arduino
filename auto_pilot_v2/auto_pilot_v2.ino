@@ -43,20 +43,20 @@ void lecture_centrale_inertielle() {
   cap16 <<= 8;
   cap16 += Wire.read();
   roulis = Wire.read(); //(0,255)
-if (roulis >= 125 && roulis <=179){
-	roulis = roulis - 102;
-}
-roulis = roulis - 76;
+  if (roulis >= 125 && roulis <= 179) {
+    roulis = roulis - 102;
+  }
+  roulis = roulis - 76;
 
   tangage = Wire.read();
   if (tangage > 127) {
     tangage -= 255;
   }
-tangage = tangage - 15;
+  tangage = tangage - 15;
 
-Serial.print(roulis);
-Serial.print(";");
-Serial.println(tangage);
+  Serial.print(roulis);
+  Serial.print(";");
+  Serial.println(tangage);
 }
 
 void mixage_elevons() {
@@ -80,8 +80,18 @@ void asservissement_position_angulaire(int consigne_roulis, int consigne_tangage
   erreur_roulis = consigne_roulis - roulis;
   erreur_tangage = consigne_tangage - tangage;
 
-  consigne_servos_roulis = -Kppa * erreur_roulis;
-  consigne_servos_tangage = -Kppa * erreur_tangage;
+  position_angulaire_PID(erreur_roulis, erreur_tangage);
+}
+
+void position_angulaire_PID(int erreur_roulis, int erreur_tangage) {
+  err_roulis_k = erreur_roulis;
+  err_tang_k = erreur_tangage;
+
+  consigne_servos_roulis = int(-Kppa * ((1+Kdpa/delta_t)*err_roulis_k - (Kdpa/delta_t)*err_roulis_k_1));
+  err_roulis_k_1 = err_roulis_k;
+
+  consigne_servos_tangage = int(-Kppa * ((1+Kdpa/delta_t)*err_tang_k - (Kdpa/delta_t)*err_tang_k_1));
+  err_tang_k_1 = err_tang_k;
 }
 
 void logCarteSD() {

@@ -44,6 +44,8 @@ int consigne_servos_roulis;
 int consigne_servos_tangage;
 
 int Kppa = 5; // Gain correcteur proportionnel asservissement position angulaire
+int Kdpa = 1;
+float delta_t = 0.010;
 
 //Objets
 Servo elevon_gauche_servo;
@@ -53,6 +55,13 @@ SdFat SD;
 File fichierDonnees;
 
 String logStr;
+
+//PID
+//erreurs
+float err_roulis_k;
+float err_roulis_k_1;
+float err_tang_k;
+float err_tang_k_1;
 
 
 
@@ -64,6 +73,7 @@ void asservissement_position_angulaire(int consigne_roulis, int consigne_tangage
 void log_carte_SD();
 void pilote_auto();
 void etat_AP();
+void position_angulaire_PID(int erreur_roulis, int erreur_tangage);
 
 
 
