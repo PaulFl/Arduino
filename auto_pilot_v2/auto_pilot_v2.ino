@@ -94,7 +94,7 @@ void position_angulaire_PID(int erreur_roulis, int erreur_tangage) {
 void logCarteSD() {
   fichierDonnees = SD.open("log.txt", FILE_WRITE);
   if (fichierDonnees) {
-    fichierDonnees.println(String(millis()) + ";" + String(roulis) + ";" + String(cap16));
+    fichierDonnees.println(String(millis()) + ";" + String(roulis) + ";" + String(cap16) + ";" + String(AP_engage) + ";" + String(Kppa));
     fichierDonnees.close();
   }
 }
