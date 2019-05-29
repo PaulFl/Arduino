@@ -112,9 +112,11 @@ void etat_AP() {
 	Serial.println(lecture);
   }
   if (lecture > 1700){
-    Kdpa = 1;
+    Kppa = 3;
+    Kdpa = 2;
   } else {
-    Kdpa = 0;
+    Kppa = 2;
+    Kdpa = 1;
   }
   AP_engage = (lecture > 1300);
 }
