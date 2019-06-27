@@ -1,11 +1,6 @@
-#include <PPMReader.h>
-// #include <InterruptHandler.h>   <-- You may need this on some versions of Arduino
 
-// Initialize a PPMReader on digital pin 3 with 6 expected channels.
-int interruptPin = 3;
-int channelAmount = 6;
-PPMReader ppm(interruptPin, channelAmount);
-
+bool switchState = false;
+short inputPin = 3;
 
 #include <stdio.h>
 #include <avr/interrupt.h>
@@ -39,12 +34,12 @@ volatile uint8_t sens_addr[N_IBUS_CHANNELS]; // sensor addresses
 
 // Which sensors we have
 const uint8_t sens_type[N_IBUS_CHANNELS] = {
-	IBUS_SENS_TEMP,
-	IBUS_SENS_ALT,        // absolute height, 4 bytes signed m*100
-	IBUS_SENS_GPS_ALT,    // relative height, 4 bytes signed m*100
-	IBUS_SENS_ALT_MAX,    // max relative height, 4 bytes signed m*100
-	IBUS_SENS_CLIMB,      // climb rate m/s * 100, 2 bytes
-	IBUS_SENS_EXTV,
+  IBUS_SENS_TEMP,
+  IBUS_SENS_ALT,        // absolute height, 4 bytes signed m*100
+  IBUS_SENS_GPS_ALT,    // relative height, 4 bytes signed m*100
+  IBUS_SENS_ALT_MAX,    // max relative height, 4 bytes signed m*100
+  IBUS_SENS_CLIMB,      // climb rate m/s * 100, 2 bytes
+  IBUS_SENS_EXTV,
 };
 volatile uint32_t sens_val[N_IBUS_CHANNELS];
 
@@ -55,17 +50,17 @@ static void handle_rx_packet(void);
 #ifdef __AVR_ATmega328P__
 static void led_init(void)
 {
-	DDRB |= _BV(PB5); // Rx LED
+  DDRB |= _BV(PB5); // Rx LED
 }
 
 static void led1_on(void)
 {
-	PORTB |= _BV(PB5);
+  PORTB |= _BV(PB5);
 }
 
 static void led1_off(void)
 {
-	PORTB &= ~_BV(PB5);
+  PORTB &= ~_BV(PB5);
 }
 
 static void led2_on(void) { }
@@ -75,28 +70,28 @@ static void led2_off(void) { }
 #ifdef __AVR_ATmega32U4__
 static void led_init(void)
 {
-	DDRB |= _BV(PB0); // Rx LED
-	DDRD |= _BV(PD5); // Tx LED
+  DDRB |= _BV(PB0); // Rx LED
+  DDRD |= _BV(PD5); // Tx LED
 }
 
 static void led1_on(void)
 {
-	PORTB &= ~_BV(PB0);
+  PORTB &= ~_BV(PB0);
 }
 
 static void led1_off(void)
 {
-	PORTB |= _BV(PB0);
+  PORTB |= _BV(PB0);
 }
 
 static void led2_on(void)
 {
-	PORTD &= ~_BV(PD5);
+  PORTD &= ~_BV(PD5);
 }
 
 static void led2_off(void)
 {
-	PORTD |= _BV(PD5);
+  PORTD |= _BV(PD5);
 }
 #endif
 
@@ -113,29 +108,29 @@ static volatile uint8_t buf_offset;
 #ifdef __AVR_ATmega328P__
 static void serial_init(void)
 {
-	UBRR0 = UBRR_VAL;
+  UBRR0 = UBRR_VAL;
 
-	UCSR0A = 0;
-	UCSR0B = _BV(RXEN0) | _BV(RXCIE0) | _BV(UDRIE0);
-        UCSR0C = _BV(UCSZ01)|_BV(UCSZ00);
+  UCSR0A = 0;
+  UCSR0B = _BV(RXEN0) | _BV(RXCIE0) | _BV(UDRIE0);
+  UCSR0C = _BV(UCSZ01) | _BV(UCSZ00);
 }
 
 static void serial_enable_rx(void)
 {
-	UCSR0B &= ~(_BV(TXEN0) | _BV(TXCIE0));
-	UCSR0B |= _BV(RXEN0) | _BV(RXCIE0);
+  UCSR0B &= ~(_BV(TXEN0) | _BV(TXCIE0));
+  UCSR0B |= _BV(RXEN0) | _BV(RXCIE0);
 }
 
 static void serial_enable_tx(void)
 {
-	UCSR0B &= ~_BV(RXEN0);
-	UCSR0B |= _BV(TXEN0) | _BV(UDRIE0);
+  UCSR0B &= ~_BV(RXEN0);
+  UCSR0B |= _BV(TXEN0) | _BV(UDRIE0);
 }
 
 static void serial_notify_tx_end(void)
 {
-	UCSR0B &= ~_BV(UDRIE0);
-	UCSR0B |= _BV(TXCIE0);
+  UCSR0B &= ~_BV(UDRIE0);
+  UCSR0B |= _BV(TXCIE0);
 }
 
 #define serial_rx_vect USART_RX_vect
@@ -149,29 +144,29 @@ static void serial_notify_tx_end(void)
 #ifdef __AVR_ATmega32U4__
 static void serial_init(void)
 {
-	UBRR1 = UBRR_VAL;
+  UBRR1 = UBRR_VAL;
 
-	UCSR1A = 0;
-	UCSR1B = _BV(RXEN1) | _BV(RXCIE1) | _BV(UDRIE1);
-        UCSR1C = _BV(UCSZ11)|_BV(UCSZ10);
+  UCSR1A = 0;
+  UCSR1B = _BV(RXEN1) | _BV(RXCIE1) | _BV(UDRIE1);
+  UCSR1C = _BV(UCSZ11) | _BV(UCSZ10);
 }
 
 static void serial_enable_rx(void)
 {
-	UCSR1B &= ~(_BV(TXEN1) | _BV(TXCIE1));
-	UCSR1B |= _BV(RXEN1) | _BV(RXCIE1);
+  UCSR1B &= ~(_BV(TXEN1) | _BV(TXCIE1));
+  UCSR1B |= _BV(RXEN1) | _BV(RXCIE1);
 }
 
 static void serial_enable_tx(void)
 {
-	UCSR1B &= ~_BV(RXEN1);
-	UCSR1B |= _BV(TXEN1) | _BV(UDRIE1);
+  UCSR1B &= ~_BV(RXEN1);
+  UCSR1B |= _BV(TXEN1) | _BV(UDRIE1);
 }
 
 static void serial_notify_tx_end(void)
 {
-	UCSR1B &= ~_BV(UDRIE1);
-	UCSR1B |= _BV(TXCIE1);
+  UCSR1B &= ~_BV(UDRIE1);
+  UCSR1B |= _BV(TXCIE1);
 }
 
 #define serial_rx_vect USART1_RX_vect
@@ -184,57 +179,57 @@ static void serial_notify_tx_end(void)
 
 static void recv_restart(void)
 {
-	// led2_on();
+  // led2_on();
 
-	buf_offset = 0;
-	serial_enable_rx();
+  buf_offset = 0;
+  serial_enable_rx();
 }
 
 static void tx_start(void)
 {
-	buf_offset = 0;
-	serial_enable_tx();
+  buf_offset = 0;
+  serial_enable_tx();
 }
 
 // USART receive interrupt
 ISR(serial_rx_vect)
 {
-	uint8_t val = serial_data;
-	static uint8_t ledstate;
+  uint8_t val = serial_data;
+  static uint8_t ledstate;
 
-	// a shorthand - for now, we accept 4-byte packets only
-	if (buf_offset == 0 && val != 4)
-		return;
-	
-	buffer[buf_offset++] = val;
-		if (ledstate) {
-			led2_on();
-			ledstate = 0;
-		} else {
-			led2_off();
-			ledstate = 1;
-		}
+  // a shorthand - for now, we accept 4-byte packets only
+  if (buf_offset == 0 && val != 4)
+    return;
 
-	if (buf_offset == buffer[0]) {
-		handle_rx_packet();
-		buf_offset = 0;
-	}
+  buffer[buf_offset++] = val;
+  if (ledstate) {
+    led2_on();
+    ledstate = 0;
+  } else {
+    led2_off();
+    ledstate = 1;
+  }
+
+  if (buf_offset == buffer[0]) {
+    handle_rx_packet();
+    buf_offset = 0;
+  }
 }
 
 // Next Tx byte wanted
 ISR(serial_udre_vect)
 {
-	if (buf_offset < buffer[0])
-		serial_data = buffer[buf_offset++];
+  if (buf_offset < buffer[0])
+    serial_data = buffer[buf_offset++];
 
-	if (buf_offset >= buffer[0]) // finished
-		serial_notify_tx_end();
+  if (buf_offset >= buffer[0]) // finished
+    serial_notify_tx_end();
 }
 
 // Tx finished
 ISR(serial_tx_vect)
 {
-	recv_restart();
+  recv_restart();
 }
 
 /* ---- A/D converter for battery voltage ---- */
@@ -244,10 +239,10 @@ ISR(serial_tx_vect)
 #ifdef __AVR_ATmega328P__
 static void adc_init(void)
 {
-	ADCSRA = _BV(ADEN)   // enable ADC
-		| _BV(ADPS0) | _BV(ADPS1) | _BV(ADPS2); // CLK/128 = 125 kHz
-	ADMUX = _BV(REFS1) | _BV(REFS0) // internal 1.1V reference
-		| _BV(MUX2) | _BV(MUX1) | _BV(MUX0); // ADC7
+  ADCSRA = _BV(ADEN)   // enable ADC
+           | _BV(ADPS0) | _BV(ADPS1) | _BV(ADPS2); // CLK/128 = 125 kHz
+  ADMUX = _BV(REFS1) | _BV(REFS0) // internal 1.1V reference
+          | _BV(MUX2) | _BV(MUX1) | _BV(MUX0); // ADC7
 }
 
 #define adc_to_10mv(x) ((x) * EXT_V_DIVIDER * 0.1074)
@@ -257,11 +252,11 @@ static void adc_init(void)
 #ifdef __AVR_ATmega32U4__
 static void adc_init(void)
 {
-	DIDR0 |= _BV(ADC4D); // disable digital input on ADC4
-	ADCSRA = _BV(ADEN)   // enable ADC
-		| _BV(ADPS0) | _BV(ADPS1) | _BV(ADPS2); // CLK/128 = 125 kHz
-	ADMUX = _BV(REFS1) | _BV(REFS0) // internal 2.56V reference
-		| _BV(MUX2); // ADC4 on pin PF4
+  DIDR0 |= _BV(ADC4D); // disable digital input on ADC4
+  ADCSRA = _BV(ADEN)   // enable ADC
+           | _BV(ADPS0) | _BV(ADPS1) | _BV(ADPS2); // CLK/128 = 125 kHz
+  ADMUX = _BV(REFS1) | _BV(REFS0) // internal 2.56V reference
+          | _BV(MUX2); // ADC4 on pin PF4
 }
 
 #define adc_to_10mv(x) ((x) * EXT_V_DIVIDER * 0.25)
@@ -271,106 +266,106 @@ static void adc_init(void)
 // TODO: use the ADC interrupt instead
 static uint16_t read_adc_sync(void)
 {
-	uint16_t retval;
+  uint16_t retval;
 
-	ADCSRA |= _BV(ADSC); // start the conversion
+  ADCSRA |= _BV(ADSC); // start the conversion
 
-	// wait for the result
-	while ((ADCSRA & _BV(ADIF)) == 0)
-		;
+  // wait for the result
+  while ((ADCSRA & _BV(ADIF)) == 0)
+    ;
 
-	retval = ADCW;
-	ADCSRA |= _BV(ADIF); // clear the interrupt flag
+  retval = ADCW;
+  ADCSRA |= _BV(ADIF); // clear the interrupt flag
 
-	return retval;
+  return retval;
 }
 
 /* ----------------- iBus ------------------ */
 static void ibus_init(void)
 {
-	uint8_t i;
+  uint8_t i;
 
-	for (i = 0 ; i < N_IBUS_CHANNELS; i++)
-		sens_addr[i] = 0;
+  for (i = 0 ; i < N_IBUS_CHANNELS; i++)
+    sens_addr[i] = 0;
 
-	recv_restart();
+  recv_restart();
 }
 
 static void send_buffer(void)
 {
-	uint8_t i;
-	uint16_t csum = 0xFFFF;
+  uint8_t i;
+  uint16_t csum = 0xFFFF;
 
-	// led2_on(); // off after the frame is sent
+  // led2_on(); // off after the frame is sent
 
-	// compute the I-Bus checksum
-	for (i = 0; i < buffer[0] - 2; i++)
-		csum -= buffer[i];
+  // compute the I-Bus checksum
+  for (i = 0; i < buffer[0] - 2; i++)
+    csum -= buffer[i];
 
-	buffer[i++] = csum & 0xFF;
-	buffer[i++] = csum >> 8;
+  buffer[i++] = csum & 0xFF;
+  buffer[i++] = csum >> 8;
 
-	tx_start();
+  tx_start();
 }
 
 static void handle_rx_packet(void)
 {
-	uint16_t csum = 0xFFFF;
-	uint8_t i, cmd, dev;
+  uint16_t csum = 0xFFFF;
+  uint8_t i, cmd, dev;
 
-	for (i = 0; i < buf_offset-2; i++)
-		csum -= (uint16_t)buffer[i];
+  for (i = 0; i < buf_offset - 2; i++)
+    csum -= (uint16_t)buffer[i];
 
-	if ((buffer[buf_offset-2] != (csum & 0xFF))
-		|| (buffer[buf_offset-1] != (csum >> 8))) { // invalid csum
-		buf_offset = 0; // start over
-		return;
-	}
+  if ((buffer[buf_offset - 2] != (csum & 0xFF))
+      || (buffer[buf_offset - 1] != (csum >> 8))) { // invalid csum
+    buf_offset = 0; // start over
+    return;
+  }
 
-	cmd = buffer[1] & 0xF0;
-	dev = buffer[1] & 0x0F;
+  cmd = buffer[1] & 0xF0;
+  dev = buffer[1] & 0x0F;
 
-	switch (cmd) {
-	case 0x80: // discovery/assign address
-		for (i = 0; i < N_IBUS_CHANNELS; i++) {
-			if (sens_addr[i] == 0 || sens_addr[i] == dev) {
-				sens_addr[i] = dev;
-				send_buffer();
-				return;
-			}
-		}
-		break;
-	case 0x90: // telemetry type request
-		for (i = 0; i < N_IBUS_CHANNELS; i++) {
-			if (sens_addr[i] == dev) {
-				buffer[0] = 0x06; // len
-				buffer[2] = sens_type[i];
-				// Sensor IDs >= 0x80 are four-byte
-				buffer[3] = sens_type[i] < 0x80 ? 0x02 : 0x04;
-				send_buffer();
-				return;
-			}
-		}
-		break;
-	case 0xA0: // get measurement request
-		for (i = 0; i < N_IBUS_CHANNELS; i++) {
-			if (sens_addr[i] == dev) {
-				buffer[2] = sens_val[i] & 0xFF;
-				buffer[3] = (sens_val[i] >> 8) & 0xFF;
-				// two-byte or four-byte sensor?
-				if (sens_type[i] < 0x80) {
-					buffer[0] = 0x06;
-				} else {
-					buffer[0] = 0x08;
-					buffer[4] = (sens_val[i] >> 16) & 0xFF;
-					buffer[5] = (sens_val[i] >> 24) & 0xFF;
-				}
-				send_buffer();
-				return;
-			}
-		}
-		break;
-	}
+  switch (cmd) {
+    case 0x80: // discovery/assign address
+      for (i = 0; i < N_IBUS_CHANNELS; i++) {
+        if (sens_addr[i] == 0 || sens_addr[i] == dev) {
+          sens_addr[i] = dev;
+          send_buffer();
+          return;
+        }
+      }
+      break;
+    case 0x90: // telemetry type request
+      for (i = 0; i < N_IBUS_CHANNELS; i++) {
+        if (sens_addr[i] == dev) {
+          buffer[0] = 0x06; // len
+          buffer[2] = sens_type[i];
+          // Sensor IDs >= 0x80 are four-byte
+          buffer[3] = sens_type[i] < 0x80 ? 0x02 : 0x04;
+          send_buffer();
+          return;
+        }
+      }
+      break;
+    case 0xA0: // get measurement request
+      for (i = 0; i < N_IBUS_CHANNELS; i++) {
+        if (sens_addr[i] == dev) {
+          buffer[2] = sens_val[i] & 0xFF;
+          buffer[3] = (sens_val[i] >> 8) & 0xFF;
+          // two-byte or four-byte sensor?
+          if (sens_type[i] < 0x80) {
+            buffer[0] = 0x06;
+          } else {
+            buffer[0] = 0x08;
+            buffer[4] = (sens_val[i] >> 16) & 0xFF;
+            buffer[5] = (sens_val[i] >> 24) & 0xFF;
+          }
+          send_buffer();
+          return;
+        }
+      }
+      break;
+  }
 }
 
 // Basic command interpreter for controlling port pins
@@ -385,126 +380,126 @@ static void handle_rx_packet(void)
 
 int main(void)
 {
-	int32_t alt, base_alt, alt_measured;
-	int32_t max_alt = 0, climb = 0, prev_alt = 0, climb_sum = 0;
-	uint8_t base_alt_measurements = 20, climb_measurements = 0;
-	uint16_t voltage_raw;
+  int32_t alt, base_alt, alt_measured;
+  int32_t max_alt = 0, climb = 0, prev_alt = 0, climb_sum = 0;
+  uint8_t base_alt_measurements = 20, climb_measurements = 0;
+  uint16_t voltage_raw;
 
 #ifdef SENSOR_BMP085
-	bmp085_init();
+  bmp085_init();
 #endif
 #ifdef SENSOR_BMP280
-	bmp280_init();
-	bmp280_set_config(0, 3, 0); // 0.5 ms delay, 8x filter, no 3-wire SPI
+  bmp280_init();
+  bmp280_set_config(0, 3, 0); // 0.5 ms delay, 8x filter, no 3-wire SPI
 #endif
-	adc_init();
-	led_init();
-	led1_off();
+  adc_init();
+  led_init();
+  led1_off();
 
 #ifdef SENSOR_BMP085
-	alt = ((int32_t)bmp085_getaltitude() * 100) << ALTITUDE_SHIFT;
+  alt = ((int32_t)bmp085_getaltitude() * 100) << ALTITUDE_SHIFT;
 #endif
 #ifdef SENSOR_BMP280
-	bmp280_measure();
-	alt = ((int32_t)bmp280_getaltitude() * 100) << ALTITUDE_SHIFT;
+  bmp280_measure();
+  alt = ((int32_t)bmp280_getaltitude() * 100) << ALTITUDE_SHIFT;
 #endif
-	base_alt = alt >> ALTITUDE_SHIFT;
+  base_alt = alt >> ALTITUDE_SHIFT;
 
-	voltage_raw = read_adc_sync() << VOLTAGE_SHIFT;
+  voltage_raw = read_adc_sync() << VOLTAGE_SHIFT;
 
-	serial_init();
-	ibus_init();
+  serial_init();
+  ibus_init();
 
-	sei();
+  sei();
 
-	while (1) {
-        
-        for (int channel = 1; channel <= channelAmount; ++channel) {
-            unsigned long value = ppm.rawChannelValue(channel);
-        }
-        
-		int32_t tmp;
-		uint8_t sens = 0;
+  while (1) {
+    int lecture = pulseIn(inputPin, HIGH);
+    if (switchState != (lecture > 1500)){
+      base_alt_measurements = 20;
+      switchState = (lecture > 1500);
+    }
 
-		led1_on();
+    int32_t tmp;
+    uint8_t sens = 0;
 
-		// temperature
+    led1_on();
+
+    // temperature
 #ifdef SENSOR_BMP085
-		sens_val[sens++] = 400 + 10*bmp085_gettemperature();
+    sens_val[sens++] = 400 + 10 * bmp085_gettemperature();
 
-		alt_measured = bmp085_getaltitude() * 100;
+    alt_measured = bmp085_getaltitude() * 100;
 #endif
 
 #ifdef SENSOR_BMP280
-		bmp280_measure();
+    bmp280_measure();
 
-		sens_val[sens++] = 400 + bmp280_gettemperature()/10;
+    sens_val[sens++] = 400 + bmp280_gettemperature() / 10;
 
-		alt_measured = bmp280_getaltitude() * 100;
+    alt_measured = bmp280_getaltitude() * 100;
 #endif
 
-		// absolute altitude running average
-		alt -= alt >> ALTITUDE_SHIFT;
-		alt += alt_measured;
+    // absolute altitude running average
+    alt -= alt >> ALTITUDE_SHIFT;
+    alt += alt_measured;
 
-		tmp = alt >> ALTITUDE_SHIFT;
-		// absolute altitude
-		sens_val[sens++] = tmp;
+    tmp = alt >> ALTITUDE_SHIFT;
+    // absolute altitude
+    sens_val[sens++] = tmp;
 
-		if (base_alt_measurements) {
-			base_alt_measurements--;
-			max_alt = 0;
-			base_alt = tmp;
-			tmp = 0;
-			prev_alt = 0;
-		} else {
-			// convert to relative
-			tmp -= base_alt;
+    if (base_alt_measurements) {
+      base_alt_measurements--;
+      max_alt = 0;
+      base_alt = tmp;
+      tmp = 0;
+      prev_alt = 0;
+    } else {
+      // convert to relative
+      tmp -= base_alt;
 
-			// maximum relative
-			if (tmp > max_alt) {
-				max_alt = tmp;
-			}
-		}
-		// relative altitude
-		sens_val[sens++] = tmp;
+      // maximum relative
+      if (tmp > max_alt) {
+        max_alt = tmp;
+      }
+    }
+    // relative altitude
+    sens_val[sens++] = tmp;
 
-		// maximum altitude
-		sens_val[sens++] = max_alt;
+    // maximum altitude
+    sens_val[sens++] = max_alt;
 
-		/*
-		 * RoC: we do not want to calculate it every time,
-		 * because it is very imprecise. So we average the
-		 * altitude (1 << CLIMB_SHIFT) times, and then compute
-		 * the climb rate based of this.
-		 *
-		 * This is not very precise, it is better to use the raw
-		 * altitude in Tx instead.
-		 */
-		climb_sum += alt_measured;
+    /*
+       RoC: we do not want to calculate it every time,
+       because it is very imprecise. So we average the
+       altitude (1 << CLIMB_SHIFT) times, and then compute
+       the climb rate based of this.
 
-		if (++climb_measurements >= (1 << CLIMB_SHIFT)) {
-			climb_measurements = 0;
-			climb_sum >>= CLIMB_SHIFT;
-			climb = (climb_sum - prev_alt)*1000/MAIN_LOOP_MS;
-			prev_alt = climb_sum;
-			climb_sum = 0;
-		}
+       This is not very precise, it is better to use the raw
+       altitude in Tx instead.
+    */
+    climb_sum += alt_measured;
 
-		// climb rate (RoC)
-		sens_val[sens++] = climb;
+    if (++climb_measurements >= (1 << CLIMB_SHIFT)) {
+      climb_measurements = 0;
+      climb_sum >>= CLIMB_SHIFT;
+      climb = (climb_sum - prev_alt) * 1000 / MAIN_LOOP_MS;
+      prev_alt = climb_sum;
+      climb_sum = 0;
+    }
 
-		// ext_voltage
-		voltage_raw -= voltage_raw >> VOLTAGE_SHIFT;
-		voltage_raw += read_adc_sync();
-		tmp = adc_to_10mv(voltage_raw >> VOLTAGE_SHIFT);
-		if (tmp < 100) { // when unconnected, don't send the noise
-			tmp = 0;
-		}
-		sens_val[sens++] = tmp;
+    // climb rate (RoC)
+    sens_val[sens++] = climb;
 
-		led1_off();
-                _delay_ms(MAIN_LOOP_MS);
-	}
+    // ext_voltage
+    voltage_raw -= voltage_raw >> VOLTAGE_SHIFT;
+    voltage_raw += read_adc_sync();
+    tmp = adc_to_10mv(voltage_raw >> VOLTAGE_SHIFT);
+    if (tmp < 100) { // when unconnected, don't send the noise
+      tmp = 0;
+    }
+    sens_val[sens++] = tmp;
+
+    led1_off();
+    _delay_ms(MAIN_LOOP_MS);
+  }
 }
-
