@@ -11,6 +11,8 @@ short inputPin = 3;
 #include "bmp085/bmp085.h"
 #endif
 
+#define SENSOR_BMP280
+
 #ifdef SENSOR_BMP280
 #include "bmp280/bmp280.h"
 #endif
