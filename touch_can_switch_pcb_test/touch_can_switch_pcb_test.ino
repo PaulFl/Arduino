@@ -23,12 +23,13 @@ short can_send_pin = 4;
 short can_rcv_pin = 7;
 short relay_pin = 2;
 
-CapacitiveSensor capSensor = CapacitiveSensor(can_send_pin, can_rcv_pin);
+CapacitiveSensor cap_sensor = CapacitiveSensor(can_send_pin, can_rcv_pin);
 
 void setup() {
     Serial.begin(9600);
     
     pinMode(status_led_pin, OUTPUT);
+    pinMode(relay_pin, OUTPUT);
     pinMode(red_led_pin, OUTPUT);
     pinMode(green_led_pin, OUTPUT);
     pinMode(blue_led_pin, OUTPUT);
@@ -149,6 +150,6 @@ void serial_port_test() {
 void can_sensor_test() {
     Serial.println("Can sensor test start");
     while (true){
-        Serial.println(capSensor.capacitiveSensorRaw(100));
+        Serial.println(cap_sensor.capacitiveSensorRaw(100));
     }
 }
