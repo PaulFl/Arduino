@@ -28,6 +28,9 @@ void setup() {
 #endif
     
     pinMode(status_led_pin, OUTPUT);
+    pinMode(relay_pin, OUTPUT);
+    
+    
     for (int i = 0; i<3; i++) {
         pinMode(rgb_leds_pin[i], OUTPUT);
     }
@@ -37,7 +40,7 @@ void setup() {
 
 void loop() {
     set_threshold();
-    cap_sensor();
+    read_cap_sensor();
     
     
 #ifdef DEBUG
@@ -45,7 +48,7 @@ void loop() {
 #endif
 }
 
-void cap_sensor() {
+void read_cap_sensor() {
     sensor_value = cap_sensor.capacitiveSensorRaw(cap_sensor_samples);
 }
 
