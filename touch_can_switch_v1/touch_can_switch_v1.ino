@@ -46,14 +46,12 @@ bool touched = false;
 
 int new_colors[] = {0,0,0};
 int values_colors[] = {0,0,0};
-int color;
 bool color_reached = false;
 
 unsigned long last_change;
 unsigned long last_color;
 
 bool relay_state = LOW;
-bool play_color = true;
 
 
 void setup() {
@@ -64,7 +62,7 @@ void setup() {
     pinMode(status_led_pin, OUTPUT);
     pinMode(relay_pin, OUTPUT);
     
-    digitalWrite(status_led_pin, LOW);
+    digitalWrite(status_led_pin, HIGH);
     digitalWrite(relay_pin, LOW);
     
     
@@ -112,8 +110,10 @@ void set_threshold() {
     pot_value = analogRead(pot_pin);
     if (pot_value > 1021 || pot_value < 2) {
         pot_end_reached = true;
+        digitalWrite(status_led_pin, LOW);
     } else {
         pot_end_reached = false;
+        digitalWrite(status_led_pin, HIGH);
     }
     threshold_high_value = map(pot_value, 0, 1023, lowest_high_threshold, highest_high_threshold);
     threshold_low_value = threshold_high_value - threshold_hysteresis;
@@ -136,9 +136,65 @@ void switch_relay(bool state) {
 }
 
 void update_color() {
-    
+    if (strcmp(new_colors, values_colors) == 0 && !color_reached) {
+        last_color = millis();
+        color_reached = true;
+    } else if (color_reached && millis() - last_color > led_pause) {
+        color_reached = false;
+        set_color(random(6));
+    }
+    if (millis() - last_change > speed) {
+        last_change = millis();
+        for (int i = 0; i<3; i++) {
+            if (values_colors[i] > new_colors[i]) {
+                values_colors[i]--;
+            } else if (values_colors[i] < new_colors[i]) {
+                values_colors[i]++;
+            }
+            
+            if (!touched) {
+                analogWrite(rgb_leds_pin[i], values_colors[i]);
+            } else {
+                analogWrite(rgb_leds_pin[i], 0);
+            }
+        }
+    }
 }
 
-void set_color() {
-    
+void set_color(int color) {
+    switch (color) {
+        case 0:
+            new_colors[0] = 255;
+            new_colors[1] = 0;
+            new_colors[2] = 0;
+            break;
+        case 1:
+            new_colors[0] = 0;
+            new_colors[1] = 255;
+            new_colors[2] = 0;
+            break;
+        case 2:
+            new_colors[0] = 0;
+            new_colors[1] = 0;
+            new_colors[2] = 255;
+            break;
+        case 3:
+            new_colors[0] = 255;
+            new_colors[1] = 255;
+            new_colors[2] = 0;
+            break;
+        case 4:
+            new_colors[0] = 0;
+            new_colors[1] = 255;
+            new_colors[2] = 255;
+            break;
+        case 5:
+            new_colors[0] = 255;
+            new_colors[1] = 0;
+            new_colors[2] = 255;
+            break;
+            
+        default:
+            break;
+    }
 }
