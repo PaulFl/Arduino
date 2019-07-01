@@ -81,7 +81,7 @@ void loop() {
     if (sensor_value > threshold_high_value && !touched) {
         touched = true;
         for (int i = 0; i<3; i++) {
-            digitalWrite(rgb_leds_pin[i], LOW)
+            digitalWrite(rgb_leds_pin[i], LOW);
         }
         relay_state = !relay_state;
         digitalWrite(relay_pin, relay_state);
@@ -91,7 +91,7 @@ void loop() {
     } else if (sensor_value < threshold_low_value && touched) {
         touched = false;
         for (int i =0; i<3; i++) {
-            analogWrite(rgb_leds_pin[i], values_colors[i])
+            analogWrite(rgb_leds_pin[i], values_colors[i]);
         }
     }
     
@@ -136,7 +136,7 @@ void switch_relay(bool state) {
 }
 
 void update_color() {
-    if (strcmp(new_colors, values_colors) == 0 && !color_reached) {
+    if (values_colors[0] == new_colors[0] && values_colors[1] == new_colors[1] && values_colors[2] == new_colors[2] && !color_reached) {
         last_color = millis();
         color_reached = true;
     } else if (color_reached && millis() - last_color > led_pause) {
