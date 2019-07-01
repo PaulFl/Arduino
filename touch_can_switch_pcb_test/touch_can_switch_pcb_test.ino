@@ -13,6 +13,8 @@
 
 #include <CapacitiveSensor.h>
 
+int sensor_samples = 100;
+
 
 short status_led_pin = 13;
 short red_led_pin = 3;
@@ -39,8 +41,10 @@ void setup() {
     rgb_led_test();
     power_supply_test();
     serial_port_test();
-    pot_test();
-    can_sensor_test();
+    while (1) {
+        pot_test();
+        can_sensor_test();
+    }
 }
 
 void loop() {
@@ -135,12 +139,10 @@ void power_supply_test() {
     digitalWrite(blue_led_pin, LOW);
 }
 
-void pot_test() {;
-    Serial.println("Trim pot test start");
-    unsigned long start = millis();
-    while (millis()  - start < 30000){
-        Serial.println(analogRead(pot_pin));
-    }
+void pot_test() {
+    Serial.print("Pot: \t");
+    Serial.print(analogRead(pot_pin));
+    Serial.print("\t");
 }
 
 void serial_port_test() {
@@ -148,8 +150,7 @@ void serial_port_test() {
 }
 
 void can_sensor_test() {
-    Serial.println("Can sensor test start");
-    while (true){
-        Serial.println(cap_sensor.capacitiveSensorRaw(100));
-    }
+    Serial.print("Sensor: \t");
+    Serial.print(analogRead(cap_sensor.capacitiveSensorRaw(sensor_samples)));
+    Serial.println("\t");
 }
