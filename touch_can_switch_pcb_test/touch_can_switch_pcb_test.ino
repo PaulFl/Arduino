@@ -151,6 +151,6 @@ void serial_port_test() {
 
 void can_sensor_test() {
     Serial.print("Sensor: \t");
-    Serial.print(analogRead(cap_sensor.capacitiveSensorRaw(sensor_samples)));
+    Serial.print(cap_sensor.capacitiveSensorRaw(sensor_samples));
     Serial.println("\t");
 }
