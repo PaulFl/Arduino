@@ -65,6 +65,7 @@ const short buzzer  = 13;
 
 const int frequencies[] = {
     NOTE_E4, NOTE_CS4, NOTE_A4, NOTE_E3
+    //NOTE_E3, NOTE_CS4, NOTE_E4, NOTE_A4  //In order
 };
 
 bool states[] = {
