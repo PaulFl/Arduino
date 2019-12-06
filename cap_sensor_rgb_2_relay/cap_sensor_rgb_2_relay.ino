@@ -1,8 +1,10 @@
 #include <CapacitiveSensor.h>
 
 #define DEBUG 0
-#define HIGHTHRESHOLD 6600
-#define LOWTHRESHOLD 6300
+//#define HIGHTHRESHOLD 6600
+//#define LOWTHRESHOLD 6300
+#define HIGHTHRESHOLD 11200
+#define LOWTHRESHOLD 10600
 #define SPEED 100
 #define LEDPAUSE 5000
 

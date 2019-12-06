@@ -1,0 +1,43 @@
+#######################################
+# Syntax Coloring Map for DMXSerial
+#######################################
+
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+RDMDATA	KEYWORD1
+DMXMode	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+
+init	KEYWORD2
+maxChannel	KEYWORD2
+read	KEYWORD2
+write	KEYWORD2
+getBuffer	KEYWORD2
+noDataSince	KEYWORD2
+attachOnUpdate	KEYWORD2
+dataUpdated	KEYWORD2
+resetUpdated	KEYWORD2
+term	KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+
+DMXSerial	KEYWORD2
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+DMXNone	LITERAL1
+DMXController	LITERAL1
+DMXReceiver	LITERAL1
