@@ -8,7 +8,7 @@
 #define TICKS (FS / 40)                   // Speech data rate
 #define USEC  ((1000000 + (FS / 2)) / FS) // Sample period (microseconds)
 
-static const int16_t PROGMEM
+static const uint16_t PROGMEM
   tmsK1[]     = {0x82C0,0x8380,0x83C0,0x8440,0x84C0,0x8540,0x8600,0x8780,
                  0x8880,0x8980,0x8AC0,0x8C00,0x8D40,0x8F00,0x90C0,0x92C0,
                  0x9900,0xA140,0xAB80,0xB840,0xC740,0xD8C0,0xEBC0,0x0000,
@@ -18,7 +18,7 @@ static const int16_t PROGMEM
                  0x3E40,0x45C0,0x4CC0,0x5300,0x5880,0x5DC0,0x6240,0x6640,
                  0x69C0,0x6CC0,0x6F80,0x71C0,0x73C0,0x7580,0x7700,0x7E80};
 
-static const int8_t PROGMEM
+static const uint8_t PROGMEM
   tmsK3[]     = {0x92,0x9F,0xAD,0xBA,0xC8,0xD5,0xE3,0xF0,
                  0xFE,0x0B,0x19,0x26,0x34,0x41,0x4F,0x5C},
   tmsK4[]     = {0xAE,0xBC,0xCA,0xD8,0xE6,0xF4,0x01,0x0F,
@@ -87,12 +87,12 @@ void Adafruit_CPlay_Speaker::say(const uint8_t *addr) {
 
 	int16_t  x0=0, x1=0, x2=0, x3=0, x4=0,
 	         x5=0, x6=0, x7=0, x8=0, x9=0,
-	         synthK1, synthK2, u0;
-	uint16_t synthEnergy, synthRand = 1;
-	int8_t   synthK3, synthK4, synthK5, synthK6,
-	         synthK7, synthK8, synthK9, synthK10;
-	uint8_t  periodCounter=0, nextPwm = 0x7F, synthPeriod;
-	uint8_t  iCount = TICKS;
+	         synthK1=0, synthK2=0, u0;
+	uint16_t synthEnergy=0, synthRand=1;
+	int8_t   synthK3=0, synthK4=0, synthK5=0, synthK6=0,
+	         synthK7=0, synthK8=0, synthK9=0, synthK10=0;
+	uint8_t  periodCounter=0, nextPwm=0x7F, synthPeriod=0;
+	uint8_t  iCount=TICKS;
 	uint32_t nowTime, prevTime=0;
 
 	if(!started) begin();

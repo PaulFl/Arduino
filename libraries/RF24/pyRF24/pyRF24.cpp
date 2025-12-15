@@ -1,11 +1,11 @@
-#include <RF24/RF24.h>
 #include <boost/python.hpp>
+#include <RF24/RF24.h>
 
 namespace bp = boost::python;
 
 // ******************** explicit wrappers **************************
 // for methods which need it - mostly for buffer operations
-// 
+//
 
 void throw_ba_exception(void)
 {
@@ -13,37 +13,37 @@ void throw_ba_exception(void)
     bp::throw_error_already_set();
 }
 
-char *get_bytes_or_bytearray_str(bp::object buf)
+char* get_bytes_or_bytearray_str(bp::object buf)
 {
-    PyObject *py_ba;
+    PyObject* py_ba;
     py_ba = buf.ptr();
     if (PyByteArray_Check(py_ba))
         return PyByteArray_AsString(py_ba);
-    else if (PyBytes_Check(py_ba))
+    if (PyBytes_Check(py_ba))
         return PyBytes_AsString(py_ba);
-    else
-        throw_ba_exception();
+    throw_ba_exception();
+
     return NULL;
 }
 
 int get_bytes_or_bytearray_ln(bp::object buf)
 {
-    PyObject *py_ba;
+    PyObject* py_ba;
     py_ba = buf.ptr();
     if (PyByteArray_Check(py_ba))
         return PyByteArray_Size(py_ba);
-    else if (PyBytes_Check(py_ba))
+    if (PyBytes_Check(py_ba))
         return PyBytes_Size(py_ba);
-    else
-        throw_ba_exception();
+    throw_ba_exception();
+
     return 0;
 }
 
 bp::object read_wrap(RF24& ref, int maxlen)
 {
-    char *buf = new char[maxlen+1];
+    char* buf = new char[maxlen + 1];
     ref.read(buf, maxlen);
-    bp::object py_ba(bp::handle<>(PyByteArray_FromStringAndSize(buf, maxlen<ref.getPayloadSize()?maxlen:ref.getPayloadSize())));
+    bp::object py_ba(bp::handle<>(PyByteArray_FromStringAndSize(buf, maxlen < ref.getPayloadSize() ? maxlen : ref.getPayloadSize())));
     delete[] buf;
     return py_ba;
 }
@@ -58,10 +58,9 @@ bool write_wrap2(RF24& ref, bp::object buf, const bool multicast)
     return ref.write(get_bytes_or_bytearray_str(buf), get_bytes_or_bytearray_ln(buf), multicast);
 }
 
-void writeAckPayload_wrap(RF24& ref, uint8_t pipe, bp::object buf)
+bool writeAckPayload_wrap(RF24& ref, uint8_t pipe, bp::object buf)
 {
-    ref.writeAckPayload(pipe, get_bytes_or_bytearray_str(buf), get_bytes_or_bytearray_ln(buf));
-
+    return ref.writeAckPayload(pipe, get_bytes_or_bytearray_str(buf), get_bytes_or_bytearray_ln(buf));
 }
 
 bool writeFast_wrap1(RF24& ref, bp::object buf)
@@ -96,12 +95,12 @@ void startWrite_wrap(RF24& ref, bp::object buf, const bool multicast)
 
 void openWritingPipe_wrap(RF24& ref, const bp::object address)
 {
-    ref.openWritingPipe((const uint8_t *)(get_bytes_or_bytearray_str(address)));
+    ref.openWritingPipe((const uint8_t*)(get_bytes_or_bytearray_str(address)));
 }
 
 void openReadingPipe_wrap(RF24& ref, uint8_t number, const bp::object address)
 {
-    ref.openReadingPipe(number, (const uint8_t *)(get_bytes_or_bytearray_str(address)));
+    ref.openReadingPipe(number, (const uint8_t*)(get_bytes_or_bytearray_str(address)));
 }
 
 bp::tuple whatHappened_wrap(RF24& ref)
@@ -123,17 +122,49 @@ bp::tuple available_wrap(RF24& ref)
     return bp::make_tuple(result, pipe);
 }
 
+void setPALevel_wrap(RF24& ref, rf24_pa_dbm_e level)
+{
+    ref.setPALevel(level, 1);
+}
+
+bool begin_with_pins(RF24& ref, uint16_t _cepin, uint16_t _cspin)
+{
+    return ref.begin(_cepin, _cspin);
+}
+
+bp::object sprintfPrettyDetails_wrap(RF24& ref)
+{
+    char* buf = new char[870];
+    ref.sprintfPrettyDetails(buf);
+    bp::object ret_str(bp::handle<>(PyUnicode_FromString(reinterpret_cast<const char*>(buf))));
+    delete[] buf;
+    return ret_str;
+}
+
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(txStandBy_wrap1, RF24::txStandBy, 0, 2)
 //BOOST_PYTHON_FUNCTION_OVERLOADS(txStandBy_wrap2, RF24::txStandBy, 1, 2)
 
 // ******************** enums **************************
 // from both RF24 and bcm2835
-// 
 
-BOOST_PYTHON_MODULE(RF24){
+BOOST_PYTHON_MODULE(RF24)
+{
+    bp::scope().attr("RF24_DRIVER") =
+#ifdef RF24_PIGPIO
+        "pigpio"
+#elif defined(MRAA)
+        "MRAA"
+#elif defined(RF24_RPi)
+        "RPi"
+#elif defined(RF24_WIRINGPI)
+        "wiringPi"
+#else
+        "SPIDEV"
+#endif
+        ;
 
 #ifdef BCM2835_H
-    bp::enum_< RPiGPIOPin>("RPiGPIOPin")
+    bp::enum_<RPiGPIOPin>("RPiGPIOPin")
         .value("RPI_GPIO_P1_03", RPI_GPIO_P1_03)
         .value("RPI_GPIO_P1_05", RPI_GPIO_P1_05)
         .value("RPI_GPIO_P1_07", RPI_GPIO_P1_07)
@@ -198,10 +229,9 @@ BOOST_PYTHON_MODULE(RF24){
         .value("RPI_BPLUS_GPIO_J8_37", RPI_BPLUS_GPIO_J8_37)
         .value("RPI_BPLUS_GPIO_J8_38", RPI_BPLUS_GPIO_J8_38)
         .value("RPI_BPLUS_GPIO_J8_40", RPI_BPLUS_GPIO_J8_40)
-        .export_values()
-        ;
+        .export_values();
 
-    bp::enum_< bcm2835SPIClockDivider>("bcm2835SPIClockDivider")
+    bp::enum_<bcm2835SPIClockDivider>("bcm2835SPIClockDivider")
         .value("BCM2835_SPI_CLOCK_DIVIDER_65536", BCM2835_SPI_CLOCK_DIVIDER_65536)
         .value("BCM2835_SPI_CLOCK_DIVIDER_32768", BCM2835_SPI_CLOCK_DIVIDER_32768)
         .value("BCM2835_SPI_CLOCK_DIVIDER_16384", BCM2835_SPI_CLOCK_DIVIDER_16384)
@@ -221,110 +251,109 @@ BOOST_PYTHON_MODULE(RF24){
         .value("BCM2835_SPI_CLOCK_DIVIDER_1", BCM2835_SPI_CLOCK_DIVIDER_1)
         .export_values();
 
-
-    bp::enum_< bcm2835SPIChipSelect>("bcm2835SPIChipSelect")
+    bp::enum_<bcm2835SPIChipSelect>("bcm2835SPIChipSelect")
         .value("BCM2835_SPI_CS0", BCM2835_SPI_CS0)
         .value("BCM2835_SPI_CS1", BCM2835_SPI_CS1)
         .value("BCM2835_SPI_CS2", BCM2835_SPI_CS2)
         .value("BCM2835_SPI_CS_NONE", BCM2835_SPI_CS_NONE)
         .export_values();
 
-// exposing '#define's for SPI speed as this is needed for RF24 constructor
-    bp::scope().attr("BCM2835_SPI_SPEED_64MHZ") = BCM2835_SPI_SPEED_64MHZ;
-    bp::scope().attr("BCM2835_SPI_SPEED_32MHZ") = BCM2835_SPI_SPEED_32MHZ;
-    bp::scope().attr("BCM2835_SPI_SPEED_16MHZ") = BCM2835_SPI_SPEED_16MHZ;
-    bp::scope().attr("BCM2835_SPI_SPEED_8MHZ") = BCM2835_SPI_SPEED_8MHZ;
-    bp::scope().attr("BCM2835_SPI_SPEED_4MHZ") = BCM2835_SPI_SPEED_4MHZ;
-    bp::scope().attr("BCM2835_SPI_SPEED_2MHZ") = BCM2835_SPI_SPEED_2MHZ;
-    bp::scope().attr("BCM2835_SPI_SPEED_1MHZ") = BCM2835_SPI_SPEED_1MHZ;
-    bp::scope().attr("BCM2835_SPI_SPEED_512KHZ") = BCM2835_SPI_SPEED_512KHZ;
-    bp::scope().attr("BCM2835_SPI_SPEED_256KHZ") = BCM2835_SPI_SPEED_256KHZ;
-    bp::scope().attr("BCM2835_SPI_SPEED_128KHZ") = BCM2835_SPI_SPEED_128KHZ;
-    bp::scope().attr("BCM2835_SPI_SPEED_64KHZ") = BCM2835_SPI_SPEED_64KHZ;
-    bp::scope().attr("BCM2835_SPI_SPEED_32KHZ") = BCM2835_SPI_SPEED_32KHZ;
-    bp::scope().attr("BCM2835_SPI_SPEED_16KHZ") = BCM2835_SPI_SPEED_16KHZ;
-    bp::scope().attr("BCM2835_SPI_SPEED_8KHZ") = BCM2835_SPI_SPEED_8KHZ;
-#endif  // BCM2835_H
+#endif // BCM2835_H
 
-    bp::enum_< rf24_crclength_e>("rf24_crclength_e")
+    bp::enum_<rf24_crclength_e>("rf24_crclength_e")
         .value("RF24_CRC_DISABLED", RF24_CRC_DISABLED)
         .value("RF24_CRC_8", RF24_CRC_8)
         .value("RF24_CRC_16", RF24_CRC_16)
-        .export_values()
-        ;
+        .export_values();
 
-    bp::enum_< rf24_datarate_e>("rf24_datarate_e")
+    bp::enum_<rf24_datarate_e>("rf24_datarate_e")
         .value("RF24_1MBPS", RF24_1MBPS)
         .value("RF24_2MBPS", RF24_2MBPS)
         .value("RF24_250KBPS", RF24_250KBPS)
-        .export_values()
-        ;
+        .export_values();
 
-    bp::enum_< rf24_pa_dbm_e>("rf24_pa_dbm_e")
+    bp::enum_<rf24_pa_dbm_e>("rf24_pa_dbm_e")
         .value("RF24_PA_MIN", RF24_PA_MIN)
         .value("RF24_PA_LOW", RF24_PA_LOW)
         .value("RF24_PA_HIGH", RF24_PA_HIGH)
         .value("RF24_PA_MAX", RF24_PA_MAX)
         .value("RF24_PA_ERROR", RF24_PA_ERROR)
-        .export_values()
-        ;
+        .export_values();
 
-// ******************** RF24 class  **************************
-// 
-    bp::class_< RF24 >( "RF24", bp::init< uint8_t, uint8_t >(( bp::arg("_cepin"), bp::arg("_cspin") )) )
-#if defined (RF24_LINUX) && !defined (MRAA)
-        .def( bp::init< uint8_t, uint8_t, uint32_t >(( bp::arg("_cepin"), bp::arg("_cspin"), bp::arg("spispeed") )) )
+    // ******************** RF24 class  **************************
+    bp::class_<RF24>("RF24", bp::init<uint16_t, uint16_t>((bp::arg("_cepin"), bp::arg("_cspin"))))
+#if defined(RF24_LINUX) && !defined(MRAA)
+        .def(bp::init<uint16_t, uint16_t, uint32_t>((bp::arg("_cepin"), bp::arg("_cspin"), bp::arg("spi_speed"))))
+        .def(bp::init<uint32_t>((bp::arg("spi_speed"))))
+        .def(bp::init<>())
 #endif
-        .def("available", (bool ( ::RF24::* )(  ) )( &::RF24::available ) )
-        .def("available_pipe", &available_wrap )    // needed to rename this method as python does not allow such overloading
-        .def("begin", &RF24::begin)    
+        .def("available", (bool(::RF24::*)())(&::RF24::available))
+        .def("available_pipe", &available_wrap) // needed to rename this method as python does not allow such overloading
+        .def("begin", (bool(::RF24::*)(void))(&::RF24::begin))
+        .def("begin", &begin_with_pins)
         .def("closeReadingPipe", &RF24::closeReadingPipe)
-        .def("disableCRC", &RF24::disableCRC)    
+        .def("disableCRC", &RF24::disableCRC)
         .def("enableAckPayload", &RF24::enableAckPayload)
-        .def("enableDynamicAck", &RF24::enableDynamicAck)    
+        .def("enableDynamicAck", &RF24::enableDynamicAck)
         .def("enableDynamicPayloads", &RF24::enableDynamicPayloads)
+        .def("disableDynamicPayloads", &RF24::disableDynamicPayloads)
         .def("flush_tx", &RF24::flush_tx)
+        .def("flush_rx", &RF24::flush_rx)
         .def("getCRCLength", &RF24::getCRCLength)
         .def("getDataRate", &RF24::getDataRate)
         .def("getDynamicPayloadSize", &RF24::getDynamicPayloadSize)
         .def("getPALevel", &RF24::getPALevel)
-        .def("isAckPayloadAvailable", &RF24::isAckPayloadAvailable)    
+        .def("isAckPayloadAvailable", &RF24::isAckPayloadAvailable)
         .def("isPVariant", &RF24::isPVariant)
         .def("isValid", &RF24::isValid)
-        .def("maskIRQ", &RF24::maskIRQ, ( bp::arg("tx_ok"), bp::arg("tx_fail"), bp::arg("rx_ready")))    
-        .def("openReadingPipe", &openReadingPipe_wrap, (bp::arg("number"), bp::arg("address")))    
-        .def("openReadingPipe", (void ( ::RF24::* )( ::uint8_t,::uint64_t ) )( &::RF24::openReadingPipe), (bp::arg("number"), bp::arg("address")))    
-        .def("openWritingPipe", &openWritingPipe_wrap, (bp::arg("address")))    
-        .def("openWritingPipe", (void ( ::RF24::* )( ::uint64_t ) )( &::RF24::openWritingPipe), ( bp::arg("address") ) )    
-        .def("powerDown", &RF24::powerDown)    
-        .def("powerUp", &RF24::powerUp)    
+        .def("isChipConnected", &RF24::isChipConnected)
+        .def("maskIRQ", &RF24::maskIRQ, (bp::arg("tx_ok"), bp::arg("tx_fail"), bp::arg("rx_ready")))
+        .def("openReadingPipe", &openReadingPipe_wrap, (bp::arg("number"), bp::arg("address")))
+        .def("openReadingPipe", (void(::RF24::*)(::uint8_t, ::uint64_t))(&::RF24::openReadingPipe), (bp::arg("number"), bp::arg("address")))
+        .def("openWritingPipe", &openWritingPipe_wrap, (bp::arg("address")))
+        .def("openWritingPipe", (void(::RF24::*)(::uint64_t))(&::RF24::openWritingPipe), (bp::arg("address")))
+        .def("powerDown", &RF24::powerDown)
+        .def("powerUp", &RF24::powerUp)
         .def("printDetails", &RF24::printDetails)
+        .def("printPrettyDetails", &RF24::printPrettyDetails)
+        .def("sprintfPrettyDetails", &sprintfPrettyDetails_wrap)
         .def("reUseTX", &RF24::reUseTX)
-        .def("read", &read_wrap, (bp::arg("maxlen")))    
+        .def("read", &read_wrap, (bp::arg("maxlen")))
         .def("rxFifoFull", &RF24::rxFifoFull)
+        .def("isFifo", (uint8_t(::RF24::*)(bool))(&::RF24::isFifo), (bp::arg("about_tx")))
+        .def("isFifo", (bool(::RF24::*)(bool, bool))(&::RF24::isFifo), (bp::arg("about_tx"), bp::arg("check_empty")))
         .def("setAddressWidth", &RF24::setAddressWidth)
-        .def("setAutoAck", (void ( ::RF24::* )( bool ) )( &::RF24::setAutoAck ), ( bp::arg("enable") ) )    
-        .def("setAutoAck", (void ( ::RF24::* )( ::uint8_t,bool ) )( &::RF24::setAutoAck ), ( bp::arg("pipe"), bp::arg("enable") ) )    
-        .def("setCRCLength", &RF24::setCRCLength, ( bp::arg("length") ) )    
-        .def("setChannel", &RF24::setChannel, ( bp::arg("channel") ) )    
-        .def("setDataRate", &RF24::setDataRate, ( bp::arg("speed") ) )    
-        .def("setPALevel", &RF24::setPALevel, ( bp::arg("level") ) )    
-        .def("setRetries", &RF24::setRetries , (bp::arg("delay"), bp::arg("count")))    
-        .def("startFastWrite", &startFastWrite_wrap1, ( bp::arg("buf"), bp::arg("len"), bp::arg("multicast") ) )    
-        .def("startFastWrite", &startFastWrite_wrap2, ( bp::arg("buf"), bp::arg("len"), bp::arg("multicast"), bp::arg("startTx") ) )    
-        .def("startListening", &RF24::startListening)    
-        .def("startWrite", &startWrite_wrap, ( bp::arg("buf"), bp::arg("len"), bp::arg("multicast") ) )    
+        .def("setAutoAck", (void(::RF24::*)(bool))(&::RF24::setAutoAck), (bp::arg("enable")))
+        .def("setAutoAck", (void(::RF24::*)(::uint8_t, bool))(&::RF24::setAutoAck), (bp::arg("pipe"), bp::arg("enable")))
+        .def("setCRCLength", &RF24::setCRCLength, (bp::arg("length")))
+        .def("setDataRate", &RF24::setDataRate, (bp::arg("speed")))
+        .def("setPALevel", &RF24::setPALevel, (bp::arg("level"), bp::arg("lnaEnable") = 1))
+        .def("setPALevel", &setPALevel_wrap, (bp::arg("level")))
+        .def("setRetries", &RF24::setRetries, (bp::arg("delay"), bp::arg("count")))
+        .def("startFastWrite", &startFastWrite_wrap1, (bp::arg("buf"), bp::arg("len"), bp::arg("multicast")))
+        .def("startFastWrite", &startFastWrite_wrap2, (bp::arg("buf"), bp::arg("len"), bp::arg("multicast"), bp::arg("startTx")))
+        .def("startListening", &RF24::startListening)
+        .def("startWrite", &startWrite_wrap, (bp::arg("buf"), bp::arg("len"), bp::arg("multicast")))
         .def("stopListening", &RF24::stopListening)
         .def("testCarrier", &RF24::testCarrier)
         .def("testRPD", &RF24::testRPD)
-        .def("txStandBy", (bool ( ::RF24::* )( ::uint32_t,bool))(&RF24::txStandBy), txStandBy_wrap1( bp::args("timeout", "startTx") ) )
-        .def("whatHappened", &whatHappened_wrap)    
-        .def("write", &write_wrap1, ( bp::arg("buf") ) )    
-        .def("write", &write_wrap2, ( bp::arg("buf"), bp::arg("multicast") ) )    
-        .def("writeAckPayload", writeAckPayload_wrap, ( bp::arg("pipe"), bp::arg("buf") ) )    
-        .def("writeBlocking", &writeBlocking_wrap, ( bp::arg("buf"), bp::arg("timeout") ) )    
-        .def("writeFast", &writeFast_wrap1, ( bp::arg("buf") ) )    
-        .def("writeFast", &writeFast_wrap2, ( bp::arg("buf"), bp::arg("multicast") ) )    
+        .def("toggleAllPipes", &RF24::toggleAllPipes)
+        .def("setRadiation", &RF24::setRadiation)
+        .def("txStandBy", (bool(::RF24::*)(::uint32_t, bool))(&RF24::txStandBy), txStandBy_wrap1(bp::args("timeout", "startTx")))
+        .def("whatHappened", &whatHappened_wrap)
+        .def("startConstCarrier", &RF24::startConstCarrier, (bp::arg("level"), bp::arg("channel")))
+        .def("stopConstCarrier", &RF24::stopConstCarrier)
+        .def("write", &write_wrap1, (bp::arg("buf")))
+        .def("write", &write_wrap2, (bp::arg("buf"), bp::arg("multicast")))
+        .def("writeAckPayload", writeAckPayload_wrap, (bp::arg("pipe"), bp::arg("buf")))
+        .def("writeBlocking", &writeBlocking_wrap, (bp::arg("buf"), bp::arg("timeout")))
+        .def("writeFast", &writeFast_wrap1, (bp::arg("buf")))
+        .def("writeFast", &writeFast_wrap2, (bp::arg("buf"), bp::arg("multicast")))
+        .add_property("channel", &RF24::getChannel, &RF24::setChannel)
+        .def("setChannel", &RF24::setChannel, (bp::arg("channel")))
+        .def("getChannel", &RF24::getChannel)
         .add_property("payloadSize", &RF24::getPayloadSize, &RF24::setPayloadSize)
-        .def_readwrite( "failureDetected", &RF24::failureDetected );
+        .def("setPayloadSize", &RF24::setPayloadSize, (bp::arg("size")))
+        .def("getPayloadSize", &RF24::getPayloadSize)
+        .def_readwrite("failureDetected", &RF24::failureDetected);
 }
