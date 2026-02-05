@@ -36,7 +36,7 @@ void generate_ppm_frame() {
   unsigned long frame_start = micros();
 
   // Generate each channel's low pulse + high gap
-  noInterrupts(); // Disable interrupts during critical timing section
+  // noInterrupts(); // Disable interrupts during critical timing section
   for (uint8_t ch = 0; ch < CHANNEL_COUNT; ++ch) {
     unsigned int slot = ppm_values[ch];
 
@@ -45,15 +45,17 @@ void generate_ppm_frame() {
     if (slot > 2200) slot = 2200;
 
     // Drive LOW for short pulse (synchronizing pulse)
+    noInterrupts();
     digitalWrite(ppm_pin, LOW);
     delayMicroseconds(PULSE_LEN_US);
     digitalWrite(ppm_pin, HIGH);
+    interrupts();
     
     // Now keep HIGH for the rest of the slot (slot includes the PULSE_LEN_US)
     unsigned int rest = (slot > PULSE_LEN_US) ? (slot - PULSE_LEN_US) : 0;
     delayMicroseconds(rest);
   }
-  interrupts();
+  // interrupts();
 
  // compute remaining time to reach FRAME_LEN_US and wait (this is the sync gap)
   unsigned long elapsed = micros() - frame_start;
@@ -66,12 +68,34 @@ void generate_ppm_frame() {
   }
 }
 
+void led_blink() {
+  static int led_state = 0;
+  static unsigned long last_millis = 0;
+
+  unsigned long current_millis = millis();
+
+  unsigned long on_time = battery_percent_rounded * 10; 
+  unsigned long off_time = 1000 - on_time;
+
+  if (!led_state && (current_millis - last_millis > off_time)) {
+    led_state = 1;
+    digitalWrite(led_pin, led_state);
+    last_millis = current_millis;
+  } else if (led_state && (current_millis - last_millis > on_time)) {
+    led_state = 0;
+    digitalWrite(led_pin, led_state);
+    last_millis = current_millis;
+  }
+}
+
 
 void setup() {
   pinMode(ppm_pin, OUTPUT);
   pinMode(led_pin, OUTPUT);
 
   digitalWrite(led_pin, HIGH);
+
+  Serial.begin(115200);
 
   delay(3000);
 }
@@ -86,9 +110,29 @@ void loop() {
   battery_voltage_mv = map(battery_voltage_analog_value, 0, 1023, 0, 6600);
 
   int raw_percent = map(battery_voltage_mv, 3300, 4200, 0, 100);
-  raw_percent = constrain(raw_percent, 0, 100);
+  raw_percent = constrain(raw_percent, 5, 100);
 
   battery_percent_rounded = ((raw_percent + 5) / 10) * 10;
 
+  Serial.print("Battery: ");
+  Serial.print(battery_voltage_analog_value);
+  Serial.print(" (raw) / ");
+  Serial.print(battery_voltage_mv);
+  Serial.print(" mV / ");
+  Serial.print(battery_percent_rounded);
+  Serial.println("%");
+
+  for (int i = 0; i < 6; i++) {
+    Serial.print("CH");
+    Serial.print(i + 1);
+    Serial.print(": ");
+    Serial.print(analog_values[i]);
+    Serial.print(" -> ");
+    Serial.print(ppm_values[i]);
+    if (i < 5) Serial.print("\t");
+  }
+  Serial.println();
+
   generate_ppm_frame();
+  led_blink();
 }
