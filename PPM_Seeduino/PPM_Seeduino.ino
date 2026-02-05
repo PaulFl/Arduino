@@ -1,6 +1,6 @@
 const uint8_t PPM_PIN = 1;           // Seeeduino XIAO D2 (change if needed)
 const uint8_t SWITCH_PIN = D5;
-const uint8_t CHANNEL_COUNT = 6;
+const uint8_t CHANNEL_COUNT = 8;
 
 const unsigned long FRAME_LEN_US = 20000UL; // total frame length in microseconds (22.5ms)
 const unsigned int PULSE_LEN_US = 400;      // short low pulse for each channel (in µs)
@@ -22,6 +22,7 @@ int switch_state = 0;
 int mainSheet_out = 0;
 int fine_out = 0;
 int jibSheet_out = 0;
+int switch_out = 0;
 
 void setup() {
   pinMode(PPM_PIN, OUTPUT);
@@ -44,16 +45,25 @@ void loop() {
 
     channels[3] = mainSheet_out;
 
+    // if (!switch_state) {
+    //   fine_out = map(fine_pot, 0, 1023, 0, 500);
+    //   channels[4] = 1500 + fine_out;
+    // } else {
+    //   fine_out = map(fine_pot, 0, 1023, 0, 500);
+    //   channels[4] = 1500 - fine_out;
+    // }
+
+    fine_out = map(fine_pot, 0, 1023, 1000, 2000);
+
     if (!switch_state) {
-      fine_out = map(fine_pot, 0, 1023, 0, 500);
-      channels[4] = 1500 + fine_out;
+      switch_out = 1000;
     } else {
-      fine_out = map(fine_pot, 0, 1023, 0, 300);
-      channels[4] = 1300 - fine_out;
+      switch_out = 2000;
     }
 
-    // channels[4] = fine_out;
+    channels[4] = fine_out;
     channels[5] = jibSheet_out;
+    channels[6] = switch_out;
 
 
 
