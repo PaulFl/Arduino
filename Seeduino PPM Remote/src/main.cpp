@@ -109,7 +109,7 @@ void loop() {
   battery_voltage_analog_value = analogRead(battery_voltage_pin);
   battery_voltage_mv = map(battery_voltage_analog_value, 0, 1023, 0, 6600);
 
-  int raw_percent = map(battery_voltage_mv, 3300, 4200, 0, 100);
+  int raw_percent = map(battery_voltage_mv, 3300, 4100, 0, 100);
   raw_percent = constrain(raw_percent, 5, 100);
 
   battery_percent_rounded = ((raw_percent + 5) / 10) * 10;
