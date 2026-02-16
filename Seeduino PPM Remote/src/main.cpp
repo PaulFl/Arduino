@@ -4,7 +4,7 @@ const int CHANNEL_COUNT = 8;
 const unsigned long FRAME_LEN_US = 20000UL; // total frame length in microseconds (22.5ms)
 const unsigned int PULSE_LEN_US = 400;      // short low pulse for each channel (in µs)
 
-const int ppm_pin = A0;
+const int ppm_pin = A6;
 
 const int battery_voltage_pin = A10;
 
@@ -14,7 +14,7 @@ const int channel_pins[6] = {
   A3,
   A4,
   A5,
-  A6
+  A5
 };
 
 int analog_values [CHANNEL_COUNT] = {
@@ -88,6 +88,28 @@ void led_blink() {
   }
 }
 
+void send_serial_studio_data() {
+  // Serial Studio Frame Format: /*DATA1,DATA2,DATA3...*/
+  Serial.print("/*");
+  
+  // 1. Battery Data
+  Serial.print(battery_voltage_mv);
+  Serial.print(",");
+  Serial.print(battery_percent_rounded);
+  
+  // 2. Channel Data (Analog Raw and then PPM)
+  for (int i = 0; i < 6; i++) {
+    Serial.print(",");
+    Serial.print(analog_values[i]);
+  }
+  for (int i = 0; i < 6; i++) {
+    Serial.print(",");
+    Serial.print(ppm_values[i]);
+  }
+  
+  Serial.println("*/"); 
+}
+
 
 void setup() {
   pinMode(ppm_pin, OUTPUT);
@@ -114,24 +136,26 @@ void loop() {
 
   battery_percent_rounded = ((raw_percent + 5) / 10) * 10;
 
-  Serial.print("Battery: ");
-  Serial.print(battery_voltage_analog_value);
-  Serial.print(" (raw) / ");
-  Serial.print(battery_voltage_mv);
-  Serial.print(" mV / ");
-  Serial.print(battery_percent_rounded);
-  Serial.println("%");
 
-  for (int i = 0; i < 6; i++) {
-    Serial.print("CH");
-    Serial.print(i + 1);
-    Serial.print(": ");
-    Serial.print(analog_values[i]);
-    Serial.print(" -> ");
-    Serial.print(ppm_values[i]);
-    if (i < 5) Serial.print("\t");
-  }
-  Serial.println();
+  send_serial_studio_data();
+  // Serial.print("Battery: ");
+  // Serial.print(battery_voltage_analog_value);
+  // Serial.print(" (raw) / ");
+  // Serial.print(battery_voltage_mv);
+  // Serial.print(" mV / ");
+  // Serial.print(battery_percent_rounded);
+  // Serial.println("%");
+
+  // for (int i = 0; i < 6; i++) {
+  //   Serial.print("CH");
+  //   Serial.print(i + 1);
+  //   Serial.print(": ");
+  //   Serial.print(analog_values[i]);
+  //   Serial.print(" -> ");
+  //   Serial.print(ppm_values[i]);
+  //   if (i < 5) Serial.print("\t");
+  // }
+  // Serial.println();
 
   generate_ppm_frame();
   led_blink();
